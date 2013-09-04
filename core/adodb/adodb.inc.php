@@ -2928,7 +2928,7 @@
 	{
 		$this->bind = array();
 		for ($i=0; $i < $this->_numOfFields; $i++) {
-			$o =& $this->FetchField($i);
+			$o = $this->FetchField($i);
 			if ($upper === 2) $this->bind[$o->name] = $i;
 			else $this->bind[($upper) ? strtoupper($o->name) : strtolower($o->name)] = $i;
 		}
@@ -3722,6 +3722,15 @@
 		}
 
 		switch($drivername) {
+		case 'mysqlt':
+		case 'mysqli': 
+				$drivername='mysql'; 
+				break;
+		case 'postgres7':
+		case 'postgres8':
+				$drivername = 'postgres'; 
+				break;	
+		case 'firebird15': $drivername = 'firebird'; break;
 		case 'oracle': $drivername = 'oci8'; break;
 		case 'access': if ($perf) $drivername = ''; break;
 		case 'db2'   : break;

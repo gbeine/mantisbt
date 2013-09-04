@@ -11,6 +11,7 @@ the doc/INSTALL file.
 
 This patch changes the following files:
     core/category_api.php
+    core/file_api.php
     core/user_api.php
     admin/schema.php
     config_defaults_inc.php
@@ -54,10 +55,25 @@ Mail_Mime package and set
 	$g_mail_parse_mime	= OFF;
 from OFF to ON.
 
+For parsing HTML mails, set 
+	$g_mail_parse_html	= ON;
+and set 
+	$g_mail_html_parser
+to a valid tool for dumping HTML contents ("/usr/bin/w3m -T text/html -dump")
+Also, 
+	$g_mail_tmp_directory
+has to be a valid directory to handle write the temporary HTML files.
+
 For debugging controls there is the switch
 	$g_mail_additional	= OFF;
 which puts the complete message into the Additional Information field,
 if it is activated.
+
+If you like to see what bug_report_mail.php is doing, set
+	$g_mail_debug = ON;
+
+If $g_mail_directory is a valid directory and also writeable,
+the complete mails will be saved to this directory.
 
 In this case you should decrease the amount of fetched messages via
 	$g_mail_fetch_max	= 1;
@@ -67,6 +83,22 @@ If you'd like to use the Mail Reporter but don't save the whole message for
 making the sender's address available, set
 	$g_mail_save_from	= OFF;
 to ON.
+
+If you don't want bug_report_mail.php to delete the mails from your POP3
+server set
+	$g_mail_delete = OFF;
+Use this carefully!
+
+With 
+	$g_mail_auth_method
+you may set the AUTH method for your POP3 server. Default is 'USER',
+but 'DIGEST-MD5','CRAM-MD5','LOGIN','PLAIN','APOP' are also possible
+
+For using the priority of the mails for the bug priority, set
+	$g_mail_use_bug_priority = ON;
+The
+	$g_mail_bug_priority_default = NORMAL;
+is the default value for the priority of new bug entries.
 
 After this, bug_report_mail can be used via cron like this:
 
@@ -81,13 +113,30 @@ This addon is distributed under the same conditions as Mantis itself.
 Gerrit Beine, August 2004
 
 Changelog:
+May 2006
+	- update to Mantis 1.0.3
+	- added support for HTML mail
+	- added support for encoded mail bodies and subjects
+	- changed handling of mail
+	- the global mail_debug configuration option is now set OFF by default
+	- include the additional patches submitted by
+		- EBY (support for priorities and file uploads)
+		  file_add in core/file_api.php
+		  mail_parse_content in core/mail_api.php
+		  config_defaults_inc.php
+Dec 2005
+	- update to Mantis 1.0.0rc4
+	- update to Mantis 0.19.4
+Oct 2005
+	- update to Mantis 1.0.0rc3
+	- update to Mantis 0.19.3
 Sep 2005:
 	- update to Mantis 1.0.0rc2
 	- fixed a bug in getting all categories for a project
 		category_get_all_rows in core/category_api.php
 Aug 2005:
 	- update to Mantis 1.0.0rc1
-	- include the additional patches submitted by
+	- include the additional patches submitted by      
 		- gernot (Fixed MIME handling and save the mail's sender)
 		  mail_get_all_mails in core/mail_api.php
 		  mail_parse_content in core/mail_api.php

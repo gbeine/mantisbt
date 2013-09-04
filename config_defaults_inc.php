@@ -1,12 +1,12 @@
 <?php
 	# Mantis - a php based bugtracking system
 	# Copyright (C) 2000 - 2002  Kenzaburo Ito - kenito@300baud.org
-	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
+	# Copyright (C) 2002 - 2006  Mantis Team   - mantisbt-dev@lists.sourceforge.net
 	# This program is distributed under the terms and conditions of the GPL
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: config_defaults_inc.php,v 1.283 2005-09-11 11:24:09 vboctor Exp $
+	# $Id: config_defaults_inc.php,v 1.283.2.1.2.1.2.1.2.2.2.4 2006-05-07 06:12:22 vboctor Exp $
 	# --------------------------------------------------------
 
 
@@ -78,7 +78,7 @@
 			$t_host = 'www.example.com';
 		}
 
-		$t_path = dirname( $_SERVER['PHP_SELF'] );
+		$t_path = dirname( strip_tags( $_SERVER['PHP_SELF'] ) );
 		if ( '/' == $t_path || '\\' == $t_path ) {
 			$t_path = '';
 		}
@@ -312,7 +312,7 @@
 	#############################
 
 	# --- version variables -----------
-	$g_mantis_version		= '1.0.0rc2';
+	$g_mantis_version		= '1.0.3';
 	$g_show_version			= ON;
 
 	################################
@@ -1634,6 +1634,10 @@
 	# Default is OFF, ignored if mail_use_reporter is ON
 	$g_mail_auto_signup	= OFF;
 
+	# How many mails should be fetched at the same time
+	# If big mails with attachments should be received, specify only one
+	$g_mail_fetch_max	= 1;
+
 	# Write complete mail into the "Additional Information"
 	$g_mail_additional	= OFF;
 
@@ -1643,11 +1647,54 @@
 	# Parse MIME mails (may require a lot of memory)
 	$g_mail_parse_mime	= OFF;
 
-	# How many mails should be fetched at the same time
-	# If big mails with attachments should be received, specify only one
-	$g_mail_fetch_max	= 1;
+	# Parse HTML mails
+	$g_mail_parse_html	= OFF;
+
+	# HTML Parser Command
+	# It should print the formatted text to STDOUT
+	# For example: "/usr/bin/w3m -T text/html -dump"
+	$g_mail_html_parser	= OFF;
+
+	# directory for saving temporary mail content
+	$g_mail_tmp_directory	= '/tmp';
+	
+	# Delete incoming mail from POP3 server
+	$g_mail_delete		= ON;
 
 	# Signup new users automatically (possible security risk!)
 	# Default is OFF, ignored if mail_use_reporter is ON
 	$g_mail_debug		= OFF;
+	
+	# Save mail contents to this directory if debug mode is ON
+	$g_mail_directory	= '/tmp/mantis';
+	
+	# The auth method used for POP3
+	# Valid methods are: 'DIGEST-MD5','CRAM-MD5','LOGIN','PLAIN','APOP','USER'
+	$g_mail_auth_method	= 'USER';
+	
+	# Looks for priority header field
+	$g_mail_use_bug_priority = ON;
+	
+	# Default priority for mail reported bugs
+	$g_mail_bug_priority_default = NORMAL;
+	
+	# Classify bug priorities
+	$g_mail_bug_priority = array(
+		'5 (lowest)'	=> 10,
+		'4 (low)'	=> 20,
+		'3 (normal)'	=> 30,
+		'2 (high)'	=> 40,
+		'1 (highest)'	=> 50,
+		'5'		=> 20,
+		'4'		=> 20,
+		'3'		=> 30,
+		'2'		=> 40,
+		'1'		=> 50,
+		'0'		=> 10,
+		'low'		=> 20,
+		'normal' 	=> 30,
+		'high' 		=> 40,
+		'' 		=> 30,
+		'?' 		=> 30
+	);
 ?>

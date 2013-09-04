@@ -6,17 +6,33 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: view_all_set.php,v 1.57 2005-08-10 14:26:28 thraxisp Exp $
+	# $Id: view_all_set.php,v 1.57.4.1.2.1.4.1 2006-04-06 00:28:52 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php require_once( 'core.php' ) ?>
 <?php auth_ensure_user_authenticated() ?>
 <?php
 	$f_type					= gpc_get_int( 'type', -1 );
-	$f_view_type			= gpc_get_string( 'view_type', 'simple' );
 	$f_source_query_id		= gpc_get_int( 'source_query_id', -1 );
 	$f_print				= gpc_get_bool( 'print' );
 	$f_temp_filter			= gpc_get_bool( 'temporary' );
+
+	# validate filter type
+	$f_default_view_type = 'simple';
+	if ( ADVANCED_DEFAULT == config_get( 'view_filters' ) ) {
+		$f_default_view_type = 'advanced';
+	}
+
+	$f_view_type = gpc_get_string( 'view_type', $f_default_view_type );
+	if ( ADVANCED_ONLY == config_get( 'view_filters' ) ) {
+		$f_view_type = 'advanced';
+	}
+	if ( SIMPLE_ONLY == config_get( 'view_filters' ) ) {
+		$f_view_type = 'simple';
+	}
+	if ( ! in_array( $f_view_type, array( 'simple', 'advanced' ) ) ) {
+		$f_view_type = $f_default_view_type;
+	}	
 
 	# these are all possibly multiple selections for advanced filtering
 	$f_show_category = array();
@@ -125,7 +141,7 @@
 
 	# these are only single values, even when doing advanced filtering
 	$f_per_page				= gpc_get_int( 'per_page', -1 );
-	$f_highlight_changed	= gpc_get_string( 'highlight_changed', config_get( 'default_show_changed' ) );
+	$f_highlight_changed	= gpc_get_int( 'highlight_changed', config_get( 'default_show_changed' ) );
 	$f_sticky_issues		= gpc_get_bool( 'sticky_issues' );
 	# sort direction
 	$f_sort_d					= gpc_get_string( 'sort', '' );
@@ -136,12 +152,12 @@
 	$f_dir_1				= gpc_get_string( 'dir_1', '' );
 
 	# date values
-	$f_start_month			= gpc_get_string( 'start_month', date( 'm' ) );
-	$f_end_month			= gpc_get_string( 'end_month', date( 'm' ) );
-	$f_start_day			= gpc_get_string( 'start_day', 1 );
-	$f_end_day				= gpc_get_string( 'end_day', date( 'd' ) );
-	$f_start_year			= gpc_get_string( 'start_year', date( 'Y' ) );
-	$f_end_year				= gpc_get_string( 'end_year', date( 'Y' ) );
+	$f_start_month			= gpc_get_int( 'start_month', date( 'm' ) );
+	$f_end_month			= gpc_get_int( 'end_month', date( 'm' ) );
+	$f_start_day			= gpc_get_int( 'start_day', 1 );
+	$f_end_day				= gpc_get_int( 'end_day', date( 'd' ) );
+	$f_start_year			= gpc_get_int( 'start_year', date( 'Y' ) );
+	$f_end_year				= gpc_get_int( 'end_year', date( 'Y' ) );
 	$f_search				= gpc_get_string( 'search', '' );
 	$f_and_not_assigned		= gpc_get_bool( 'and_not_assigned' );
 	$f_do_filter_by_date	= gpc_get_bool( 'do_filter_by_date' );
@@ -211,8 +227,8 @@
 		}
 	}
 
-	$f_relationship_type = gpc_get_string( 'relationship_type', -1 );
-	$f_relationship_bug = gpc_get_string( 'relationship_bug', 0 );
+	$f_relationship_type = gpc_get_int( 'relationship_type', -1 );
+	$f_relationship_bug = gpc_get_int( 'relationship_bug', 0 );
 
 	if ( $f_temp_filter ) {
 		$f_type = 1;

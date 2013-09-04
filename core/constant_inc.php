@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: constant_inc.php,v 1.52 2005-08-04 19:54:03 thraxisp Exp $
+	# $Id: constant_inc.php,v 1.52.4.1.6.1 2006-05-07 05:56:22 vboctor Exp $
 	# --------------------------------------------------------
 
 	### CONSTANTS  ###
@@ -169,6 +169,7 @@
 	define( 'ERROR_UPLOAD_FAILURE',					15 );
 	define( 'ERROR_FTP_CONNECT_ERROR',				16 );
 	define( 'ERROR_HANDLER_ACCESS_TOO_LOW',				17 );
+	define( 'ERROR_PAGE_REDIRECTION',				18 );
 
 	# ERROR_CONFIG_*
 	define( 'ERROR_CONFIG_OPT_NOT_FOUND',			100 );
@@ -306,8 +307,8 @@
 
 	# Meta filter values
 	define( 'META_FILTER_MYSELF',	-1 );
-	define( 'META_FILTER_NONE',     '[none]'  );
-	define( 'META_FILTER_ANY',      '[any]'   );
+	define( 'META_FILTER_NONE',     -2  );
+	define( 'META_FILTER_ANY',      0   );
 
 	# Versions
 	define( 'VERSION_ALL',		null );

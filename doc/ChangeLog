@@ -1,5 +1,79 @@
 Mantis ChangeLog
 
+2005.05.07 - 1.0.3
+
+- 0007037: [security] Port: Login with disabled account possible (vboctor)
+- 0007034: [bugtracker] Port: bug in string_sanitize_url() (vboctor)
+- 0007028: [db mssql] Port: "Prune Accounts" function doesn't work with MS SQL (vboctor)
+- 0007029: [db mssql] Port: MS SQL Error on View Filters Page (vboctor)
+- 0007030: [db mssql] Port: installtion fails - administrator have no rights on db (vboctor)
+- 0007032: [db mssql] Port: Error on opening Change Log (vboctor)
+- 0007039: [db mssql] Notice: Only variables should be assigned by reference in \core\adodb\adodb.inc.php on line 2931 (vboctor)
+- 0007035: [feature] Port: Global Profiles list not sorted (vboctor)
+- 0007038: [filters] Port: SYSTEM WARNING: Argument 1 to array_multisort() is expected to be an array or a sort flag (vboctor)
+- 0007031: [installation] Port: is_writable never success in install.php (vboctor)
+- 0007041: [installation] Port: newbie admins may be redirected to blank page (vboctor)
+- 0007033: [printing] Port: wrong strpos function call (vboctor)
+- 0007027: [upgrade] Port: fixed_in_version is renamed to Fixed_in_version during database migration (vboctor)
+
+2006.04.18 - 1.0.2
+
+- 0006902: [security] XSS in mantis bug track system .... (thraxisp)
+- 0006859: [bugtracker] Can send reminders to all recipients (thraxisp)
+
+2006.02.18 - 1.0.1
+
+- 0006722: [installation] Remaining mysqli_ install problems (ref. #0006672): mysqli_real_escape_string() expects parameter 1 to be link (thraxisp)
+- 0006672: [installation] install.php assumes mysql extension, fails with mysqli extension (thraxisp)
+- 0006668: [filters] Parse error while saving new filter: Call to undefined function: string_strip_tags() (thraxisp)
+
+
+2006.02.04  -  1.0.0
+
+- 0006044: [security] 'Return' _GET is not checked (thraxisp)
+- 0006650: [security] ADOdb can be exploited to execute arbitrary SQL code (vboctor)
+- 0006659: [security] Cross site scripting vulnerability (thraxisp)
+- 0006634: [filters] Filter does not work with profiles (vboctor)
+
+
+2006.01.17  -  1.0.0rc5
+
+- 0006509: [security] Port: Additional XSS Vulnerabilities in Filter (thraxisp)
+- 0006557: [security] XSS Vulnerability in manage_user (TKADV2005-11-002) (thraxisp)
+- 0006563: [security] Port XSS Vulnerability in project documents (TKADV2005-11-002) (thraxisp)
+- 0006569: [security] XSS Vulnerability in saved queries (TKADV2005-11-002) (thraxisp)
+- 0006594: [bugtracker] config_flush_cache does not work correctly (thraxisp)
+- 0006585: [documentation] don't see the documentation (thraxisp)
+- 0006501: [filters] Categories can't be selected for filter-setting (thraxisp)
+
+
+2005.12.13  -  1.0.0rc4
+
+- 0006421: [security] Private bugs show up in public RSS feed (vboctor)
+- 0006458: [security] Port #6457: SQL Injection in manage user page (TKADV2005-11-002) (vboctor)
+- 0006461: [security] Port #6460: HTTP Header CRLF Injection (TKADV2005-11-002) (vboctor)
+- 0006485: [security] XSS Vulnerability in filters (TKADV2005-11-002) (thraxisp)
+- 0006489: [security] Port Injection Vulnerabilities in Filters (TKADV2005-11-002) (thraxisp)
+- 0006492: [security] Port #6453: Make note private has no effect when resolving bug (thraxisp)
+- 0006432: [bugtracker] error processing does not work! (jlatour)
+- 0006379: [filters] Filter returns private issues when it should not (thraxisp)
+- 0006254: [localization] strings_korean_utf8.txt has UTF-8 byte-order marker (ryandesign)
+- 0006268: [localization] strings_chinese_simplified_utf8.txt has UTF-8 byte-order marker (ryandesign)
+- 0006304: [localization] [PATCH] Major overhaul of strings_dutch.txt (jlatour)
+- 0006358: [localization] Updated Dutch localization (Wanderer)
+- 0006474: [localization] Calls to htmlspecialchars should take into account the current charset (jlatour)
+
+
+2005.10.29  -  1.0.0rc3
+
+- 0006273: [security] File Inclusion Vulnerability (vboctor)
+- 0006275: [security] SQL injection (vboctor)
+- 0006234: [filters] Filter sometimes returns no results (thraxisp)
+- 0006295: [filters] Old filters and view_state problems. (thraxisp)
+- 0006288: [filters] Patch against CVS HEAD for Saved filter problem with view_state (thraxisp)
+- 0006296: [filters] Filter sql includes unnecessary links to custom_field_string_table for date custom fields (thraxisp)
+- 0006297: [filters] sorting on custom field, bring MySQL to deadlock loop (thraxisp)
+
 
 2005.09.11  -  1.0.0rc2
 

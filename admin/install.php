@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: install.php,v 1.22 2005-08-10 17:10:12 thraxisp Exp $
+	# $Id: install.php,v 1.22.10.3 2006-05-05 16:03:25 vboctor Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -142,7 +142,7 @@ if ( 0 == $t_install_state ) {
 <!-- Check PHP Version -->
 <tr>
 	<td bgcolor="#ffffff">
-		Checking  PHP Version (Your version is <?php echo phpversion(); ?>)
+		Checking PHP version (your version is <?php echo phpversion(); ?>)
 	</td>
 	<?php
 		if (phpversion() == '4.0.6') {
@@ -152,17 +152,17 @@ if ( 0 == $t_install_state ) {
 				if ( version_compare ( phpversion() , '4.0.6', '>=' ) ) {
 					print_test_result( GOOD );
 				} else {
-					print_test_result( BAD, true, 'Upgrade the version of PHP to a more recent version' );
+					print_test_result( BAD, true, 'Upgrade to a more recent version of PHP' );
 				}
 			} else {
-			 	print_test_result( BAD, true, 'Upgrade the version of PHP to a more recent version' );
+			 	print_test_result( BAD, true, 'Upgrade to a more recent version of PHP' );
 			}
 		}
 	?>
 </tr>
 
 <!-- Check Safe Mode -->
-<?php print_test( 'Checking If Safe mode is enabled for install script',
+<?php print_test( 'Checking if safe mode is enabled for install script',
 		! ini_get ( 'SAFE_MODE' ),
 		true,
 		'Disable safe_mode in php.ini before proceeding' ) ?>
@@ -196,13 +196,17 @@ if ( 2 == $t_install_state ) {
 				case 'mysql':
 					$t_support = function_exists('mysql_connect');
 					break;
+				case 'mysqli':
+					$t_support = function_exists('mysqli_connect');
+					break;
 				case 'pgsql':
 					$t_support = function_exists('pg_connect');
 					break;
 				case 'mssql':
-				case 'odbc_mssql':
-				case 'ado_mssql':
 					$t_support = function_exists('mssql_connect');
+					break;
+				case 'oci8':
+					$t_support = function_exists('OCILogon');
 					break;
 				default:
 					$t_support = false;
@@ -240,8 +244,12 @@ if ( 2 == $t_install_state ) {
 			if ( '' !== $f_admin_password ) {
 				print_test_result( GOOD );
 			} else {
-				print_test_result( BAD, false, 'admin user password is blank, using database user password instead' );
-				$f_admin_password = $f_db_password;
+				if (  '' != $f_db_password ) {
+					print_test_result( BAD, false, 'admin user password is blank, using database user password instead' );
+					$f_admin_password = $f_db_password;
+				} else {
+					print_test_result( GOOD );
+				}
 			}
 	?>
 </tr>
@@ -255,11 +263,11 @@ if ( 2 == $t_install_state ) {
 		$g_db = ADONewConnection($f_db_type);
 		$t_result = @$g_db->Connect($f_hostname, $f_admin_username, $f_admin_password);
 
-		if ( $t_result == true ) {
+		if ( $t_result ) {
 			print_test_result( GOOD );
 			# check if db exists for the admin
 			$t_result = @$g_db->Connect($f_hostname, $f_admin_username, $f_admin_password, $f_database_name);
-			if ( $t_result == true ) {
+			if ( $t_result ) {
 				$f_db_exists = true;
 			}
 		} else {
@@ -273,7 +281,8 @@ if ( 2 == $t_install_state ) {
 	<td bgcolor="#ffffff">
 		Checking Database Server Version
 		<?php
-			$t_version_info = $g_db->ServerInfo();
+			# due to a bug in ADODB, this call prompts warnings, hence the @
+			$t_version_info = @$g_db->ServerInfo();
 			echo '<br /> Running ' . $f_db_type . ' version ' . $t_version_info['description'];
 		?>
 	</td>
@@ -282,17 +291,16 @@ if ( 2 == $t_install_state ) {
 		$t_error = '';
 		switch ( $f_db_type ) {
 			case 'mysql':
+			case 'mysqli':
 				if ( function_exists ( 'version_compare' ) ) {
 					if ( version_compare ( $t_version_info['version'] , '4.1.0', '>' ) ) {
-						$t_warning = 'Please ensure that you installation supports the new password scheme used in MySQL 4.1.0 and later. See ' .
+						$t_warning = 'Please ensure that your installation supports the new password scheme used in MySQL 4.1.0 and later. See ' .
 							'<a href="http://dev.mysql.com/doc/mysql/en/password-hashing.html">http://dev.mysql.com/doc/mysql/en/password-hashing.html</a>.';
 					}
 				}
 				break;
 			case 'pgsql':
 			case 'mssql':
-			case 'odbc_mssql':
-			case 'ado_mssql':
 			default:
 		}
 			
@@ -344,10 +352,38 @@ if ( 1 == $t_install_state ) {
 	</td>
 	<td>
 		<select name="db_type">
-		<option value="mysql">MySql (default)</option>
-		<option value="odbc_mssql">Microsoft SQL Server ODBC (experimental)</option>
-		<option value="ado_mssql">Microsoft SQL Server ADO (experimental)</option>
-		<option value="pgsql">PGSQL (experimental)</option>
+		<?php
+			if ( $f_db_type == 'mysql' ) {
+				echo '<option value="mysql" selected="selected">MySql (default)</option>';
+			} else {
+				echo '<option value="mysql">MySql (default)</option>';
+			}
+
+			if ( $f_db_type == 'mysqli' ) {
+				echo '<option value="mysqli" selected="selected">MySqli</option>';
+			} else {
+				echo '<option value="mysqli">MySqli</option>';
+			}
+
+			if ( $f_db_type == 'mssql' ) {
+				echo '<option value="mssql" selected="selected">Microsoft SQL Server (experimental)</option>';
+			} else {
+				echo '<option value="mssql">Microsoft SQL Server (experimental)</option>';
+			}
+
+			if ( $f_db_type == 'pgsql' ) {
+				echo '<option value="pgsql" selected="selected">PGSQL (experimental)</option>';
+			} else {
+				echo '<option value="pgsql">PGSQL (experimental)</option>';
+			}
+			
+			if ( $f_db_type == 'oci8' ) {
+				echo '<option value="oci8" selected="selected">Oracle - oci8 (Experimental)</option>';
+			} else {
+				echo '<option value="oci8">Oracle - oci8 (Experimental)</option>';
+			}
+		?>
+		</select>
 	</td>
 </tr>
 
@@ -486,13 +522,14 @@ if ( 3 == $t_install_state ) {
 	# install the tables
 	if ( false == $g_failed ) {
 		$g_db_connected = false; # fake out database access routines used by config_get
+		$GLOBALS['g_db_type'] = $f_db_type; # database_api references this
 		require_once( dirname( __FILE__ ) . DIRECTORY_SEPARATOR . 'schema.php' );
 		$g_db = ADONewConnection( $f_db_type );
 		$t_result = @$g_db->Connect( $f_hostname, $f_admin_username, $f_admin_password, $f_database_name );
 		if ( ! $f_log_queries ) {
 			$g_db_connected = true; # fake out database access routines used by config_get
 		}
-		$t_last_update = config_get( 'database_version', -1 );
+		$t_last_update = config_get( 'database_version', -1, ALL_USERS, ALL_PROJECTS );
 		$lastid = sizeof( $upgrade ) - 1;
 		$i = $t_last_update + 1;
 		if ( $f_log_queries ) {
@@ -529,7 +566,7 @@ if ( 3 == $t_install_state ) {
 		if ( $f_log_queries ) {
 			# add a query to set the database version
 			echo 'INSERT INTO mantis_config_table ( value, type, access_reqd, config_id, project_id, user_id ) VALUES (\'' . $lastid . '\', 1, 90, \'database_version\', 20, 0 );' . "\r\n";
-			echo '</pre></br /><p style="color:red">Your database has not been created yet. Please create the database, then install the tables and data using the information above before proceeding</td></tr>';
+			echo '</pre></br /><p style="color:red">Your database has not been created yet. Please create the database, then install the tables and data using the information above before proceeding.</td></tr>';
 		}
 
 	}
@@ -591,8 +628,7 @@ if ( 5 == $t_install_state ) {
 
 		$t_config_filename = $g_absolute_path . 'config_inc.php';
 		if ( !file_exists ( $t_config_filename ) ) {
-			if ( is_writable( $t_config_filename ) ) {
-				$fd = fopen( $t_config_filename, 'x' );
+			if ( $fd = @fopen( $t_config_filename, 'x' ) ) {
 				fwrite( $fd, $t_config );
 				fclose( $fd );
 			}
@@ -621,7 +657,7 @@ if ( 5 == $t_install_state ) {
 <?php
 	if ( true == $t_write_failed ) {
 		echo '<tr><table width="50%" border="0" cellpadding="10" cellspacing="1" align="center">';
-		echo '<tr><td>Please add the following lines to ' . $g_absolute_path . 'config_inc.php before continuing to the database upgrade check</td></tr>';
+		echo '<tr><td>Please add the following lines to ' . $g_absolute_path . 'config_inc.php before continuing to the database upgrade check:</td></tr>';
 		echo '<tr><td><pre>' . htmlentities( $t_config ) . '</pre></td></tr></table></tr>';
 	}
 ?>

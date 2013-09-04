@@ -1,0 +1,58 @@
+The current version of bug_report_mail only support plain text e-mails
+and POP3 Mailaccounts with PEAR's Net_POP3 packge.
+
+bug_report_mail is able to recognize if mail is a reply to an already opened
+bug and adds the content as a bugnote.
+
+If you are alway running Mantis you have to alter your projects table
+with the sql/bug_report_mail.sql script.
+If not, you can create the database tables in the way described in
+the doc/INSTALL file.
+
+This patch changes the following files:
+    core/category_api.php
+    core/user_api.php
+    config_defaults_inc.php
+    manage_proj_cat_edit_page.php
+    manage_proj_edit_page.php
+These files are new:
+    core/mail_api.php
+    sql/bug_report_mail.sql
+    bug_report_mail.php
+    manage_proj_cat_mail_delete.php
+    manage_proj_cat_mail_update.php
+    manage_proj_mail_categories.php
+    manage_proj_mail_delete.php
+    manage_proj_mail_update.php
+
+After installing this patch, you can add a POP3 server's hostname
+and authentication data for each of your projects with the project edit form.
+
+There are two ways to receive mail with bug_report_mail:
+The secure (and default) way is to use a standard reporting user:
+You have to create a reporter account, for example 'Mail'.
+The name for this reporter account you have to write in your config_inc.php file:
+	$g_mail_reporter = "Mail";
+and then, bug_report_mail must be informed to behave like this:
+    $g_mail_use_reporter = ON;
+
+The other way is to signup new user accounts automatically.
+For using this, you have to change this
+    $g_mail_auto_signup     = OFF;
+from OFF to ON.
+Now, bug_report_mail will look for an user named like the mail's sender
+or an user which mail adress is identical.
+If no user is found, then a new account will be created.
+The new user's name will be the mail address.
+
+This could be used for attacks, but there is no other way in the moment.
+
+After this, bug_report_mail can be used via cron like this:
+
+*/5 *   *   *   * lynx --dump http://mantis.homepage.com/bug_report_mail.php
+
+This line uses lynx to fetch bug reports from via POP3 every 5 minutes. 
+
+This addon is distributed under the same condition as Mantis itself.
+
+Gerrit Beine, August 2004

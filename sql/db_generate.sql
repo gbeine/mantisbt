@@ -328,6 +328,10 @@ CREATE TABLE mantis_project_category_table (
   project_id int(7) unsigned NOT NULL default '0',
   category varchar(64) NOT NULL default '',
   user_id int(7) unsigned NOT NULL default '0',
+  pop3_host varchar( 255 ) default NULL ,
+  pop3_user varchar( 255 ) default NULL ,
+  pop3_pass varchar( 255 ) default NULL ,
+  pop3_pass varchar( 255 ) default NULL ,
   PRIMARY KEY  (project_id,category)
 ) TYPE=MyISAM;
 
@@ -377,6 +381,11 @@ CREATE TABLE mantis_project_table (
   access_min int(2) NOT NULL default '10',
   file_path varchar(250) NOT NULL default '',
   description text NOT NULL,
+  pop3_host varchar( 255 ) default NULL ,
+  pop3_user varchar( 255 ) default NULL ,
+  pop3_pass varchar( 255 ) default NULL ,
+  pop3_pass varchar( 255 ) default NULL ,
+  pop3_categories enum( '0','1' ) NOT NULL default '0',
   PRIMARY KEY  (id),
   UNIQUE KEY name (name),
   KEY id (id)

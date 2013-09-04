@@ -1335,4 +1335,20 @@
 	# Enable support for bug relationships where a bug can be a related, dependent on, or duplicate of another.
 	# See relationship_api.php for more details.
 	$g_enable_relationship = ON;
+
+	######################
+	# Mail Reporting
+	######################
+
+	# --- mail reporting settings -----
+	# This tells Mantis to report all the Mail with only one account
+	$g_mail_use_reporter    = ON;
+
+	# The account's name for mail reporting
+	# Also used for fallback if a user is not found in database
+	$g_mail_reporter        = 'Mail';
+
+	# Signup new users automatically (possible security risk!)
+	# Default is OFF, ignored if mail_use_reporter is ON
+	$g_mail_auto_signup	= OFF;
 ?>

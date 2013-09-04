@@ -18,6 +18,7 @@
 	require_once( $t_core_path . 'version_api.php' );
 	require_once( $t_core_path . 'custom_field_api.php' );
 	require_once( $t_core_path . 'icon_api.php' );
+	require_once( $t_core_path . 'mail_api.php' );
 ?>
 <?php
 	$f_project_id = gpc_get_int( 'project_id' );
@@ -25,6 +26,8 @@
 	access_ensure_project_level( config_get( 'manage_project_threshold' ), $f_project_id );
 
 	$row = project_get_row( $f_project_id );
+	$mail = mail_get_account_data( $f_project_id );
+
 ?>
 <?php html_page_top1() ?>
 <?php html_page_top2() ?>
@@ -534,4 +537,74 @@ if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_projec
 	</table>
 </div>
 
+<?php  if ( ! $mail['pop3_categories'] ) { ?>
+<!-- MAIL ACCOUNT CHANGE -->
+<br />
+<div align="center">
+	<form method="post" action="manage_proj_mail_update.php">
+		<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
+		<table class="width75" cellspacing="1">
+			<tr>
+				<td class="form-title" colspan="4">
+					<?php echo 'Mail Account Settings' ?>
+				</td>
+			</tr>
+			<tr class="row-1">
+				<td class="category" width="25%">
+					<?php echo "POP3 Host"?>
+				</td>
+				<td width="75%">
+					<input type="text" name="pop3_host" size="64" maxlength="255" value="<?php echo string_attribute( $mail['pop3_host'] ) ?>" />
+				</td>
+			</tr>
+			<tr class="row-1">
+				<td class="category" width="25%">
+					<?php echo "POP3 User"?>
+				</td>
+				<td width="75%">
+					<input type="text" name="pop3_user" size="64" maxlength="255" value="<?php echo string_attribute( $mail['pop3_user'] ) ?>" />
+				</td>
+			</tr>
+			<tr class="row-1">
+				<td class="category" width="25%">
+					<?php echo "POP3 Password"?>
+				</td>
+				<td width="75%">
+					<input type="text" name="pop3_pass" size="64" maxlength="255" value="<?php echo string_attribute( $mail['pop3_pass'] ) ?>" />
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2">
+					<input type="submit" value="<?php echo 'Set Mail Account Data' ?>" />
+				</td>
+			</tr>
+		</table>
+	</form>
+</div>
+<!-- MAIL ACCOUNT RESET -->
+<div class="border-center">
+	<form method="post" action="manage_proj_mail_delete.php">
+		<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
+		<input type="submit" value="<?php echo 'Delete Mail Account Data' ?>" />
+	</form>
+</div>
+<br />
+<!-- MAIL ACCOUNT CATEGORIES -->
+<div class="border-center">
+	<form method="post" action="manage_proj_mail_categories.php">
+		<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
+		<input type="hidden" name="categories" value="On" />
+		<input type="submit" value="<?php echo 'Activate Mail Account per Category' ?>" />
+	</form>
+</div>
+<?php } else { ?>
+<!-- MAIL ACCOUNT CATEGORIES -->
+<div class="border-center">
+	<form method="post" action="manage_proj_mail_categories.php">
+		<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
+		<input type="hidden" name="categories" value="Off" />
+		<input type="submit" value="<?php echo 'Deactivate Mail Account per Category' ?>" />
+	</form>
+</div>
+<?php } ?>
 <?php html_page_bottom1( __FILE__ ) ?>

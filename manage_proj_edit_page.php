@@ -6,14 +6,14 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: manage_proj_edit_page.php,v 1.81 2004-09-22 10:15:33 bpfennigschmidt Exp $
+	# $Id: manage_proj_edit_page.php,v 1.91 2005-07-19 13:42:49 vboctor Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path . 'category_api.php' );
 	require_once( $t_core_path . 'version_api.php' );
 	require_once( $t_core_path . 'custom_field_api.php' );
@@ -147,6 +147,120 @@ if ( access_has_global_level ( config_get( 'delete_project_threshold' ) ) ) { ?>
 	helper_alternate_class( 0 );
 ?>
 
+<!-- SUBPROJECTS -->
+<div align="center">
+<table class="width75" cellspacing="1">
+
+<!-- Title -->
+<tr>
+	<td class="form-title" colspan="6">
+		<?php echo lang_get( 'subprojects' ) ?>
+                <?php
+	                # Check the user's global access level before allowing project creation
+	                if ( access_has_global_level ( config_get( 'create_project_threshold' ) ) ) {
+	                        print_button( 'manage_proj_create_page.php?parent_id=' . $f_project_id, lang_get( 'create_new_subproject_link' ) );
+	                }
+                ?>
+	</td>
+</tr>
+
+<!-- Subprojects -->
+<?php
+	$t_subproject_ids = current_user_get_accessible_subprojects( $f_project_id );
+
+	if ( Array() != $t_subproject_ids ) {
+?>
+<tr class="row-category">
+	<td width="20%">
+		<?php echo lang_get( 'name' ) ?>
+	</td>
+	<td width="10%">
+		<?php echo lang_get( 'status' ) ?>
+	</td>
+	<td width="10%">
+		<?php echo lang_get( 'enabled' ) ?>
+	</td>
+	<td width="10%">
+		<?php echo lang_get( 'view_status' ) ?>
+	</td>
+	<td width="30%">
+		<?php echo lang_get( 'description' ) ?>
+	</td>
+	<td width="20%">
+		<?php echo lang_get( 'actions' ) ?>
+	</td>
+</tr>
+
+<?php
+		foreach ( $t_subproject_ids as $t_subproject_id ) {
+			$t_subproject = project_get_row( $t_subproject_id );
+?>
+<tr <?php echo helper_alternate_class() ?>>
+	<td>
+		<a href="manage_proj_edit_page.php?project_id=<?php echo $t_subproject['id'] ?>"><?php echo string_display( $t_subproject['name'] ) ?></a>
+	</td>
+	<td>
+		<?php echo get_enum_element( 'project_status', $t_subproject['status'] ) ?>
+	</td>
+	<td>
+		<?php echo trans_bool( $t_subproject['enabled'] ) ?>
+	</td>
+	<td>
+		<?php echo get_enum_element( 'project_view_state', $t_subproject['view_state'] ) ?>
+	</td>
+	<td>
+		<?php echo string_display_links( $t_subproject['description'] ) ?>
+	</td>
+	<td class="center">
+		<?php
+				print_button( 'manage_proj_edit_page.php?project_id=' . $t_subproject['id'], lang_get( 'edit_link' ) );
+				echo '&nbsp;';
+				print_button( 'manage_proj_subproj_delete.php?project_id=' . $f_project_id . '&amp;subproject_id=' . $t_subproject['id'], lang_get( 'unlink_link' ) );
+		?>
+	</td>
+</tr>
+<?php
+		} # End of foreach loop over subprojects
+	} # End of hiding subproject listing if there are no subprojects
+?>
+
+<!-- Add subproject -->
+<tr>
+	<td class="left" colspan="2">
+		<form method="post" action="manage_proj_subproj_add.php">
+			<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
+			<select name="subproject_id">
+<?php
+	$t_all_subprojects = project_hierarchy_get_subprojects( $f_project_id );
+	$t_all_subprojects[] = $f_project_id;
+	$t_manage_access = config_get( 'manage_project_threshold' );
+
+	$t_projects = project_get_all_rows();
+
+	$t_projects = multi_sort( $t_projects, 'name', ASC );
+
+	foreach ( $t_projects as $t_project ) {
+		if ( in_array( $t_project['id'], $t_all_subprojects ) ||
+            in_array( $f_project_id, project_hierarchy_get_all_subprojects( $t_project['id'] ) ) ||
+            ! access_has_project_level( $t_manage_access, $t_project ) ) {
+                continue;
+		}
+?>
+				<option value="<?php echo $t_project['id'] ?>"><?php echo $t_project['name'] ?></option>
+<?php
+	} # End looping over projects
+?>
+			</select>
+			<input type="submit" value="<?php echo lang_get('add_subproject'); ?>">
+		</form>
+	</td>
+</tr>
+
+</table>
+</div>
+
+<br />
+
 <!-- PROJECT CATEGORIES -->
 <div align="center">
 <table class="width75" cellspacing="1">
@@ -175,7 +289,7 @@ if ( access_has_global_level ( config_get( 'delete_project_threshold' ) ) ) { ?>
 		</tr>
 <?php
 	}
-	
+
 	foreach ( $t_categories as $t_category ) {
 		$t_name = $t_category['category'];
 
@@ -197,9 +311,9 @@ if ( access_has_global_level ( config_get( 'delete_project_threshold' ) ) ) { ?>
 				<?php
 					$t_name = urlencode( $t_name );
 
-					print_bracket_link( 'manage_proj_cat_edit_page.php?project_id=' . $f_project_id . '&amp;category=' . $t_name, lang_get( 'edit_link' ) );
-					echo ' ';
-					print_bracket_link( 'manage_proj_cat_delete.php?project_id=' . $f_project_id . '&amp;category=' . $t_name, lang_get( 'delete_link' ) );
+					print_button( 'manage_proj_cat_edit_page.php?project_id=' . $f_project_id . '&amp;category=' . $t_name, lang_get( 'edit_link' ) );
+					echo '&nbsp;';
+					print_button( 'manage_proj_cat_delete.php?project_id=' . $f_project_id . '&amp;category=' . $t_name, lang_get( 'delete_link' ) );
 				?>
 			</td>
 		</tr>
@@ -224,7 +338,7 @@ if ( access_has_global_level ( config_get( 'delete_project_threshold' ) ) ) { ?>
 		<form method="post" action="manage_proj_cat_copy.php">
 			<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
 			<select name="other_project_id">
-				<?php print_project_option_list( null, false ) ?>
+				<?php print_project_option_list( null, false, $f_project_id ); ?>
 			</select>
 			<input type="submit" name="copy_from" class="button" value="<?php echo lang_get( 'copy_categories_from' ) ?>" />
 			<input type="submit" name="copy_to" class="button" value="<?php echo lang_get( 'copy_categories_to' ) ?>" />
@@ -285,9 +399,9 @@ if ( access_has_global_level ( config_get( 'delete_project_threshold' ) ) ) { ?>
 				<?php
 					$t_version_id = version_get_id( $t_name, $f_project_id );
 
-					print_bracket_link( 'manage_proj_ver_edit_page.php?version_id=' . $t_version_id, lang_get( 'edit_link' ) );
+					print_button( 'manage_proj_ver_edit_page.php?version_id=' . $t_version_id, lang_get( 'edit_link' ) );
 					echo '&nbsp;';
-					print_bracket_link( 'manage_proj_ver_delete.php?version_id=' . $t_version_id, lang_get( 'delete_link' ) );
+					print_button( 'manage_proj_ver_delete.php?version_id=' . $t_version_id, lang_get( 'delete_link' ) );
 				?>
 			</td>
 		</tr>
@@ -361,13 +475,13 @@ if ( access_has_project_level( config_get( 'custom_field_link_threshold' ), $f_p
 	<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
 	<input type="hidden" name="field_id" value="<?php echo $t_field_id ?>" />
 	<input type="text" name="sequence" value="<?php echo custom_field_get_sequence( $t_field_id, $f_project_id ) ?>" size="2" />
-	<input type="submit" class="button" value="<?php echo lang_get( 'update' ) ?>" />
+	<input type="submit" class="button-small" value="<?php echo lang_get( 'update' ) ?>" />
 </form>
 				</td>
 				<td class="center">
 				<?php
 					# You need global permissions to edit custom field defs
-					print_bracket_link( "manage_proj_custom_field_remove.php?field_id=$t_field_id&amp;project_id=$f_project_id", lang_get( 'remove_link' ) );
+					print_button( "manage_proj_custom_field_remove.php?field_id=$t_field_id&amp;project_id=$f_project_id", lang_get( 'remove_link' ) );
 				?>
 				</td>
 			</tr>
@@ -429,9 +543,9 @@ if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_projec
 ?>
 <br />
 <div align="center">
-	<form method="post" action="manage_proj_user_add.php">
-		<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
-		<table class="width75" cellspacing="1">
+	<table class="width75" cellspacing="1">
+		<form method="post" action="manage_proj_user_add.php">
+			<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
 			<tr>
 				<td class="form-title" colspan="5">
 					<?php echo lang_get( 'add_user_title' ) ?>
@@ -444,7 +558,7 @@ if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_projec
 				<td class="category">
 					<?php echo lang_get( 'access_level' ) ?>
 				</td>
-				<td class="category"> &nbsp; </td>
+				<td class="category">&nbsp;  </td>
 			</tr>
 			<tr class="row-1" valign="top">
 				<td>
@@ -462,8 +576,21 @@ if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_projec
 					<input type="submit" class="button" value="<?php echo lang_get( 'add_user_button' ) ?>" />
 				</td>
 			</tr>
-		</table>
-	</form>
+		</form>
+		<!-- Copy Users Form -->
+		<form method="post" action="manage_proj_user_copy.php">
+			<tr>
+				<td class="left" colspan="3">
+						<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
+						<select name="other_project_id">
+							<?php print_project_option_list( null, false, $f_project_id ); ?>
+						</select>
+						<input type="submit" name="copy_from" class="button" value="<?php echo lang_get( 'copy_users_from' ) ?>" />
+						<input type="submit" name="copy_to" class="button" value="<?php echo lang_get( 'copy_users_to' ) ?>" />
+				</td>
+			</tr>
+		</form>
+	</table>
 </div>
 <?php
 }
@@ -495,23 +622,37 @@ if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_projec
 		</tr>
 <?php
 	$t_users = project_get_all_user_rows( $f_project_id );
+	$t_display = array();
+	$t_sort = array();
+	foreach ( $t_users as $t_user ) {
+		$t_user_name = string_attribute( $t_user['username'] );
+		$t_sort_name = strtolower( $t_user_name );
+		if ( ( isset( $t_user['realname'] ) ) && ( $t_user['realname'] > "" ) && ( ON == config_get( 'show_realname' ) ) ){
+			$t_user_name = string_attribute( $t_user['realname'] ) . " (" . $t_user_name . ")";
+			if ( ON == config_get( 'sort_by_last_name') ) {
+				$t_sort_name_bits = split( ' ', strtolower( $t_user_name ), 2 );
+				$t_sort_name = $t_sort_name_bits[1] . ', ' . $t_sort_name_bits[1];
+			} else {
+				$t_sort_name = strtolower( $t_user_name );
+			}
+		}
+		$t_display[] = $t_user_name;
+		$t_sort[] = $t_sort_name;
+	}
+	array_multisort( $t_sort, SORT_ASC, SORT_STRING, $t_users, $t_display );
 
 	# reset the class counter
 	helper_alternate_class( 0 );
 
-	foreach ( $t_users as $t_user ) {
+	for ($i = 0; $i < count( $t_sort ); $i++ ) {
+		$t_user = $t_users[$i];
 ?>
 		<tr <?php echo helper_alternate_class() ?>>
 			<td>
-				<?php
-					echo $t_user['username'];
-					if ( isset( $t_user['realname'] ) && $t_user['realname'] > "" ) {
-						echo " (" . $t_user['realname'] . ")";
-					}
-				?>
+				<?php echo $t_display[$i] ?>
 			</td>
 			<td>
-			<?php 
+			<?php
 				$t_email = user_get_email( $t_user['id'] );
 				print_email_link( $t_email, $t_email );
 			?>
@@ -525,7 +666,7 @@ if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_projec
 				#  from this project
 				if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_project_id ) ) {
 					if ( project_includes_user( $f_project_id, $t_user['id'] )  ) {
-						print_bracket_link( 'manage_proj_user_remove.php?project_id=' . $f_project_id . '&amp;user_id=' . $t_user['id'], lang_get( 'remove_link' ) );
+						print_button( 'manage_proj_user_remove.php?project_id=' . $f_project_id . '&amp;user_id=' . $t_user['id'], lang_get( 'remove_link' ) );
 					}
 				}
 			?>
@@ -535,17 +676,15 @@ if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_projec
 	}  # end for
 ?>
 	<tr>
-	<td> &nbsp; </td>
-	<td> &nbsp; </td>
-	<td> &nbsp; </td>
+	<td>&nbsp;  </td>
+	<td>&nbsp;  </td>
+	<td>&nbsp;  </td>
 	<td class="center">
 	<?php
 		# You need global or project-specific permissions to remove users
 		#  from this project
 		if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_project_id ) ) {
-			if ( project_includes_user( $f_project_id, $t_user['id'] )  ) {
-				print_bracket_link( 'manage_proj_user_remove.php?project_id=' . $f_project_id, lang_get( 'remove_all_link' ) );
-			}
+			print_button( 'manage_proj_user_remove.php?project_id=' . $f_project_id, lang_get( 'remove_all_link' ) );
 		}
 	?>
 	</td>
@@ -582,7 +721,7 @@ if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_projec
 				</td>
 			</tr>
 			<tr class="row-1">
-				<td class="category" width="25%">
+			<td class="category" width="25%">
 					<?php echo "POP3 Password"?>
 				</td>
 				<td width="75%">
@@ -623,4 +762,6 @@ if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_projec
 	</form>
 </div>
 <?php } ?>
+
 <?php html_page_bottom1( __FILE__ ) ?>
+

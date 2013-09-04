@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: helper_api.php,v 1.52 2004-09-28 23:00:48 vboctor Exp $
+	# $Id: helper_api.php,v 1.61 2005-07-14 21:30:29 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### Helper API ###
@@ -57,6 +57,7 @@
 		# statements
 
 		$t_color_str	= 'closed';
+		$t_color = '#ffffff';
 		$t_arr			= explode_enum_string( $t_status_enum_string );
 		$t_arr_count	= count( $t_arr );
 		for ( $i=0; $i < $t_arr_count ;$i++ ) {
@@ -68,14 +69,11 @@
 			}
 		}
 
-		$t_color_variable_name = $t_color_str.'_color';
-		if ( config_is_set( $t_color_variable_name ) ) {
-			return config_get( $t_color_variable_name );
-		} elseif ( isset ( $t_status_colors[$t_color_str] ) ) {
-			return $t_status_colors[$t_color_str];
+        if ( isset ( $t_status_colors[$t_color_str] ) ) {
+			$t_color = $t_status_colors[$t_color_str];
 		}
 
-		return '#ffffff';
+		return $t_color;
 	}
 	# --------------------
 	# Given a enum string and num, return the appropriate string
@@ -146,16 +144,35 @@
 		return $t_timeout;
 	}
 
+    # this allows pages to override the current project settings.
+    #  This typically applies to the view bug pages where the "current"
+    #  project as used by the filters, etc, does not match the bug being viewed.
+    $g_project_override = null;
+    
 	# --------------------
 	# Return the current project id as stored in a cookie
 	#  If no cookie exists, the user's default project is returned
 	function helper_get_current_project() {
+        global $g_project_override;
+        
+        if ( $g_project_override !== null ) {
+            return $g_project_override;
+        }
+        
 		$t_cookie_name = config_get( 'project_cookie' );
 
 		$t_project_id = gpc_get_cookie( $t_cookie_name, null );
 
 		if ( null === $t_project_id ) {
-			$t_project_id = current_user_get_pref( 'default_project' );
+			$t_pref_row = user_pref_cache_row( auth_get_current_user_id(), ALL_PROJECTS, false );
+			if ( false === $t_pref_row ) {
+				$t_project_id = ALL_PROJECTS;
+			} else {
+				$t_project_id = $t_pref_row['default_project'];
+			}
+		} else {
+			$t_project_id = split( ';', $t_project_id );
+			$t_project_id = $t_project_id[ count( $t_project_id ) - 1 ];
 		}
 
 		if ( !project_exists( $t_project_id ) ||
@@ -166,6 +183,34 @@
 
 		return (int)$t_project_id;
 	}
+
+	# --------------------
+	# Return the current project id as stored in a cookie, in an Array
+	#  If no cookie exists, the user's default project is returned
+	#  If the current project is a subproject, the return value will include
+	#   any parent projects
+	function helper_get_current_project_trace() {
+		$t_cookie_name = config_get( 'project_cookie' );
+
+		$t_project_id = gpc_get_cookie( $t_cookie_name, null );
+
+		if ( null === $t_project_id ) {
+			$t_bottom     = current_user_get_pref( 'default_project' );
+			$t_project_id = Array( $t_bottom );
+		} else {
+			$t_project_id = split( ';', $t_project_id );
+			$t_bottom     = $t_project_id[ count( $t_project_id ) - 1 ];
+		}
+
+		if ( !project_exists( $t_bottom ) ||
+			 ( 0 == project_get_field( $t_bottom, 'enabled' ) ) ||
+			 !access_has_project_level( VIEWER, $t_bottom ) ) {
+			$t_project_id = Array( ALL_PROJECTS );
+		}
+
+		return $t_project_id;
+	}
+
 	# --------------------
 	# Set the current project id (stored in a cookie)
 	function helper_set_current_project( $p_project_id ) {
@@ -238,5 +283,37 @@
 		}
 
 		return call_user_func_array( $t_function, $p_args_array );
+	}
+
+	# --------------------
+	function helper_project_specific_where( $p_project_id, $p_user_id = null ) {
+		if ( null === $p_user_id ) {
+			$p_user_id = auth_get_current_user_id();
+		}
+
+		if ( ALL_PROJECTS == $p_project_id ) {
+			$t_topprojects = $t_project_ids = user_get_accessible_projects( $p_user_id );
+			foreach ( $t_topprojects as $t_project ) {
+				$t_project_ids = array_merge( $t_project_ids, user_get_all_accessible_subprojects( $p_user_id, $t_project ) );
+			}
+
+			$t_project_ids = array_unique( $t_project_ids );
+		} else {
+			access_ensure_project_level( VIEWER, $p_project_id );
+			$t_project_ids = user_get_all_accessible_subprojects( $p_user_id, $p_project_id );
+			array_unshift( $t_project_ids, $p_project_id );
+		}
+
+		$t_project_ids = array_map( 'db_prepare_int', $t_project_ids );
+
+		if ( 0 == count( $t_project_ids ) ) {
+			$t_project_filter = ' 1<>1';
+		} elseif ( 1 == count( $t_project_ids ) ) {
+			$t_project_filter = ' project_id=' . $t_project_ids[0];
+		} else {
+			$t_project_filter = ' project_id IN (' . join( ',', $t_project_ids ) . ')';
+		}
+
+		return $t_project_filter;
 	}
 ?>

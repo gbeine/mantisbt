@@ -6,17 +6,17 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: news_update.php,v 1.30 2004-02-08 08:00:06 vboctor Exp $
+	# $Id: news_update.php,v 1.32 2005-03-21 12:09:37 vboctor Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'news_api.php' );
 	require_once( $t_core_path.'string_api.php' );
-	require_once( dirname( __FILE__ ) . DIRECTORY_SEPARATOR . 'news_inc.php' );
+	require_once( $t_core_path.'print_api.php' );
 ?>
 <?php
 	$f_news_id		= gpc_get_int( 'news_id' );

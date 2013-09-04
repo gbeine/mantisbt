@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: print_all_bug_page_word.php,v 1.52 2004-08-08 11:39:00 jlatour Exp $
+	# $Id: print_all_bug_page_word.php,v 1.60 2005-07-22 01:07:41 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -16,9 +16,9 @@
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'current_user_api.php' );
 	require_once( $t_core_path.'bug_api.php' );
 	require_once( $t_core_path.'custom_field_api.php' );
@@ -40,17 +40,17 @@
 
 		# Make sure that IE can download the attachments under https.
 		header( 'Pragma: public' );
-		
+
 		header( 'Content-Type: application/msword' );
 		header( 'Content-Disposition: attachment; filename="' . $t_export_title . '.doc"' );
 	}
 
 	# This is where we used to do the entire actual filter ourselves
 	$t_page_number = gpc_get_int( 'page_number', 1 );
-	$t_per_page = null;
+	$t_per_page = -1;
 	$t_bug_count = null;
 	$t_page_count = null;
-	
+
 	$result = filter_get_bug_rows( $t_page_number, $t_per_page, $t_page_count, $t_bug_count );
 	$row_count = sizeof( $result );
 
@@ -69,46 +69,40 @@ xmlns="http://www.w3.org/TR/REC-html40">
 	//$t_bug_arr_sort[$row_count]=-1;
 	$f_bug_arr = explode_enum_string( $f_export );
 
-	# $t_bug_arr_sort contains 1 if the field as been selected, 0 if not
-	for( $i=0; $i < $row_count; $i++ ) {
-		if ( isset( $f_bug_arr[$i] ) ) {
-			$index = $f_bug_arr[$i];
-			$t_bug_arr_sort[$index]=1;
-		}
-	}
-
 	for( $j=0; $j < $row_count; $j++ ) {
 
 		# prefix bug data with v_
 		extract( $result[$j], EXTR_PREFIX_ALL, 'v' );
 
-		$t_last_updated = date( $g_short_date_format, $v_last_updated );
-
-		# grab the bugnote count
-		$bugnote_count = bug_get_bugnote_count( $v_id );
-
-		# grab the project name
-		$t_project_name = project_get_field( $v_project_id, 'name' );
-
-		# bug text infos
-		$query3 = "SELECT *
-			FROM $g_mantis_bug_text_table
-			WHERE id='$v_bug_text_id'";
-		$result3 = db_query( $query3 );
-		$row = db_fetch_array( $result3 );
-		extract( $row, EXTR_PREFIX_ALL, 'v2' );
-
-		$v_os 						= string_display( $v_os );
-		$v_os_build					= string_display( $v_os_build );
-		$v_platform					= string_display( $v_platform );
-		$v_version 					= string_display( $v_version );
-		$v_summary 					= string_display_links( $v_summary );
-		$v2_description 			= string_display_links( $v2_description );
-		$v2_steps_to_reproduce 		= string_display_links( $v2_steps_to_reproduce );
-		$v2_additional_information 	= string_display_links( $v2_additional_information );
-
 		# display the available and selected bugs
-		if ( isset( $t_bug_arr_sort[$j] ) || ( $f_show_flag==0 )) {
+		if ( in_array( $v_id, $f_bug_arr ) || ( $f_show_flag==0 ) ) {
+
+            $t_last_updated = date( $g_short_date_format, $v_last_updated );
+
+            # grab the bugnote count
+            $bugnote_count = bug_get_bugnote_count( $v_id );
+
+            # grab the project name
+            $t_project_name = project_get_field( $v_project_id, 'name' );
+
+            # bug text infos
+            $t_bug_text_table = config_get( 'mantis_bug_text_table' );
+            $query3 = "SELECT *
+                FROM $t_bug_text_table
+                WHERE id='$v_bug_text_id'";
+            $result3 = db_query( $query3 );
+            $row = db_fetch_array( $result3 );
+            extract( $row, EXTR_PREFIX_ALL, 'v2' );
+
+            $v_os 						= string_display( $v_os );
+            $v_os_build					= string_display( $v_os_build );
+            $v_platform					= string_display( $v_platform );
+            $v_version 					= string_display( $v_version );
+            $v_summary 					= string_display_links( $v_summary );
+            $v2_description 			= string_display_links( $v2_description );
+            $v2_steps_to_reproduce 		= string_display_links( $v2_steps_to_reproduce );
+            $v2_additional_information 	= string_display_links( $v2_additional_information );
+            ### note that dates are converted to unix format in filter_get_bug_rows
 ?>
 <br />
 <table class="width100" cellspacing="1">
@@ -330,8 +324,9 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 <?php
 	# account profile description
 	if ( $v_profile_id > 0 ) {
+	   $t_user_prof_table = config_get( 'mantis_user_profile_table' );
 		$query4 = "SELECT description
-				FROM $g_mantis_user_profile_table
+				FROM $t_user_prof_table
 				WHERE id='$v_profile_id'";
 		$result4 = db_query( $query4 );
 		$t_profile_description = '';
@@ -358,16 +353,18 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 	</td>
 	<td class="print" colspan="5">
 		<?php
+	        $t_bug_file_table = config_get( 'mantis_bug_file_table' );
 			$query5 = "SELECT filename, filesize, date_added
-					FROM $g_mantis_bug_file_table
+					FROM $t_bug_file_table
 					WHERE bug_id='$v_id'";
 			$result5 = db_query( $query5 );
 			$num_files = db_num_rows( $result5 );
 			for ( $i=0;$i<$num_files;$i++ ) {
 				$row = db_fetch_array( $result5 );
 				extract( $row, EXTR_PREFIX_ALL, 'v2' );
+				$v2_filename = file_get_display_name( $v2_filename );
 				$v2_filesize = round( $v2_filesize / 1024 );
-				$v2_date_added = date( config_get( 'normal_date_format' ), ( $v2_date_added ) );
+				$v2_date_added = date( config_get( 'normal_date_format' ), db_unixtimestamp( $v2_date_added ) );
 
 				switch ( $g_file_upload_method ) {
 					case DISK:	PRINT "$v2_filename ($v2_filesize KB) <span class=\"italic\">$v2_date_added</span>";
@@ -385,11 +382,19 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 </tr>
 <?php
 	# get the bugnote data
+ 	if ( !access_has_bug_level( config_get( 'private_bugnote_threshold' ), $v_id ) ) {
+ 		$t_restriction = 'AND view_state=' . VS_PUBLIC;
+ 	} else {
+ 		$t_restriction = '';
+ 	}
+
+	$t_bugnote_table		= config_get( 'mantis_bugnote_table' );
+	$t_bugnote_text_table	= config_get( 'mantis_bugnote_text_table' );
 	$t_bugnote_order = current_user_get_pref( 'bugnote_order' );
-	
-	$query6 = "SELECT *, date_submitted
-			FROM $g_mantis_bugnote_table
-			WHERE bug_id='$v_id'
+
+	$query6 = "SELECT *
+			FROM $t_bugnote_table
+			WHERE bug_id='$v_id' $t_restriction
 			ORDER BY date_submitted $t_bugnote_order";
 	$result6 = db_query( $query6 );
 	$num_notes = db_num_rows( $result6 );
@@ -420,10 +425,11 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 			$row = db_fetch_array( $result6 );
 			extract( $row, EXTR_PREFIX_ALL, 'v3' );
 			$v3_date_submitted = date( config_get( 'normal_date_format' ), ( db_unixtimestamp( $v3_date_submitted ) ) );
+			$v3_last_modified = date( config_get( 'normal_date_format' ), ( db_unixtimestamp( $v3_last_modified ) ) );
 
 			# grab the bugnote text and id and prefix with v3_
 			$query6 = "SELECT note, id
-					FROM $g_mantis_bugnote_text_table
+					FROM $t_bugnote_text_table
 					WHERE id='$v3_bugnote_text_id'";
 			$result7 = db_query( $query6 );
 			$v3_note = db_result( $result7, 0, 0 );
@@ -437,8 +443,13 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 	</td>
 </tr>
 <tr>
-	<td class="nopad" valign="top" width="15%">
+	<td class="nopad" valign="top" width="20%">
 		<table class="hide" cellspacing="1">
+		<tr>
+			<td class="print">
+				(<?php echo bugnote_format_id( $v3_id ) ?>)
+			</td>
+		</tr>
 		<tr>
 			<td class="print">
 				<?php print_user( $v3_reporter_id ) ?>&nbsp;&nbsp;&nbsp;
@@ -447,6 +458,9 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 		<tr>
 			<td class="print">
 				<?php echo $v3_date_submitted ?>&nbsp;&nbsp;&nbsp;
+				<?php if ( db_unixtimestamp( $v3_date_submitted ) != db_unixtimestamp( $v3_last_modified ) ) {
+					echo '<br />(' . lang_get( 'edited_on').' '. $v3_last_modified . ')';
+				} ?>
 			</td>
 		</tr>
 		</table>
@@ -455,7 +469,20 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 		<table class="hide" cellspacing="1">
 		<tr>
 			<td class="print">
-				<?php echo $v3_note ?>
+				<?php
+					switch ( $v3_note_type ) {
+						case REMINDER:
+							echo lang_get( 'reminder_sent_to' ) . ': ';
+							$v3_note_attr = substr( $v3_note_attr, 1, strlen( $v3_note_attr ) - 2 );
+							$t_to = array();
+							foreach ( explode( '|', $v3_note_attr ) as $t_recipient ) {
+								$t_to[] = prepare_user_name( $t_recipient );
+							}
+							echo implode( ', ', $t_to ) . '<br />';
+						default:
+							echo $v3_note;
+					}
+				?>
 			</td>
 		</tr>
 		</table>
@@ -473,6 +500,6 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 
 <?php
 echo '<br /><br />';
-		} # end isset
+		} # end in_array
 }  # end main loop
 ?>

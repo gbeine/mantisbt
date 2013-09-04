@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: lost_pwd_page.php,v 1.3 2004-10-25 19:45:04 marcelloscata Exp $
+	# $Id: lost_pwd_page.php,v 1.10 2005-05-01 16:20:22 thraxisp Exp $
 	# --------------------------------------------------------
 	# ======================================================================
 	# Author: Marcello Scata' <marcelloscata at users.sourceforge.net> ITALY
@@ -16,7 +16,8 @@
 
 	# lost password feature disabled or reset password via email disabled -> stop here!
 	if( OFF == config_get( 'lost_password_feature' ) ||
-		OFF == config_get( 'send_reset_password' ) ) {
+		OFF == config_get( 'send_reset_password' )  ||
+	 	OFF == config_get( 'enable_email_notification' ) ) {
 		trigger_error( ERROR_LOST_PASSWORD_NOT_ENABLED, ERROR );
 	}
 
@@ -30,7 +31,7 @@
 <form name="lost_password_form" method="post" action="lost_pwd.php">
 <table class="width50" cellspacing="1">
 <tr>
-	<td class="form-title" colspan=2>
+	<td class="form-title" colspan="2">
 		<?php echo lang_get( 'lost_password_title' ) ?>
 	</td>
 </tr>
@@ -67,7 +68,7 @@
 	</td>
 </tr>
 <?php
-  }else{
+  } else {
 ?>
 <tr>
 	<td colspan="2">
@@ -94,9 +95,13 @@
 	if ( ON == config_get( 'use_javascript' ) ) {
 ?>
 <!-- Autofocus JS -->
+<?php if ( ON == config_get( 'use_javascript' ) ) { ?>
 <script type="text/javascript" language="JavaScript">
-window.document.lost_password_form.username.focus();
+<!--
+	window.document.lost_password_form.username.focus();
+// -->
 </script>
+<?php } ?>
 
 <?php
 	}

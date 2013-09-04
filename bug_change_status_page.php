@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_change_status_page.php,v 1.10 2004-10-08 18:57:51 thraxisp Exp $
+	# $Id: bug_change_status_page.php,v 1.22 2005-06-14 22:00:32 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -21,18 +21,53 @@
 ?>
 <?php
 	$f_bug_id = gpc_get_int( 'bug_id' );
+	$t_bug = bug_get( $f_bug_id );
+	
+	if( $t_bug->project_id != helper_get_current_project() ) {
+		# in case the current project is not the same project of the bug we are viewing...
+		# ... override the current project. This to avoid problems with categories and handlers lists etc.
+		$g_project_override = $t_bug->project_id;
+	}
+	
 	$f_new_status = gpc_get_int( 'new_status' );
+	$f_reopen_flag = gpc_get_int( 'reopen_flag', OFF );
 
 	if ( ! ( ( access_has_bug_level( access_get_status_threshold( $f_new_status, bug_get_field( $f_bug_id, 'project_id' ) ), $f_bug_id ) ) ||
-				( ( bug_get_field( $f_bug_id, 'reporter_id' ) == auth_get_current_user_id() ) && 
+				( ( bug_get_field( $f_bug_id, 'reporter_id' ) == auth_get_current_user_id() ) &&
 						( ( ON == config_get( 'allow_reporter_reopen' ) ) ||
-								( ON == config_get( 'allow_reporter_close' ) ) ) ) ) ) {
+								( ON == config_get( 'allow_reporter_close' ) ) ) ) ||
+				( ( ON == $f_reopen_flag ) && ( access_has_bug_level( config_get( 'reopen_bug_threshold' ), $f_bug_id ) ) )
+			) ) {
 		access_denied();
+	}
+
+	# get new issue handler if set, otherwise default to original handler
+	$f_handler_id = gpc_get_int( 'handler_id', bug_get_field( $f_bug_id, 'handler_id' ) );
+
+	if ( ASSIGNED == $f_new_status ) {
+		$t_bug_sponsored = sponsorship_get_amount( sponsorship_get_all_ids( $f_bug_id ) ) > 0;
+		if ( $t_bug_sponsored ) {
+			if ( !access_has_bug_level( config_get( 'assign_sponsored_bugs_threshold' ), $f_bug_id ) ) {
+				trigger_error( ERROR_SPONSORSHIP_ASSIGNER_ACCESS_LEVEL_TOO_LOW, ERROR );
+			}
+		}
+
+		if ( $f_handler_id != NO_USER ) {
+            if ( !access_has_bug_level( config_get( 'handle_bug_threshold' ), $f_bug_id, $f_handler_id ) ) {
+				trigger_error( ERROR_HANDLER_ACCESS_TOO_LOW, ERROR );
+			}
+
+			if ( $t_bug_sponsored ) {
+				if ( !access_has_bug_level( config_get( 'handle_sponsored_bugs_threshold' ), $f_bug_id, $f_handler_id ) ) {
+					trigger_error( ERROR_SPONSORSHIP_HANDLER_ACCESS_LEVEL_TOO_LOW, ERROR );
+				}
+			}
+		}
 	}
 
 	$t_status_label = str_replace( " ", "_", get_enum_to_string( config_get( 'status_enum_string' ), $f_new_status ) );
 	$t_resolved = config_get( 'bug_resolved_status_threshold' );
-	
+
 	$t_bug = bug_get( $f_bug_id );
 ?>
 <?php html_page_top1(bug_format_summary( $f_bug_id, SUMMARY_CAPTION )) ?>
@@ -65,7 +100,8 @@ if ( ON == config_get( 'enable_relationship' ) ) {
 ?>
 
 <?php
-if ( ( $t_resolved <= $f_new_status ) && ( CLOSED > $f_new_status ) ) { ?>
+$t_current_resolution = $t_bug->resolution;
+if ( ( $t_resolved <= $f_new_status ) && ( ( CLOSED > $f_new_status ) || ( in_array( $t_current_resolution, array( OPEN, REOPENED ) ) ) ) ) { ?>
 <!-- Resolution -->
 <tr <?php echo helper_alternate_class() ?>>
 	<td class="category">
@@ -93,13 +129,14 @@ if ( ( $t_resolved <= $f_new_status ) && ( CLOSED > $f_new_status ) ) { ?>
 <?php } ?>
 
 <?php
-if ( $t_resolved > $f_new_status ) { ?>
+if ( ( $t_resolved > $f_new_status ) &&
+		access_has_bug_level( config_get( 'update_bug_assign_threshold', config_get( 'update_bug_threshold')), $f_bug_id) ) { ?>
 <!-- Assigned To -->
 <tr <?php echo helper_alternate_class() ?>>
 	<td class="category">
 		<?php echo lang_get( 'assigned_to' ) ?>
 	</td>
-	<td colspan="5">
+	<td>
 		<select name="handler_id">
 			<option value="0"></option>
 			<?php print_assign_to_option_list( $t_bug->handler_id, $t_bug->project_id ) ?>
@@ -108,11 +145,14 @@ if ( $t_resolved > $f_new_status ) { ?>
 </tr>
 <?php } ?>
 
-
 <!-- Custom Fields -->
 <?php
-$t_custom_status_label = "update"; # default info to check
-if ( ( $f_new_status == config_get( 'bug_resolved_status_threshold' ) ) &&
+# @@@ thraxisp - I undid part of the change for #5068 for #5527
+#  We really need to say what fields are shown in which statusses. For now,
+#  this page will show required custom fields in update mode, or 
+#  display or required fields on resolve or close
+$t_custom_status_label = "update"; # Don't show custom fields by default
+if ( ( $f_new_status == $t_resolved ) &&
 			( CLOSED > $f_new_status ) ) {
 	$t_custom_status_label = "resolved";
 }
@@ -120,16 +160,24 @@ if ( CLOSED == $f_new_status ) {
 	$t_custom_status_label = "closed";
 }
 
-$t_custom_fields_found = false;
 $t_related_custom_field_ids = custom_field_get_linked_ids( bug_get_field( $f_bug_id, 'project_id' ) );
+
 foreach( $t_related_custom_field_ids as $t_id ) {
 	$t_def = custom_field_get_definition( $t_id );
-	if( ( $t_def['display_' . $t_custom_status_label] || $t_def['require_' . $t_custom_status_label] ) && custom_field_has_write_access( $t_id, $f_bug_id ) ) {
-		$t_custom_fields_found = true;
+	$t_display = $t_def['display_' . $t_custom_status_label];
+	$t_require = $t_def['require_' . $t_custom_status_label];
+	
+	if ( ( "update" == $t_custom_status_label ) && ( ! $t_require ) ) {
+        continue;
+	}
+	if ( in_array( $t_custom_status_label, array( "resolved", "closed" ) ) && ! ( $t_display || $t_require ) ) {
+        continue;
+	}
+	if ( custom_field_has_write_access( $t_id, $f_bug_id ) ) {
 ?>
 <tr <?php echo helper_alternate_class() ?>>
 	<td class="category">
-		<?php if($t_def['require_'. $t_custom_status_label]) {?><span class="required">*</span><?php } ?><?php echo lang_get_defaulted( $t_def['name'] ) ?>
+		<?php if ( $t_require ) {?><span class="required">*</span><?php } ?><?php echo lang_get_defaulted( $t_def['name'] ) ?>
 	</td>
 	<td>
 		<?php
@@ -138,8 +186,8 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 	</td>
 </tr>
 <?php
-	} # $t_def['display_' . $t_custom_status_label] || $t_def['require_' . $t_custom_status_label] && custom_field_has_write_access( $t_id, $f_bug_id ) )
-	else if( ( $t_def['display_' . $t_custom_status_label] || $t_def['require_' . $t_custom_status_label] ) && custom_field_has_read_access( $t_id, $f_bug_id ) ) {
+	} #  custom_field_has_write_access( $t_id, $f_bug_id ) )
+	else if ( custom_field_has_read_access( $t_id, $f_bug_id ) ) {
 ?>
 	<tr <?php echo helper_alternate_class() ?>>
 		<td class="category">
@@ -150,16 +198,16 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 		</td>
 	</tr>
 <?php
-	} # $t_def['display_' . $t_custom_status_label] || $t_def['require_' . $t_custom_status_label] ) && custom_field_has_read_access( $t_id, $f_bug_id ) )
+	} # custom_field_has_read_access( $t_id, $f_bug_id ) )
 } # foreach( $t_related_custom_field_ids as $t_id )
 ?>
 
 <?php
-if (  $f_new_status >= $t_resolved ) { 
-	$t_show_version = ( ON == config_get( 'show_product_version' ) ) 
-		|| ( ( AUTO == config_get( 'show_product_version' ) ) 
+if ( ( $f_new_status >= $t_resolved ) && access_has_bug_level( config_get( 'handle_bug_threshold' ), $f_bug_id ) ) {
+	$t_show_version = ( ON == config_get( 'show_product_version' ) )
+		|| ( ( AUTO == config_get( 'show_product_version' ) )
 					&& ( count( version_get_all_rows( $t_bug->project_id ) ) > 0 ) );
-	if ( $t_show_version ) { 
+	if ( $t_show_version ) {
 ?>
 <!-- Fixed in Version -->
 <tr <?php echo helper_alternate_class() ?>>
@@ -173,11 +221,11 @@ if (  $f_new_status >= $t_resolved ) {
 		</select>
 	</td>
 </tr>
-<?php } 
+<?php }
 	} ?>
 
 <?php
-if ( $f_new_status >= $t_resolved ) { ?>
+if ( ( $f_new_status >= $t_resolved ) && ( CLOSED > $f_new_status ) ) { ?>
 <!-- Close Immediately (if enabled) -->
 <?php if ( ( ON == config_get( 'allow_close_immediately' ) )
 				&& ( access_has_bug_level( access_get_status_threshold( CLOSED ), $f_bug_id ) ) ) { ?>
@@ -193,8 +241,7 @@ if ( $f_new_status >= $t_resolved ) { ?>
 <?php } ?>
 
 <?php
-	if ( ( bug_get_field( $f_bug_id, 'status' ) == $t_resolved ) 
-			&& ( $f_new_status == config_get( 'bug_reopen_status' ) ) ) {
+	if ( ON == $f_reopen_flag ) {
 		# bug was re-opened
 		printf("	<input type=\"hidden\" name=\"resolution\" value=\"%s\" />\n",  config_get( 'bug_reopen_resolution' ) );
 	}
@@ -202,15 +249,33 @@ if ( $f_new_status >= $t_resolved ) { ?>
 
 <!-- Bugnote -->
 <tr <?php echo helper_alternate_class() ?>>
-	<td class="category" colspan="2">
+	<td class="category">
 		<?php echo lang_get( 'add_bugnote_title' ) ?>
 	</td>
-</tr>
-<tr <?php echo helper_alternate_class() ?>>
-	<td class="center" colspan="2">
+	<td class="center">
 		<textarea name="bugnote_text" cols="80" rows="10" wrap="virtual"></textarea>
 	</td>
 </tr>
+<?php if ( access_has_bug_level( config_get( 'private_bugnote_threshold' ), $f_bug_id ) ) { ?>
+<tr <?php echo helper_alternate_class() ?>>
+	<td class="category">
+		<?php echo lang_get( 'view_status' ) ?>
+	</td>
+	<td>
+<?php
+		$t_default_bugnote_view_status = config_get( 'default_bugnote_view_status' );
+		if ( access_has_bug_level( config_get( 'set_view_status_threshold' ), $f_bug_id ) ) {
+?>
+			<input type="checkbox" name="private" <?php check_checked( $t_default_bugnote_view_status, VS_PRIVATE ); ?> />
+<?php
+			echo lang_get( 'private' );
+		} else {
+			echo get_enum_element( 'project_view_state', $t_default_bugnote_view_status );
+		}
+?>
+	</td>
+</tr>
+<?php } ?>
 
 
 <!-- Submit Button -->

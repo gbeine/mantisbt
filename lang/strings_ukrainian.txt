@@ -8,11 +8,11 @@
 	###########################################################################
 	# Ukrainian (Windows1251): Yuri Kirghisov, yuri@apple.com.ua
 	# -------------------------------------------------
-	# $Revision: 1.2 $
-	# $Author: bigbadger $
-	# $Date: 2004-10-15 07:07:11 $
+	# $Revision: 1.14 $
+	# $Author: thraxisp $
+	# $Date: 2005-07-20 14:17:52 $
 	#
-	# $Id: strings_ukrainian.txt,v 1.2 2004-10-15 07:07:11 bigbadger Exp $
+	# $Id: strings_ukrainian.txt,v 1.14 2005-07-20 14:17:52 thraxisp Exp $
 	###########################################################################
 ?>
 <?php
@@ -29,6 +29,9 @@ $s_actiongroup_menu_resolve = 'Вирішити';
 $s_actiongroup_menu_update_priority = 'Змінити пріоритет';
 $s_actiongroup_menu_update_status = 'Змінити статус';
 $s_actiongroup_menu_update_view_status = 'Змінити рівень доступу';
+$s_actiongroup_menu_update_category = 'Update Category';
+$s_actiongroup_menu_set_sticky = 'Set/Unset Sticky';
+$s_actiongroup_menu_update_field = 'Update %s';
 $s_actiongroup_bugs = 'Виділені проблеми';
 
 # new strings:
@@ -52,6 +55,8 @@ $s_jump = 'Перейти';
 $s_copy_users = 'Скопіювати користувачів';
 $s_copy_categories_from = 'Скопіювати категорії з';
 $s_copy_categories_to = 'Скопіювати категорії в';
+$s_copy_users_from = 'Copy Users From';
+$s_copy_users_to = 'Copy Users To';
 $s_bug_history = 'Хронологія проблеми';
 $s_field = 'Поле';
 $s_old_value = 'Старе значення';
@@ -99,6 +104,7 @@ $s_login_link = 'Увійти';
 $s_bug_actiongroup_failed = 'У вас недостатньо прав на виконання операції над наступними проблемами: ';
 $s_bug_actiongroup_access = 'У вас недостатньо прав на виконання операції.';
 $s_bug_actiongroup_status = 'Неможливо змінити статус проблеми на вказаний';
+$s_bug_actiongroup_category = 'This issue cannot be changed to the requested category';
 $s_close_bugs_conf_msg = 'Ви справді хочете закрити ці проблеми?';
 $s_delete_bugs_conf_msg = 'Ви справді хочете видалити ці проблеми?';
 $s_move_bugs_conf_msg = 'Перенести проблеми в проект';
@@ -108,6 +114,8 @@ $s_resolve_bugs_conf_msg = 'Вкажіть резолюцію для проблем';
 $s_priority_bugs_conf_msg = 'Вкажіть пріоритет проблем';
 $s_status_bugs_conf_msg = 'Вкажіть статус проблем';
 $s_view_status_bugs_conf_msg = 'Вкажіть рівень доступу проблеми';
+$s_category_bugs_conf_msg = 'Choose issues category';
+$s_set_sticky_bugs_conf_msg = 'Are you sure you wish to set/unset these issues sticky?';
 $s_close_group_bugs_button = 'Закрити проблеми' ;
 $s_delete_group_bugs_button = 'Видалити проблеми' ;
 $s_move_group_bugs_button = 'Перенести проблеми' ;
@@ -116,7 +124,9 @@ $s_assign_group_bugs_button = 'Призначити проблеми' ;
 $s_resolve_group_bugs_button = 'Вирішити проблеми' ;
 $s_priority_group_bugs_button = 'Змінити пріоритет' ;
 $s_status_group_bugs_button = 'Змінити статус' ;
+$s_category_group_bugs_button = 'Update Category';
 $s_view_status_group_bugs_button = 'Змінити рівень доступу';
+$s_set_sticky_group_bugs_button = 'Set/Unset Sticky';
 
 # improved JPgraphs strings
 $s_graph_imp_status_title = 'Діаграми за статусами' ;
@@ -194,12 +204,16 @@ $MANTIS_ERROR[ERROR_NEWS_NOT_FOUND]	 = 'Не вдалось знайти новину.';
 $MANTIS_ERROR[ERROR_USER_CREATE_PASSWORD_MISMATCH] = 'Пароль і перевірка не співпадають.';
 $MANTIS_ERROR[ERROR_GPC_ARRAY_EXPECTED]	 = 'Очікувався масив, а отримано рядок.';
 $MANTIS_ERROR[ERROR_GPC_ARRAY_UNEXPECTED] = 'Очікувався рядок, а отримано масив.';
+$MANTIS_ERROR[ERROR_GPC_NOT_NUMBER] = 'A number was expected for %s.';
 $MANTIS_ERROR[ERROR_BUG_NOT_FOUND]	 = 'Не можу знайти проблему %d.';
+$MANTIS_ERROR[ERROR_FILTER_NOT_FOUND]	 = 'Filter %d not found.';
 $MANTIS_ERROR[ERROR_EMAIL_INVALID]	 = 'Неправильний email.';
 $MANTIS_ERROR[ERROR_USER_PROFILE_NOT_FOUND] = 'Не вдалось знайти профайл.';
 $MANTIS_ERROR[ERROR_FILE_NOT_ALLOWED]	 = 'Цей тип файлів закачувати не дозволено.';
 $MANTIS_ERROR[ERROR_FILE_DUPLICATE]	 = 'Це дублікат файла. Спочатку видаліть попередній файл.';
 $MANTIS_ERROR[ERROR_FILE_INVALID_UPLOAD_PATH] = 'Неправильний шлях для закачуваних файлів.  Папка або не існує, або неможливо в неї що-небудь записати.';
+$MANTIS_ERROR[ERROR_FILE_NO_UPLOAD_FAILURE] = 'No file was uploaded. Please go back and Choose a file before pressing Upload';
+$MANTIS_ERROR[ERROR_FILE_MOVE_FAILED] = 'Uploaded file could not be moved to the file storage directory. Directory either does not exist or not writable to webserver';
 $MANTIS_ERROR[ERROR_BUG_DUPLICATE_SELF]	 = 'Ви не можете зробити проблему дублікатом неї ж.';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_NOT_FOUND] = 'Не можу знайти таке власне поле';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_NAME_NOT_UNIQUE] = 'Таке ім\'я вже існує.';
@@ -239,8 +253,10 @@ $MANTIS_ERROR[ERROR_LOST_PASSWORD_NO_EMAIL_SPECIFIED] = 'Вкажіть email, щоб скин
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_MATCHING_DATA] = 'Вказана інформація не підходить до жодного активного запису!';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_CONFIRM_HASH_INVALID] = 'URL підтвердження або хибний, або вже використаний. Зареєструйтесь знову.';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_MAX_IN_PROGRESS_ATTEMPTS_REACHED] = 'Досягнуто максимуму паралельних запитів. Зв\'яжіться з системним адміністратором';
+$MANTIS_ERROR[ERROR_PROJECT_RECURSIVE_HIERARCHY] = 'That operation would create a loop in the subproject hierarchy.';
+$MANTIS_ERROR[ERROR_USER_CHANGE_LAST_ADMIN] = 'You cannot change the access level of the only ADMINISTRATOR in the system.';
 
-#$s_login_error = 'Ваш запис може бути заблокований (надто багато хибних спроб входу) або ж ви ввели неправильні ім\'я/пароль.';
+#$s_login_error = 'Your account may be disabled or blocked (due to too many failed login attempts) or the username/password you entered is incorrect.';
 $s_login_error = 'Ви неправильно ввели ім\'я і пароль або ваш запис був заблокований.';
 $s_login_cookies_disabled = 'Ваш браузер або не підтримує "куки", або не хоче їх обробляти.';
 
@@ -257,6 +273,8 @@ $s_administrator = 'Адміністратор';
 $s_myself = "Мені";
 $s_default_access_level = 'Початкові привілеї доступу';
 
+$s_issue_status_percentage = 'Issue Status Percentage';
+
 # Enum Strings
 $s_access_levels_enum_string = '10:Спостерігач,25:Репортер,40:Редактор,55:Розробник,70:Керівник,90:Адміністратор';
 $s_project_status_enum_string = '10:development,30:release,50:stable,70:obsolete';
@@ -270,6 +288,7 @@ $s_status_enum_string = '10:нова,20:потрібна відповідь,30:визнана,40:підтверджен
 $s_resolution_enum_string = '10:відкрита,20:вирішена,30:відкрита знову,40:не відтворювана,50:не виправляється,60:дублікат,70:не проблема,80:призупинена,90:не буде вирішена';
 $s_projection_enum_string = '10:немає,30:доводка,50:незначне виправлення,70:велика переробка,90:пере-проектування';
 $s_eta_enum_string = '10:невідомо,20:< 1 дня,30:2-3 дні,40:< 1 тижня,50:< 1 місяця,60:> 1 місяця';
+$s_sponsorship_enum_string = '0:Unpaid,1:Requested,2:Paid';
 
 # Email Strings
 $s_new_account_subject = 'Реєстрація користувача';
@@ -353,6 +372,8 @@ $s_no_password_change = 'Пароль контролюється іншою системою, а тому тут не змін
 $s_confirm_password = 'Перевірка пароля';
 $s_access_level = 'Рівень доступу';
 $s_update_user_button = 'Зберегти';
+$s_verify_warning = 'Your account information has been verified. The account confirmation message you have received is now invalid.';
+$s_verify_change_password = 'You must set a password here to allow you to log in again.';
 
 # account_prefs_page.php
 $s_default_account_preferences_title = 'Параметри запису';
@@ -415,12 +436,34 @@ $s_submit_button = 'Застосувати';
 # account_profile_update.php
 $s_profile_updated_msg = 'Шаблон оновлено...';
 
+# account_sponsor_page.php
+$s_my_sponsorship = 'My Sponsorships';
+$s_update_sponsorship_button = 'Change Payment Status';
+$s_no_sponsored = 'No sponsored issues Assigned To yourself were found.';
+$s_own_sponsored = 'Issues You have Sponsored:';
+$s_issues_handled = 'Sponsored Issues You Have Been Assigned To:';
+$s_no_own_sponsored = 'You have not sponsored any issues.';
+$s_sponsor = 'Sponsor';
+$s_amount = 'Amount';
+$s_total_owing = 'Total Owing';
+$s_total_paid = 'Total Paid';
+$s_sponsor_hide = 'Hide Resolved and Paid';
+$s_sponsor_show = 'Show All';
+
+# account_sponsor_update.php
+$s_payment_updated = 'Payment information updated.';
+
 # account_update.php
 $s_account_updated_msg = 'Ваш запис був успішно оновлений';
 $s_email_updated = 'Email-адреса була успішно змінена';
 $s_realname_duplicated = 'Таке повне ім\'я вже зайняте іншим користувачем';
 $s_realname_updated = 'Повне ім\'я було успішно змінене';
 $s_password_updated = 'Пароль був успішно змінений';
+
+# adm_permission_report.php
+
+# bug_action_group_page
+$s_multiple_projects = 'The issues you have selected are from different projects. The parameters below reflect the settings for all projects. If this is incorrect, please retry your change with a smaller number of issues selected.';
 
 # bug_assign.php
 $s_bug_assign_msg = 'Проблема була успішно призначена...';
@@ -522,6 +565,8 @@ $s_summary = 'Статистика';
 $s_description = 'Опис';
 $s_steps_to_reproduce = 'Кроки для відтворення';
 $s_update_information_button = 'Зберегти інформацію';
+$s_sticky_issue = 'Sticky Issue';
+$s_profile = 'Profile';
 
 # bug_update_page.php
 $s_update_advanced_link = 'Розширене редагування';
@@ -607,7 +652,12 @@ $s_filter_button = 'Застосувати фільтр';
 $s_manage_users_link = 'Користувачі';
 $s_manage_projects_link = 'Проекти';
 $s_manage_custom_field_link = 'Власні поля';
+$s_manage_global_profiles_link = 'Manage Global Profiles';
 $s_permissions_summary_report = 'Permissions Report';
+$s_manage_config_link = 'Manage Configuration';
+$s_manage_threshold_config = 'Workflow Thresholds';
+$s_manage_email_config = 'Email Notifications';
+$s_manage_workflow_config = 'Workflow';
 $s_create_new_account_link = 'Новий запис';
 $s_projects_link = 'Проекти';
 $s_documentation_link = 'Документація';
@@ -621,6 +671,69 @@ $s_p = 'Зах.';
 $s_date_created = 'Дата створення';
 $s_last_visit = 'Останній візит';
 $s_edit_user_link = 'Редагування користувача';
+
+# manage_config_email_page
+$s_config_all_projects = 'Note: These configurations affect ALL PROJECTS.';
+$s_config_project = 'Note: These configurations affect only the %s project.';
+$s_colour_coding = 'In the table below, the following color code applies:';
+$s_colour_project = 'Project setting overrides others.';
+$s_colour_global = 'All Project settings override default configuration.';
+$s_issue_reporter = 'User who reported issue';
+$s_issue_handler = 'User who is handling the issue';
+$s_users_added_bugnote = 'Users added Bugnote';
+$s_change_configuration = 'Update Configuration';
+$s_message = 'Message';
+$s_default_notify = 'Setting default notification flags to';
+$s_action_notify = 'Setting action notification flags to';
+$s_notify_defaults_change_access = 'Change users who can change notification defaults to';
+$s_notify_actions_change_access = 'Change users who can change notifications to';
+$s_revert_to_system = "Delete All Projects Settings";
+$s_revert_to_all_project = "Delete Project Specific Settings";
+
+# manage_config_workflow_page
+$s_non_existent = 'non-existent';
+$s_current_status = 'Current Status';
+$s_next_status = 'Next Status';
+$s_workflow = 'Workflow';
+$s_workflow_thresholds = 'Thresholds that Affect Workflow';
+$s_threshold = 'Threshold';
+$s_status_level = 'Status';
+$s_alter_level = 'Who can alter this value';
+$s_validation = 'Workflow Validation';
+$s_comment = 'Validation Comment';
+$s_superfluous = 'Arc from status to itself is implied, and need not be given explicitly';
+$s_unreachable = 'You cannot move an issue into this status';
+$s_no_exit = 'You cannot move an issue out of this status';
+$s_access_levels = 'Access Levels';
+$s_access_change = 'Minimum Access Level to Change to this Status';
+$s_desc_bug_submit_status = 'Status to which a new issue is set';
+$s_desc_bug_reopen_status = 'Status to which reopened issues are set';
+$s_desc_bug_resolved_status_threshold = 'Status where an issue is considered resolved';
+$s_workflow_change_access = 'Change users who can change workflow to';
+$s_access_change_access = 'Change users who can change status change access level to';
+
+# manage_config_workflow_set
+$s_default_not_in_flow = 'The default status of %s is not selected in the next statuses for %s. It will be ignored';
+
+# manage_config_work_threshold_page
+$s_assign_issue = 'Assign an issue';
+$s_allow_close_immediate = 'Allow issue to be closed on Resolve';
+$s_allow_reporter_close = 'Allow Reporter to close Issue';
+$s_allow_reporter_reopen = 'Allow Reporter to re-open Issue';
+$s_set_status_assigned = 'Set status on assignment of Handler';
+$s_allow_user_edit = 'Allow user to edit their own bugnotes';
+$s_limit_access = 'Limit reporter\'s access to their own issues';
+$s_submit_status = 'Status to which a new issue is set';
+$s_assigned_status = 'Status to set auto-assigned issues to';
+$s_resolved_status = 'Status where an issue is considered resolved';
+$s_readonly_status = 'Status where an issue becomes read only';
+$s_reopen_status = 'Status to which a reopened issue is set';
+$s_reopen_resolution = 'Resolution to which a reopened issue is set';
+
+# manage_config_revert_page
+$s_config_delete_sure = 'Are you sure you want to delete the settings for';
+$s_in_project = 'in project';
+$s_delete_config_button = 'Delete Settings';
 
 # manage_proj_add.php
 $s_project_added_msg = 'Проект був успішно створений...';
@@ -641,6 +754,9 @@ $s_update_category_button = 'Оновити категорію';
 
 # manage_proj_category_update.php
 $s_category_updated_msg = 'Категорію оновлено...';
+
+# manage_proj_create_page.php
+$s_add_subproject_title = 'Add Subproject';
 
 # manage_proj_delete.php
 $s_project_deleted_msg = 'Проект був успішно видалений...';
@@ -668,6 +784,10 @@ $s_actions = 'Дії';
 $s_version = 'Версія';
 $s_timestamp = 'Дата';
 $s_update = 'Оновити';
+$s_subprojects = 'Subprojects';
+$s_add_subproject = 'Add as Subproject';
+$s_create_new_subproject_link = 'Create New Subproject';
+$s_unlink_link = 'Unlink';
 
 # manage_proj_menu_page.php
 $s_add_project_title = 'Додати проект';
@@ -816,6 +936,9 @@ $s_project_removed_user_msg = 'Користувача видалено з проекту';
 
 # proj_user_delete_page.php
 $s_remove_user_sure_msg = 'Ви справді хочете усунути цього користувача?';
+$s_remove_user_button = 'Remove User';
+$s_remove_all_users_sure_msg = 'Are you sure you wish to remove all the users of this project?';
+$s_remove_all_users_button = 'Remove All Users';
 
 # proj_user_menu_page.php
 $s_add_user_title = 'Непризначені користувачі';
@@ -915,6 +1038,8 @@ $s_show = 'Показувати';
 $s_changed = 'Змінена протягом (год)';
 $s_viewing_bugs_title = 'Перегляд проблем';
 $s_updated = 'Оновлена';
+$s_sticky = 'Show Sticky Issues';
+$s_sort = 'Sort by';
 
 # view_all_inc.php
 $s_none = 'Немає';
@@ -979,7 +1104,6 @@ $s_no_users_sponsoring_bug = 'У цієї проблеми немає спонсорів.';
 $s_users_sponsoring_bug = 'Спонсори проблеми';
 $s_sponsors_list = 'Список спонсорів';
 $s_total_sponsorship_amount = 'Всього спонсується = %s';
-$s_sponsor_issue = 'Проблема спонсується';
 
 # custom field strings
 $s_add_custom_field_button = 'Створити власне поле';
@@ -1011,11 +1135,14 @@ $s_custom_field_require_resolved = 'Вимагати при вирішенні';
 $s_custom_field_require_closed = 'Вимагати при закритті';
 
 $s_custom_field_sequence = 'Послідовність';
-$s_custom_field_type_enum_string = '0:Рядок,1:Ціле,2:Дійсне,3:Перелік,4:Email,5:Опція,6:Список,7:Багатоваріантний список';
+$s_custom_field_type_enum_string = '0:Рядок,1:Ціле,2:Дійсне,3:Перелік,4:Email,5:Опція,6:Список,7:Багатоваріантний список,8:Date';
 
 $s_confirm_used_custom_field_deletion = 'Це поле пов\'язане принаймні з одним проектом.  Якщо продовжите, всі значення цього поля будуть видалені.  Цю дію не можна відмінити.  Якщо ви не збираєтесь видаляти це поле, то просто клацніть в браузері кнопку Назад (Back).  Щоб продовжити, натисніть кнопку нижче';
 $s_confirm_custom_field_deletion = 'Ви справді хочете видалити це поле і всі пов\'язані значення?';
 $s_field_delete_button = 'Видалити поле';
+
+$s_confirm_custom_field_unlinking = 'Are you sure you want to remove (unlink) this custom field from the project and delete all associated values?';
+$s_field_remove_button = 'Remove Field';
 
 $s_hide_status = 'Ховати';
 $s_filter_closed = "Закриті";
@@ -1038,6 +1165,7 @@ $s_sponsors = 'Спонсорів: %d';
 $s_sponsorship_added = 'Спонсорство додане';
 $s_sponsorship_updated = 'Спонсорство оновлене';
 $s_sponsorship_deleted = 'Спонсорство видалене';
+$s_sponsorship_paid = 'Sponsorship Paid';
 $s_sponsorship_more_info = 'Докладніше про спонсорство';
 
 # URL explaining the process of sponsoring an issue.  This is defined here rather than
@@ -1080,6 +1208,7 @@ $s_view_issue = "Переглянути проблему";
 
 # Source Control Integration
 $s_checkin = 'Checkin';
+
 # Pemissions report
 $s_perm_rpt_capability = 'Capability';
 $s_view = 'View';
@@ -1108,6 +1237,8 @@ $s_manage_news = 'Manage news';
 $s_view_list_of_attachments = 'View list of attachments';
 $s_download_attachments = 'Download attachments';
 $s_delete_attachments = 'Delete attachments';
+$s_delete_attachment_button = "Delete";
+$s_delete_attachment_sure_msg = "Are you sure you wish to delete this attachment?";
 $s_upload_issue_attachments = 'Upload issue attachments';
 $s_filters = 'filters';
 $s_save_filters = 'Save filters';
@@ -1138,4 +1269,16 @@ $s_status_changed_to = 'Status changes to';
 $s_email_on_deleted = 'Email on Deleted';
 $s_email_on_sponsorship_changed = 'Email on Sponsorship changed';
 $s_email_on_relationship_changed = 'Email on Relationship changed';
+
+# DHTML filters
+$s_loading = 'Loading...';
+
+# filter_api.php
+$s_between = 'Between' ;
+$s_on_or_before = 'On Or Before' ;
+$s_before = 'Before' ;
+# $s_on = 'On' ; # @@@ (thraxisp) this already exists (~ line 499)
+$s_after = 'After' ;
+$s_on_or_after = 'On Or After' ;
+
 ?>

@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: user_api.php,v 1.79 2004-08-23 14:13:34 thraxisp Exp $
+	# $Id: user_api.php,v 1.106 2005-07-22 15:34:03 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -137,14 +137,15 @@
 
 	# --------------------
 	# Check if the realname is a valid username (does not account for uniqueness)
-	# Return 0 if it is invalid, The number of matches + 1 
+	# Return 0 if it is invalid, The number of matches + 1
 	function user_is_realname_unique( $p_username, $p_realname ) {
 		if ( is_blank( $p_realname ) ) { # don't bother checking if realname is blank
 			return 1;
 		}
-		
+
 		$c_realname = db_prepare_string( $p_realname );
 		# allow realname to match username
+		$t_count = 0;
 		if ( $p_realname <> $p_username ) {
 			# check realname does not match an existing username
 			if ( user_get_id_by_name( $p_realname ) ) {
@@ -176,13 +177,13 @@
 	# Check if the realname is a unique
 	# Trigger an error if the username is not valid
 	function user_ensure_realname_unique( $p_username, $p_realname ) {
-		if ( 0 == user_is_name_valid( $p_username, $p_realname ) ) {
+		if ( 1 > user_is_realname_unique( $p_username, $p_realname ) ) {
 			trigger_error( ERROR_USER_REAL_MATCH_USER, ERROR );
 		}
 	}
 
 	# --------------------
-	# Check if the username is a valid username (does not account for uniqueness) 
+	# Check if the username is a valid username (does not account for uniqueness)
 	#  realname can match
 	# Return true if it is, false otherwise
 	function user_is_name_valid( $p_username ) {
@@ -207,7 +208,7 @@
 		if ( !user_is_name_valid( $p_username ) ) {
 			trigger_error( ERROR_USER_NAME_INVALID, ERROR );
 		}
-	}	
+	}
 
 	# --------------------
 	# return whether user is monitoring bug for the user id and bug id
@@ -268,6 +269,54 @@
 		} else {
 			return false;
 		}
+	}
+
+	# --------------------
+	# count the number of users at or greater than a specific level
+	function user_count_level( $p_level=ANYBODY ) {
+		$t_level = db_prepare_int( $p_level );
+		$t_user_table = config_get( 'mantis_user_table' );
+		$query = "SELECT COUNT(id) FROM $t_user_table WHERE access_level>=$t_level";
+		$result = db_query( $query );
+
+		# Get the list of connected users
+		$t_users = db_result( $result );
+
+		return $t_users;
+	}
+	
+	
+	# --------------------
+	# Return an array of user ids that are logged in.
+	# A user is considered logged in if the last visit timestamp is within the
+	# specified session duration.
+	# If the session duration is 0, then no users will be returned.
+	function user_get_logged_in_user_ids( $p_session_duration_in_minutes ) {
+		$t_session_duration_in_minutes = (integer)$p_session_duration_in_minutes;
+
+		# if session duration is 0, then there is no logged in users.
+		if ( $t_session_duration_in_minutes == 0 ) {
+			return array();
+		}
+
+		# Generate timestamp
+		# @@@ The following code may not be portable accross DBMS.
+		$t_last_timestamp_threshold = mktime( date( "H" ), date( "i" ) -1 * $t_session_duration_in_minutes, date("s"), date("m"), date("d"),  date("Y") );
+		$c_last_timestamp_threshold = date( "Y-m-d H:i:s" , $t_last_timestamp_threshold );
+
+		$t_user_table = config_get( 'mantis_user_table' );
+
+		# Execute query
+		$query = "SELECT id FROM $t_user_table WHERE last_visit > '$c_last_timestamp_threshold'";
+		$result = db_query( $query, 1 );
+
+		# Get the list of connected users
+		$t_users_connected = array();
+		while ( $row = db_fetch_array( $result ) ) {
+			$t_users_connected[] = $row['id'];
+		}
+
+		return $t_users_connected;
 	}
 
 	#===================================
@@ -498,28 +547,6 @@
 	}
 
 	# --------------------
-	# --------------------
-	# get a user id from an mail address
-	#  return false if the mail address does not exist
-	function user_get_id_by_mail( $p_mailaddress ) {
-		
-		$c_mailaddress = db_prepare_string( $p_mailaddress );
-
-		$t_user_table = config_get( 'mantis_user_table' );
-
-		$query = "SELECT id
-				  FROM $t_user_table
-				  WHERE email='$c_mailaddress'";
-		$result = db_query( $query );
-
-		if ( 0 == db_num_rows( $result ) ) {
-			return false;
-		} else {
-			return db_result( $result );
-		}
-	}
-
-	# --------------------
 	# return all data associated with a particular user name
 	#  return false if the username does not exist
 	function user_get_row_by_name( $p_username ) {
@@ -592,14 +619,14 @@
 			if ( ON == config_get( 'show_realname' ) ) {
 				if ( is_blank( $row['realname'] ) ) {
 					return $row['username'];
-				}else{
+				} else {
 					if ( isset( $row['duplicate_realname'] ) && ( ON == $row['duplicate_realname'] ) ) {
 						return $row['realname'] . ' (' . $row['username'] . ')';
-					}else{
+					} else {
 						return $row['realname'];
 					}
 				}
-			}else{
+			} else {
 				return $row['username'];
 			}
 		}
@@ -624,28 +651,123 @@
 		}
 	}
 
+	$g_user_accessible_projects_cache    = null;
+
 	# --------------------
 	# retun an array of project IDs to which the user has access
-	function user_get_accessible_projects( $p_user_id ) {
-		$c_user_id = db_prepare_int( $p_user_id );
+	function user_get_accessible_projects( $p_user_id, $p_show_disabled = false ) {
+		global $g_user_accessible_projects_cache;
+
+		if ( null !== $g_user_accessible_projects_cache
+		     && auth_get_current_user_id() == $p_user_id 
+		     && false == $p_show_disabled ) {
+			return $g_user_accessible_projects_cache;
+		}
+
+		if ( access_has_global_level( config_get( 'private_project_threshold' ), $p_user_id ) ) {
+			$t_projects = project_hierarchy_get_subprojects( ALL_PROJECTS, $p_show_disabled );
+		} else {
+			$c_user_id = db_prepare_int( $p_user_id );
+
+			$t_project_table			= config_get( 'mantis_project_table' );
+			$t_project_user_list_table	= config_get( 'mantis_project_user_list_table' );
+			$t_project_hierarchy_table	= config_get( 'mantis_project_hierarchy_table' );
+
+			$t_public	= VS_PUBLIC;
+			$t_private	= VS_PRIVATE;
+			$t_enabled_clause = $p_show_disabled ? '' : 'p.enabled = 1 AND';
+
+			$query = "SELECT p.id, p.name, ph.parent_id
+					  FROM $t_project_table p
+					  LEFT JOIN $t_project_user_list_table u
+					    ON p.id=u.project_id AND u.user_id=$c_user_id
+					  LEFT JOIN $t_project_hierarchy_table ph
+					    ON ph.child_id = p.id
+					  WHERE $t_enabled_clause
+						( p.view_state='$t_public'
+						    OR (p.view_state='$t_private'
+							    AND
+						        u.user_id='$c_user_id' )
+						)
+					  ORDER BY p.name";
+
+			$result = db_query( $query );
+			$row_count = db_num_rows( $result );
+
+			$t_projects = array();
+
+			for ( $i=0 ; $i < $row_count ; $i++ ) {
+				$row = db_fetch_array( $result );
+
+				$t_projects[ $row['id'] ] = ( $row['parent_id'] === NULL ) ? 0 : $row['parent_id'];
+			}
+
+			# prune out children where the parents are already listed. Make the list
+			#  first, then prune to avoid pruning a parent before the child is found.
+			$t_prune = array();
+			foreach ( $t_projects as $t_id => $t_parent ) {
+				if ( ( $t_parent !== 0 ) && isset( $t_projects[$t_parent] ) ) {
+					$t_prune[] = $t_id;
+				}
+			}
+			foreach ( $t_prune as $t_id ) {
+				unset( $t_projects[$t_id] );
+			}
+			$t_projects = array_keys( $t_projects );
+		}
+
+		if ( auth_get_current_user_id() == $p_user_id ) {
+			$g_user_accessible_projects_cache = $t_projects;
+		}
+
+		return $t_projects;
+	}
+
+	$g_user_accessible_subprojects_cache = null;
+
+	# --------------------
+	# retun an array of subproject IDs of a certain project to which the user has access
+	function user_get_accessible_subprojects( $p_user_id, $p_project_id, $p_show_disabled = false ) {
+		global $g_user_accessible_subprojects_cache;
+
+		if ( null !== $g_user_accessible_subprojects_cache
+		     && auth_get_current_user_id() == $p_user_id 
+		      && false == $p_show_disabled ) {
+			if ( isset( $g_user_accessible_subprojects_cache[ $p_project_id ] ) ) {
+				return $g_user_accessible_subprojects_cache[ $p_project_id ];
+			} else {
+				return Array();
+			}
+		}
+
+		$c_user_id    = db_prepare_int( $p_user_id );
+		$c_project_id = db_prepare_int( $p_project_id );
 
 		$t_project_table			= config_get( 'mantis_project_table' );
 		$t_project_user_list_table	= config_get( 'mantis_project_user_list_table' );
+		$t_project_hierarchy_table	= config_get( 'mantis_project_hierarchy_table' );
 
+		$t_enabled_clause = $p_show_disabled ? '' : 'p.enabled = 1 AND';
 		$t_public	= VS_PUBLIC;
 		$t_private	= VS_PRIVATE;
 
-		if ( user_is_administrator( $p_user_id ) ) {
-			$query = "SELECT DISTINCT( id ), name
-					  FROM $t_project_table
-					  WHERE enabled=1
-					  ORDER BY name";
+		if ( access_has_global_level( config_get( 'private_project_threshold' ), $p_user_id ) ) {
+			$query = "SELECT DISTINCT p.id, p.name, ph.parent_id
+					  FROM $t_project_table p
+					  LEFT JOIN $t_project_hierarchy_table ph
+					    ON ph.child_id = p.id
+					  WHERE $t_enabled_clause
+					  	 ph.parent_id IS NOT NULL
+					  ORDER BY p.name";
 		} else {
-			$query = "SELECT DISTINCT( p.id ), p.name
+			$query = "SELECT DISTINCT p.id, p.name, ph.parent_id
 					  FROM $t_project_table p
 					  LEFT JOIN $t_project_user_list_table u
-					    ON p.id=u.project_id
-					  WHERE ( p.enabled = 1 ) AND
+					    ON p.id = u.project_id AND u.user_id='$c_user_id'
+					  LEFT JOIN $t_project_hierarchy_table ph
+					    ON ph.child_id = p.id
+					  WHERE $t_enabled_clause
+					  	ph.parent_id IS NOT NULL AND
 						( p.view_state='$t_public'
 						    OR (p.view_state='$t_private'
 							    AND
@@ -662,10 +784,40 @@
 		for ( $i=0 ; $i < $row_count ; $i++ ) {
 			$row = db_fetch_array( $result );
 
-			array_push( $t_projects, $row['id'] );
+			if ( !isset( $t_projects[ $row['parent_id'] ] ) ) {
+				$t_projects[ $row['parent_id'] ] = array();
+			}
+
+			array_push( $t_projects[ $row['parent_id'] ], $row['id'] );
 		}
 
-		return $t_projects;
+		if ( auth_get_current_user_id() == $p_user_id ) {
+			$g_user_accessible_subprojects_cache = $t_projects;
+		}
+
+		if ( !isset( $t_projects[ $p_project_id ] ) ) {
+			$t_projects[ $p_project_id ] = array();
+		}
+
+		return $t_projects[ $p_project_id ];
+	}
+
+	# --------------------
+	function user_get_all_accessible_subprojects( $p_user_id, $p_project_id ) {
+		# @@@ (thraxisp) Should all top level projects be a sub-project of ALL_PROJECTS implicitly?
+		#   affects how news and some summaries are generated
+		$t_todo        = user_get_accessible_subprojects( $p_user_id, $p_project_id );
+		$t_subprojects = Array();
+
+		while ( $t_todo ) {
+			$t_elem = array_shift( $t_todo );
+			if ( !in_array( $t_elem, $t_subprojects ) ) {
+				array_push( $t_subprojects, $t_elem );
+				$t_todo = array_merge( $t_todo, user_get_accessible_subprojects( $p_user_id, $t_elem ) );
+			}
+		}
+
+		return $t_subprojects;
 	}
 
 	# --------------------
@@ -676,19 +828,14 @@
 
 		$t_bug_table	= config_get('mantis_bug_table');
 
-		if ( ALL_PROJECTS == $p_project_id ) {
-			$t_where_prj = '';
-		} else {
-			$t_where_prj = "project_id='$c_project_id' AND";
-		}
+		$t_where_prj = helper_project_specific_where( $p_project_id, $p_user_id ) . " AND";
 
-		$t_resolved	= RESOLVED;
-		$t_closed	= CLOSED;
+		$t_resolved	= config_get('bug_resolved_status_threshold');
 
 		$query = "SELECT COUNT(*)
 				  FROM $t_bug_table
 				  WHERE $t_where_prj
-				  		status<>'$t_resolved' AND status<>'$t_closed' AND
+				  		status<'$t_resolved' AND
 				  		handler_id='$c_user_id'";
 		$result = db_query( $query );
 
@@ -703,19 +850,14 @@
 
 		$t_bug_table	= config_get('mantis_bug_table');
 
-		if ( ALL_PROJECTS == $p_project_id ) {
-			$t_where_prj = '';
-		} else {
-			$t_where_prj = "project_id='$c_project_id' AND";
-		}
+		$t_where_prj = helper_project_specific_where( $p_project_id, $p_user_id ) . " AND";
 
-		$t_resolved	= RESOLVED;
-		$t_closed	= CLOSED;
+		$t_resolved	= config_get('bug_resolved_status_threshold');
 
 		$query = "SELECT COUNT(*)
 				  FROM $t_bug_table
 				  WHERE $t_where_prj
-						  status<>'$t_resolved' AND status<>'$t_closed' AND
+						  status<'$t_resolved' AND
 						  reporter_id='$c_user_id'";
 		$result = db_query( $query );
 
@@ -750,7 +892,7 @@
 	function user_is_login_request_allowed( $p_user_id ) {
 		$t_max_failed_login_count = config_get( 'max_failed_login_count' );
 		$t_failed_login_count = user_get_field( $p_user_id, 'failed_login_count' );
-		return ( $t_failed_login_count < $t_max_failed_login_count 
+		return ( $t_failed_login_count < $t_max_failed_login_count
 							|| OFF == $t_max_failed_login_count);
 	}
 
@@ -761,9 +903,33 @@
 			return false;
 		}
 		$t_max_lost_password_in_progress_count = config_get( 'max_lost_password_in_progress_count' );
-		$t_lost_password_in_progress_count = user_get_field( $p_user_id, 'lost_password_in_progress_count' );
-		return ( $t_lost_password_in_progress_count < $t_max_lost_password_in_progress_count 
+		$t_lost_password_in_progress_count = user_get_field( $p_user_id, 'lost_password_request_count' );
+		return ( $t_lost_password_in_progress_count < $t_max_lost_password_in_progress_count
 							|| OFF == $t_max_lost_password_in_progress_count );
+	}
+
+	# --------------------
+	# return the bug filter parameters for the specified user
+	function user_get_bug_filter( $p_user_id, $p_project_id = null ) {
+		if ( null === $p_project_id ) {
+			$t_project_id = helper_get_current_project();
+		} else {
+			$t_project_id = $p_project_id;
+		}
+
+		$t_view_all_cookie_id	= filter_db_get_project_current( $t_project_id, $p_user_id );
+		$t_view_all_cookie		= filter_db_get_filter( $t_view_all_cookie_id, $p_user_id );
+		$t_cookie_detail		= explode( '#', $t_view_all_cookie, 2 );
+
+		if ( !isset( $t_cookie_detail[1] ) ) {
+			return false;
+		}
+
+		$t_filter = unserialize( $t_cookie_detail[1] );
+
+		$t_filter = filter_ensure_valid_filter( $t_filter );
+
+		return $t_filter;
 	}
 
 	#===================================
@@ -848,7 +1014,7 @@
 		$t_user_table = config_get( 'mantis_user_table' );
 
 		$query = "UPDATE $t_user_table
-				SET lost_password_in_progress_count=0
+				SET lost_password_request_count=0
 				WHERE id='$c_user_id'";
 		db_query( $query );
 
@@ -864,7 +1030,7 @@
 		$t_user_table = config_get( 'mantis_user_table' );
 
 		$query = "UPDATE $t_user_table
-				SET lost_password_in_progress_count=lost_password_in_progress_count+1
+				SET lost_password_request_count=lost_password_request_count+1
 				WHERE id='$c_user_id'";
 		db_query( $query );
 
@@ -971,7 +1137,7 @@
 		#     Should we just have two functions? (user_reset_password_random()
 		#     and user_reset_password() )?
 
-		if ( ON == config_get( 'send_reset_password' ) ) {
+		if ( ( ON == config_get( 'send_reset_password' ) ) && ( ON == config_get( 'enable_email_notification' ) ) ) {
 			# Create random password
 			$t_email		= user_get_field( $p_user_id, 'email' );
 			$t_password		= auth_generate_random_password( $t_email );

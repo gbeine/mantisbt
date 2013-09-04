@@ -10,7 +10,7 @@
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
-	
+
 	require_once( $t_core_dir . 'bug_api.php' );
 	require_once( $t_core_dir . 'bugnote_api.php' );
 	require_once( $t_core_dir . 'user_api.php' );
@@ -39,7 +39,7 @@
 	}
 
 	# --------------------
-	# Update the mail account data
+	# Update the mail account data for a project
 	function mail_update( $p_project_id, $p_pop3_host, $p_pop3_user, $p_pop3_pass ) {
 		$v_project_id	= db_prepare_int( $p_project_id );
 		$v_pop3_host	= db_prepare_string( $p_pop3_host );
@@ -53,12 +53,14 @@
 				pop3_user='$v_pop3_user',
 				pop3_pass='$v_pop3_pass'
 				WHERE id='$v_project_id'";
+
 		db_query( $query );
+
 		return true;
 	}
 
 	# --------------------
-	# Removes the mail account data
+	# Removes the mail account data from a project
 	function mail_delete( $p_project_id ) {
 		$v_project_id	= db_prepare_int( $p_project_id );
 
@@ -76,8 +78,8 @@
 	}
 
 	# --------------------
-	# Activate the Mail per Category feature for a project
-	function mail_categories( $p_project_id , $p_active ) {
+	# Activate the 'Mail per Category' feature for a project
+	function mail_categories( $p_project_id, $p_active ) {
 		$v_project_id	= db_prepare_int( $p_project_id );
 
 		if ($p_active == 'On') {
@@ -100,14 +102,14 @@
 	# --------------------
 	# Return mail account data for the specified project and category
 	function mail_category_get_account_data( $p_project_id, $p_category ) {
-		$c_project_id = db_prepare_int( $p_project_id );
-		$c_category	= db_prepare_string( $p_category );
+		$v_project_id	= db_prepare_int( $p_project_id );
+		$v_category	= db_prepare_string( $p_category );
 
 		$t_project_category_table = config_get( 'mantis_project_category_table' );
 
 		$query = "SELECT pop3_host, pop3_user, pop3_pass
 				FROM $t_project_category_table 
-				WHERE project_id='$c_project_id' AND category='$c_category'";
+				WHERE project_id='$v_project_id' AND category='$v_category'";
 
 		$result = db_query( $query );
 
@@ -117,28 +119,30 @@
 	# --------------------
 	# Update the mail account data for a category
 	function mail_category_update( $p_project_id, $p_category, $p_pop3_host, $p_pop3_user, $p_pop3_pass ) {
-		$c_project_id	= db_prepare_int( $p_project_id );
-		$c_category	= db_prepare_string( $p_category );
-		$c_pop3_host	= db_prepare_string( $p_pop3_host );
-		$c_pop3_user	= db_prepare_string( $p_pop3_user );
-		$c_pop3_pass	= db_prepare_string( $p_pop3_pass );
+		$v_project_id	= db_prepare_int( $p_project_id );
+		$v_category	= db_prepare_string( $p_category );
+		$v_pop3_host	= db_prepare_string( $p_pop3_host );
+		$v_pop3_user	= db_prepare_string( $p_pop3_user );
+		$v_pop3_pass	= db_prepare_string( $p_pop3_pass );
 
 		$t_project_category_table = config_get( 'mantis_project_category_table' );
 
 		$query = "UPDATE $t_project_category_table 
-			 	SET pop3_host='$c_pop3_host',
-				pop3_user='$c_pop3_user',
-				pop3_pass='$c_pop3_pass'
-				WHERE project_id='$c_project_id' AND category='$c_category'";
+			 	SET pop3_host='$v_pop3_host',
+				pop3_user='$v_pop3_user',
+				pop3_pass='$v_pop3_pass'
+				WHERE project_id='$v_project_id' AND category='$v_category'";
+
 		db_query( $query );
+
 		return true;
 	}
 
 	# --------------------
 	# Removes the mail account data for a category
 	function mail_category_delete( $p_project_id, $p_category ) {
-		$c_project_id	= db_prepare_int( $p_project_id );
-		$c_category	= db_prepare_string( $p_category );
+		$v_project_id	= db_prepare_int( $p_project_id );
+		$v_category	= db_prepare_string( $p_category );
 		
 		$t_project_table = config_get( 'mantis_project_table' );
 
@@ -148,9 +152,10 @@
 			 	SET pop3_host=NULL,
 				pop3_user=NULL,
 				pop3_pass=NULL
-				WHERE project_id='$c_project_id' AND category='$c_category'";
+				WHERE project_id='$v_project_id' AND category='$v_category'";
 
 		db_query( $query );
+
 		return true;
 	}
 
@@ -190,8 +195,8 @@
 	}
 
 	# --------------------
-	# return all projects with valid data for mail access
-	#  return an empty array if there are no such projects
+	# return all categories from a project with valid data for mail access
+	#  return an empty array if there are no such categories
 	function mail_categories_get_all_rows( $p_project_id ) {
 		$v_categories = array();
 		$t_categories = category_get_all_rows( $p_project_id );
@@ -210,6 +215,10 @@
 	# return all mails for an account
 	#  return an empty array if there are no new mails
 	function mail_get_all_mails( $p_account ) {
+		$t_mail_parse_mime	= config_get( 'mail_parse_mime' );
+		$t_mail_fetch_max	= config_get( 'mail_fetch_max' );
+		$t_mail_additional	= config_get( 'mail_additional' );
+		
 		$v_mails = array();
 		$t_pop3 = &new Net_POP3();
 		$t_pop3_host = $p_account['pop3_host'];
@@ -218,8 +227,25 @@
 		$t_pop3->connect($t_pop3_host, 110);
 		$t_pop3->login($t_pop3_user, $t_pop3_password);
 
-		for ($i = 1; $i <= $t_pop3->numMsg(); $i++) {
-                        $t_mail = mail_parse_content( $t_pop3->getMsg($i) );
+		if ( 0 == $t_pop3->numMsg() ) {
+			return $v_mails;
+		}
+		for ($i = 1; $i <= $t_mail_fetch_max; $i++) {
+			$t_headers = $t_pop3->getParsedHeaders($i);
+			$t_msg = $t_pop3->getMsg($i);
+			if (true == $t_mail_parse_mime &&
+			    true == isset( $t_headers['MIME-Version'] ) &&
+                            'multipart' == strtolower ( substr( $t_headers['Content-Type'], 0, 9 ) ) ) {
+				$t_mail = mail_parse_content( $t_msg );
+			} else {
+				$t_mail = $t_headers;
+				$t_mail['X-Mantis-Body'] = $t_pop3->getBody($i);
+			}
+
+			if (true == $t_mail_additional) {
+				$t_mail['X-Mantis-Complete'] = $t_msg;
+			}
+
 			array_push($v_mails, $t_mail);
 			$t_pop3->deleteMsg($i);
 		}
@@ -231,15 +257,15 @@
 	# --------------------
 	# return the mail parsed for Mantis
 	function mail_parse_content ( $p_mail ) {
-                $t_mail = array ();
+                $v_mail = array ();
 		$t_decoder = new Mail_mimeDecode($p_mail);
                 $t_params['include_bodies'] = true;
                 $t_params['decode_bodies']  = true;
                 $t_params['decode_headers'] = true;
 		$t_structure = $t_decoder->decode($t_params);
-                $t_mail['To'] = $t_structure->headers['to'];
-                $t_mail['From'] = $t_structure->headers['from'];
-                $t_mail['Subject'] = $t_structure->headers['subject'];
+                $v_mail['To'] = $t_structure->headers['to'];
+                $v_mail['From'] = $t_structure->headers['from'];
+                $v_mail['Subject'] = $t_structure->headers['subject'];
                 if (is_array($t_structure->parts))
                 {
                     $t_parts = mail_parse_parts( $t_structure->parts );
@@ -248,50 +274,50 @@
                 {
                     $t_parts = array ( mail_parse_part( $t_structure ) );
                 }
-                if ($t_parts[0]['Content-Type'] == 'text/plain') {
-                    $t_body = array_shift($t_parts);
+                if (strtolower($t_parts[0]['Content-Type']) == 'text/plain' ||
+                    strtolower($t_parts[0]['Content-Type']) == 'text/html' ) {
+                    $t_body['Body'] = $t_parts[0]['Body'];
                 }
                 else
                 {
                     $t_body['Body'] = "It seems, there is no text... :-o";
                 }
-                $t_mail['X-Mantis-Parts'] = $t_parts;
-                $t_mail['X-Mantis-Body'] = $t_body['Body'];
-		$t_mail['X-Mantis-Complete'] = $p_mail;
+                $v_mail['X-Mantis-Parts'] = $t_parts;
+                $v_mail['X-Mantis-Body'] = $t_body['Body'];
 		
-		return $t_mail;
+		return $v_mail;
 	}
 
 	# --------------------
-	# return the mail parsed for Mantis
+	# return the parsed parts from the mail
 	function mail_parse_parts ( $p_parts ) {
-                $t_parts = array ();
+                $v_parts = array ();
                 foreach ( $p_parts as $t_part ) {
-                    array_push($t_parts, mail_parse_part( $t_part ));
+                    array_push($v_parts, mail_parse_part( $t_part ));
                 }
                 
-                return $t_parts;
+                return $v_parts;
         }
 
 	# --------------------
-	# return the mail parsed for Mantis
+	# return one parsed part
 	function mail_parse_part ( $p_part ) {
-                $t_part = array ();
-                $t_part['Content-Type'] = $p_part->ctype_primary."/".$p_part->ctype_secondary;
-                $t_part['Name'] = $p_part->ctype_parameters['name'];
-                $t_part['Body'] = $p_part->body;
+                $v_part = array ();
+                $v_part['Content-Type'] = $p_part->ctype_primary."/".$p_part->ctype_secondary;
+                $v_part['Name'] = $p_part->ctype_parameters['name'];
+                $v_part['Body'] = $p_part->body;
 
-                return $t_part;
+                return $v_part;
         }
 
 	# --------------------
 	# return the mailadress from the mail's 'From'
 	function mail_parse_address ( $p_mailaddress ) {
 		if (preg_match("/<(.*?)>/", $p_mailaddress, $matches)) {
-			$c_mailaddress = $matches[1];
+			$v_mailaddress = $matches[1];
 		}
 
-		return $c_mailaddress;
+		return $v_mailaddress;
 	}
 
 	# --------------------
@@ -302,14 +328,14 @@
 
 	# --------------------
 	# return true if there is a valid mantis bug referernce in subject
-	function mail_is_a_bugnote ($p_mail_subject) {
+	function mail_is_a_bugnote ( $p_mail_subject ) {
 		return preg_match("/\[([A-Za-z0-9-_\.]*\s[0-9]{7})\]/", $p_mail_subject);
 	}
 
 	# --------------------
 	# return the bug's id from the subject
-	function mail_get_bug_id_from_subject ( $p_mail_subject) {
-		preg_match("/\[([A-Za-z0-9-_\.]*\s([0-9]{7}?))\]/", $p_mail_subject, $v_matches);
+	function mail_get_bug_id_from_subject ( $p_mail_subject ) {
+		preg_match("/\[([A-Za-z0-9-_\. ]*\s([0-9]{7}?))\]/", $p_mail_subject, $v_matches);
 
 		return $v_matches[2];
 	}
@@ -321,18 +347,18 @@
 		$t_mail_auto_signup	= config_get( 'mail_auto_signup' );
 		$t_mail_reporter	= config_get( 'mail_reporter' );
 		
-		$c_mailaddress = mail_parse_address( $p_mailaddress );
+		$v_mailaddress = mail_parse_address( $p_mailaddress );
 
 		if ( $t_mail_use_reporter ) {
 			// Always report as mail_reporter
 			$t_reporter_id = user_get_id_by_name( $t_mail_reporter );
 		} else {
 			// Try to get the reporting users id
-			$t_reporter_id = user_get_id_by_mail ( $c_mailaddress );
+			$t_reporter_id = user_get_id_by_mail ( $v_mailaddress );
 			if ( ! $t_reporter_id && $t_mail_auto_signup ) {
 				// So, we've to sign up a new user...
-				$t_user_name = mail_user_name_from_address ( $c_mailaddress );
-				user_signup($t_user_name, $c_mailaddress);
+				$t_user_name = mail_user_name_from_address ( $v_mailaddress );
+				user_signup($t_user_name, $v_mailaddress);
 				$t_reporter_id = user_get_id_by_name($t_user_name);
 			} elseif ( ! $t_reporter_id ) {
 				// Fall back to the default mail_reporter
@@ -340,23 +366,31 @@
 			}
 		}
 
+		// dirty: Set the identified user's id
+		// required if bug_report_mail is run via command line
+		$GLOBAL['g_cache_current_user_id'] = $t_reporter_id;
+
 		return $t_reporter_id;
 	}
 
 	# --------------------
-	# Adds a file to a bug. Very dirty
+	# Very dirty: Adds a file to a bug.
 	function mail_add_file( $p_bug_id, $p_part ) {
-            $GLOBALS['_mail_file_'] = $p_part['Name'];
-            $t_file_name = '/tmp/'.$p_part['Name'];
-            file_put_contents($t_file_name, $p_part['Body']);
-            file_add($p_bug_id, $t_file_name,  $p_part['Name'], $p_part['Content-Type'], 'bug');
-            unlink($t_file_name);
+		$GLOBALS['_mail_file_'] = $p_part['Name'];
+		if ( 0 < strlen($p_part['Name']) ) {
+			$t_file_name = '/tmp/'.$p_part['Name'];
+			file_put_contents($t_file_name, $p_part['Body']);
+			file_add($p_bug_id, $t_file_name,  $p_part['Name'], $p_part['Content-Type'], 'bug');
+			unlink($t_file_name);
+		}
         }
 
 	# --------------------
 	# Adds a bug which is reported via email
 	# Taken from bug_report.php and 
-	function mail_add_bug( $p_mail, $p_account ) {
+	function mail_add_bug ( $p_mail, $p_account ) {
+		$t_mail_save_from	= config_get( 'mail_save_from' );
+                
 		$t_bug_data = new BugData;
 		$t_bug_data->build			= gpc_get_string( 'build', '' );
 		$t_bug_data->platform			= gpc_get_string( 'platform', '' );
@@ -376,7 +410,13 @@
 		$t_bug_data->severity			= 50;
 		$t_bug_data->priority			= gpc_get_int( 'priority', NORMAL );
 		$t_bug_data->summary			= $p_mail['Subject'];
-		$t_bug_data->description		= $p_mail['X-Mantis-Body'];
+		if ( $t_mail_save_from ) {
+			$t_bug_data->description	= "Report from: ".$p_mail['From']."\n\n".$p_mail['X-Mantis-Body'];
+		}
+		else {
+			$t_bug_data->description	= $p_mail['X-Mantis-Body'];
+		}
+		$t_bug_data->description		= "Report from: ".$p_mail['From']."\n\n".$p_mail['X-Mantis-Body'];
 		$t_bug_data->steps_to_reproduce		= gpc_get_string( 'steps_to_reproduce', '' );
 		$t_bug_data->additional_information	= $p_mail['X-Mantis-Complete'];
 
@@ -384,26 +424,26 @@
 
 		$t_bug_data->reporter_id		= mail_get_user( $p_mail['From'] );
 
-                if (mail_is_a_bugnote($p_mail['Subject']))
-		{
+                if ( mail_is_a_bugnote( $p_mail['Subject'] ) ) {
 			# Add a bug note
 			$t_bug_id = mail_get_bug_id_from_subject( $p_mail['Subject'] );
 			if ( ! bug_is_readonly( $t_bug_id ) ) {
 				bugnote_add ( $t_bug_id, $p_mail['X-Mantis-Body'] );
 				email_bugnote_add ( $t_bug_id );
 			}
-		}
-		else
-		{
+		} else	{
 			# Create the bug
 			$t_bug_id = bug_create( $t_bug_data );
 			email_new_bug( $t_bug_id );
 		}
                 # Add files
-                foreach ($p_mail['X-Mantis-Parts'] as $part) {
-                    mail_add_file ( $t_bug_id, $part );
-                }
+		if ( null != $p_mail['X-Mantis-Parts'] ) {
+			foreach ($p_mail['X-Mantis-Parts'] as $part) {
+				mail_add_file ( $t_bug_id, $part );
+			}
+		}
 
 	}
 
 ?>
+

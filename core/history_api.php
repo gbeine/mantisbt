@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: history_api.php,v 1.30 2004-10-05 21:10:14 prichards Exp $
+	# $Id: history_api.php,v 1.32 2005-07-03 15:09:11 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### History API ###
@@ -194,6 +194,11 @@
 				$p_new_value = get_enum_element( 'projection', $p_new_value );
 				$t_field_localized = lang_get( 'projection' );
 				break;
+			case 'sticky':
+				$p_old_value = gpc_string_to_bool( $p_old_value ) ? lang_get( 'yes' ) : lang_get( 'no' ) ;
+				$p_new_value = gpc_string_to_bool( $p_new_value ) ? lang_get( 'yes' ) : lang_get( 'no' ) ;
+				$t_field_localized = lang_get( 'sticky_issue' );
+				break;
 			case 'project_id':
 				if ( project_exists( $p_old_value ) ) {
 					$p_old_value = project_get_field( $p_old_value, 'name' );
@@ -300,6 +305,10 @@
 				case BUG_DELETE_SPONSORSHIP:
 					$t_note = lang_get( 'sponsorship_deleted' );
 					$t_change = user_get_name( $p_old_value ) . ': ' . sponsorship_format_amount( $p_new_value );
+					break;
+				case BUG_PAID_SPONSORSHIP:
+					$t_note = lang_get( 'sponsorship_paid' );
+					$t_change = user_get_name( $p_old_value ) . ': ' . get_enum_element( 'sponsorship', $p_new_value );
 					break;
 				case BUG_ADD_RELATIONSHIP:
 					$t_note = lang_get( 'relationship_added' );

@@ -6,13 +6,13 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_view_advanced_page.php,v 1.67 2004-10-25 19:59:12 marcelloscata Exp $
+	# $Id: bug_view_advanced_page.php,v 1.75 2005-06-21 12:27:23 vboctor Exp $
 	# --------------------------------------------------------
 
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'bug_api.php' );
 	require_once( $t_core_path.'custom_field_api.php' );
 	require_once( $t_core_path.'file_api.php' );
@@ -23,13 +23,21 @@
 	$f_bug_id		= gpc_get_int( 'bug_id' );
 	$f_history		= gpc_get_bool( 'history', config_get( 'history_default_visible' ) );
 
-	if ( SIMPLE_ONLY == config_get( 'show_view' ) ) {
-		print_header_redirect ( 'bug_view_page.php?bug_id=' . $f_bug_id );
-	}
+	bug_ensure_exists( $f_bug_id );
 
 	access_ensure_bug_level( VIEWER, $f_bug_id );
 
 	$t_bug = bug_prepare_display( bug_get( $f_bug_id, true ) );
+
+	if( $t_bug->project_id != helper_get_current_project() ) {
+		# in case the current project is not the same project of the bug we are viewing...
+		# ... override the current project. This to avoid problems with categories and handlers lists etc.
+		$g_project_override = $t_bug->project_id;
+	}
+
+	if ( SIMPLE_ONLY == config_get( 'show_view' ) ) {
+		print_header_redirect ( 'bug_view_page.php?bug_id=' . $f_bug_id );
+	}
 
 	compress_enable();
 
@@ -71,12 +79,12 @@
 	<!-- prev/next links -->
 	<?php if( $t_bugslist ) { ?>
 	<td class="center"><span class="small">
-		<?php 
+		<?php
 			$t_bugslist = explode( ',', $t_bugslist );
 			$t_index = array_search( $f_bug_id, $t_bugslist );
 			if( false !== $t_index ) {
-				if( isset( $t_bugslist[$t_index-1] ) ) print_bracket_link( 'bug_view_advanced_page.php?bug_id='.$t_bugslist[$t_index-1], '&lt;&lt;' ); 
-				if( isset( $t_bugslist[$t_index+1] ) ) print_bracket_link( 'bug_view_advanced_page.php?bug_id='.$t_bugslist[$t_index+1], '&gt;&gt;' ); 
+				if( isset( $t_bugslist[$t_index-1] ) ) print_bracket_link( 'bug_view_advanced_page.php?bug_id='.$t_bugslist[$t_index-1], '&lt;&lt;' );
+				if( isset( $t_bugslist[$t_index+1] ) ) print_bracket_link( 'bug_view_advanced_page.php?bug_id='.$t_bugslist[$t_index+1], '&gt;&gt;' );
 			}
 		?>
 	</span></td>
@@ -305,43 +313,50 @@
 	</td>
 
 	<!-- fixed in version -->
-	<td class="category">
-		<?php 
-			$t_show_version = ( ON == config_get( 'show_product_version' ) ) 
-					|| ( ( AUTO == config_get( 'show_product_version' ) ) 
+		<?php
+			$t_show_version = ( ON == config_get( 'show_product_version' ) )
+					|| ( ( AUTO == config_get( 'show_product_version' ) )
 								&& ( count( version_get_all_rows( $t_bug->project_id ) ) > 0 ) );
-			if ( $t_show_version ) { 
-				echo lang_get( 'fixed_in_version' );
-			}
+			if ( $t_show_version ) {
 		?>
-	</td>
-	<td>
-		<?php 
-			if ( $t_show_version ) { 
-				echo $t_bug->fixed_in_version; 
-			}
-		?>
-	</td>
-
-	<!-- Product Version or Product Build, if version is suppressed -->
 	<td class="category">
-		<?php 
-			if ( $t_show_version ) { 
-				echo lang_get( 'product_version' ); 
-			}else{
-				echo lang_get( 'product_build' );
-			}
-		?>
+		<?php echo lang_get( 'fixed_in_version' ) ?>
 	</td>
 	<td>
-		<?php  
-			if ( $t_show_version ) { 
-				echo $t_bug->version; 
-			}else{
-				echo $t_bug->build;
+		<?php echo $t_bug->fixed_in_version ?>
+	</td>
+		<?php
+			} else {
+		?>
+	<td>
+	</td>
+	<td>
+	</td>
+		<?php
 			}
 		?>
+	<!-- Product Version or Product Build, if version is suppressed -->
+		<?php
+			if ( $t_show_version ) {
+		?>
+	<td class="category">
+		<?php echo lang_get( 'product_version' ) ?>
 	</td>
+	<td>
+		<?php echo $t_bug->version ?>
+	</td>
+		<?php
+			} else {
+		?>
+	<td class="category">
+		<?php echo lang_get( 'product_build' ) ?>
+	</td>
+	<td>
+		<?php echo $t_bug->build ?>
+	</td>
+		<?php
+			}
+		?>
 
 </tr>
 
@@ -428,7 +443,7 @@
 	$t_related_custom_field_ids = custom_field_get_linked_ids( $t_bug->project_id );
 	foreach( $t_related_custom_field_ids as $t_id ) {
 		if ( !custom_field_has_read_access( $t_id, $f_bug_id ) ) {
-			continue;			
+			continue;
 		} # has read access
 
 		$t_custom_fields_found = true;

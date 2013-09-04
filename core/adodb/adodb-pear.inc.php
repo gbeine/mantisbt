@@ -1,12 +1,12 @@
 <?php
-/** 
- * @version V3.50 19 May 2003 (c) 2000-2003 John Lim (jlim@natsoft.com.my). All rights reserved.
- * Released under both BSD license and Lesser GPL library license. 
- * Whenever there is any discrepancy between the two licenses, 
- * the BSD license will take precedence. 
+/**
+ * @version V4.60 24 Jan 2005 (c) 2000-2005 John Lim (jlim@natsoft.com.my). All rights reserved.
+ * Released under both BSD license and Lesser GPL library license.
+ * Whenever there is any discrepancy between the two licenses,
+ * the BSD license will take precedence.
  *
  * Set tabs to 4 for best viewing.
- * 
+ *
  * PEAR DB Emulation Layer for ADODB.
  *
  * The following code is modelled on PEAR DB code by Stig Bakken <ssb@fast.no>								   |
@@ -15,7 +15,7 @@
 
  /*
  We support:
- 
+
  DB_Common
  ---------
  	query - returns PEAR_Error on error
@@ -27,7 +27,13 @@
 	quote
 	nextID
 	disconnect
-	
+
+	getOne
+	getAssoc
+	getRow
+	getCol
+	getAll
+
  DB_Result
  ---------
  	numRows - returns -1 if not supported
@@ -36,15 +42,20 @@
 	fetchRows - does not support passing of fetchmode
 	free
  */
- 
+
 define('ADODB_PEAR',dirname(__FILE__));
-require_once "PEAR.php";
-require_once ADODB_PEAR."/adodb-errorpear.inc.php";
-require_once ADODB_PEAR."/adodb.inc.php";
+include_once "PEAR.php";
+include_once ADODB_PEAR."/adodb-errorpear.inc.php";
+include_once ADODB_PEAR."/adodb.inc.php";
 
 if (!defined('DB_OK')) {
 define("DB_OK",	1);
 define("DB_ERROR",-1);
+
+// autoExecute constants
+define('DB_AUTOQUERY_INSERT', 1);
+define('DB_AUTOQUERY_UPDATE', 2);
+
 /**
  * This is a special constant that tells DB the user hasn't specified
  * any particular get mode, so the default should be used.
@@ -102,9 +113,9 @@ class DB
 	{
 		include_once(ADODB_DIR."/drivers/adodb-$type.inc.php");
 		$obj = &NewADOConnection($type);
-		if (!is_object($obj)) return new PEAR_Error('Unknown Database Driver: '.$dsninfo['phptype'],-1);
+		if (!is_object($obj)) $obj =& new PEAR_Error('Unknown Database Driver: '.$dsninfo['phptype'],-1);
 		return $obj;
-}
+	}
 
 	/**
 	 * Create a new DB object and connect to the specified database
@@ -146,12 +157,15 @@ class DB
 			 @include_once("adodb-$type.inc.php");
 		}
 
-		@$obj =&NewADOConnection($type);
-		if (!is_object($obj)) return new PEAR_Error('Unknown Database Driver: '.$dsninfo['phptype'],-1);
-
+		@$obj =& NewADOConnection($type);
+		if (!is_object($obj)) {
+			$obj =& new PEAR_Error('Unknown Database Driver: '.$dsninfo['phptype'],-1);
+			return $obj;
+		}
 		if (is_array($options)) {
 			foreach($options as $k => $v) {
 				switch(strtolower($k)) {
+				case 'persist':
 				case 'persistent': 	$persist = $v; break;
 				#ibase
 				case 'dialect': 	$obj->dialect = $v; break;
@@ -169,11 +183,11 @@ class DB
 
 		if (isset($dsninfo['socket'])) $dsninfo['hostspec'] .= ':'.$dsninfo['socket'];
 		else if (isset($dsninfo['port'])) $dsninfo['hostspec'] .= ':'.$dsninfo['port'];
-		
+
 		if($persist) $ok = $obj->PConnect($dsninfo['hostspec'], $dsninfo['username'],$dsninfo['password'],$dsninfo['database']);
 		else  $ok = $obj->Connect($dsninfo['hostspec'], $dsninfo['username'],$dsninfo['password'],$dsninfo['database']);
-		
-		if (!$ok) return ADODB_PEAR_Error();
+
+		if (!$ok) $obj = ADODB_PEAR_Error();
 		return $obj;
 	}
 
@@ -196,9 +210,10 @@ class DB
 	 */
 	function isError($value)
 	{
-		return (is_object($value) &&
-				(get_class($value) == 'db_error' ||
-				 is_subclass_of($value, 'db_error')));
+		if (!is_object($value)) return false;
+		$class = get_class($value);
+		return $class == 'pear_error' || is_subclass_of($value, 'pear_error') ||
+				$class == 'db_error' || is_subclass_of($value, 'db_error');
 	}
 
 
@@ -213,9 +228,11 @@ class DB
 	 */
 	function isWarning($value)
 	{
+		return false;
+		/*
 		return is_object($value) &&
 			(get_class( $value ) == "db_warning" ||
-			 is_subclass_of($value, "db_warning"));
+			 is_subclass_of($value, "db_warning"));*/
 	}
 
 	/**
@@ -344,7 +361,7 @@ class DB
 	function assertExtension($name)
 	{
 		if (!extension_loaded($name)) {
-			$dlext = (substr(PHP_OS, 0, 3) == 'WIN') ? '.dll' : '.so';
+			$dlext = (strncmp(PHP_OS,'WIN',3) === 0) ? '.dll' : '.so';
 			@dl($name . $dlext);
 		}
 		if (!extension_loaded($name)) {

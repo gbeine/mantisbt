@@ -6,12 +6,12 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: manage_user_page.php,v 1.55 2004-08-12 23:15:27 vboctor Exp $
+	# $Id: manage_user_page.php,v 1.59 2005-05-31 11:13:20 vboctor Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
 
 	require_once( $t_core_path . 'icon_api.php' );
@@ -80,6 +80,8 @@
 		ORDER BY date_created DESC";
 	$result = db_query( $query );
 	$new_user_count = db_num_rows( $result );
+
+	if ( $new_user_count > 0 ) {
 ?>
 <br />
 <table class="width100" cellspacing="1">
@@ -93,30 +95,35 @@
 <?php
 for ($i=0;$i<$new_user_count;$i++) {
 	$row = db_fetch_array( $result );
-	$t_username = $row['username'];
 
-	echo $t_username.' : ';
+	if ( $i > 0 ) {
+		echo ' : ';
+	}
+
+	echo '<a href="manage_user_edit_page.php?user_id=', $row['id'], '">', $row['username'], '</a>';
 }
 ?>
 	</td>
 </tr>
 </table>
-<?php # New Accounts Form END ?>
+<?php } # New Accounts Form END ?>
 
 <?php # Never Logged In Form BEGIN ?>
 <?php
 	$query = "SELECT *
 		FROM $t_user_table
 		WHERE login_count=0
-		ORDER BY date_created";
+		ORDER BY date_created DESC";
 	$result = db_query( $query );
 	$user_count = db_num_rows( $result );
+
+	if ( $user_count > 0 ) {
 ?>
 <br />
 <table class="width100" cellspacing="1">
 <tr>
 	<td class="form-title">
-		<?php echo lang_get( 'never_logged_in_title' ) ?> [<?php echo $user_count ?>] <?php print_bracket_link( 'manage_user_prune.php', lang_get( 'prune_accounts' ) ) ?>
+		<?php echo lang_get( 'never_logged_in_title' ) ?> [<?php echo $user_count ?>] <?php print_button( 'manage_user_prune.php', lang_get( 'prune_accounts' ) ); ?>
 	</td>
 </tr>
 <tr <?php echo helper_alternate_class() ?>>
@@ -124,15 +131,18 @@ for ($i=0;$i<$new_user_count;$i++) {
 <?php
 	for ($i=0;$i<$user_count;$i++) {
 		$row = db_fetch_array( $result );
-		$t_username = $row['username'];
 
-		echo $t_username.' : ';
+		if ( $i > 0 ) {
+			echo ' : ';
+		}
+
+		echo '<a href="manage_user_edit_page.php?user_id=', $row['id'], '">', $row['username'], '</a>';
 	}
 ?>
 	</td>
 </tr>
 </table>
-<?php # Never Logged In Form END ?>
+<?php } # Never Logged In Form END ?>
 
 <?php # Manage Form BEGIN ?>
 <?php
@@ -173,12 +183,12 @@ for ($i=0;$i<$new_user_count;$i++) {
 
 	# Get the user data in $c_sort order
 	if ( 0 == $c_hide ) {
-		$query = "SELECT *, date_created, last_visit
+		$query = "SELECT *
 				FROM $t_user_table
 				WHERE $t_where
 				ORDER BY $c_sort $c_dir";
 	} else {
-		$query = "SELECT *, date_created, last_visit
+		$query = "SELECT *
 				FROM $t_user_table
 				WHERE (" . db_helper_compare_days(db_now(),"last_visit","< '$days_old'") . ") AND $t_where
 				ORDER BY $c_sort $c_dir";
@@ -192,7 +202,7 @@ for ($i=0;$i<$new_user_count;$i++) {
 <tr>
 	<td class="form-title" colspan="5">
 		<?php echo lang_get( 'manage_accounts_title' ) ?> [<?php echo $user_count ?>]
-		<?php print_bracket_link( 'manage_user_create_page.php', lang_get( 'create_new_account_link' ) ) ?>
+		<?php print_button( 'manage_user_create_page.php', lang_get( 'create_new_account_link' ) ) ?>
 	</td>
 	<td class="center" colspan="2">
 		<form method="post" action="manage_user_page.php">

@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_monitor.php,v 1.26 2004-01-11 07:16:06 vboctor Exp $
+	# $Id: bug_monitor.php,v 1.28 2005-06-14 22:00:32 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -14,13 +14,21 @@
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'bug_api.php' );
 ?>
 <?php
 	$f_bug_id	= gpc_get_int( 'bug_id' );
+	$t_bug = bug_get( $f_bug_id, true );
+
+	if( $t_bug->project_id != helper_get_current_project() ) {
+		# in case the current project is not the same project of the bug we are viewing...
+		# ... override the current project. This to avoid problems with categories and handlers lists etc.
+		$g_project_override = $t_bug->project_id;
+	}
+
 	$f_action	= gpc_get_string( 'action' );
 
 	access_ensure_bug_level( config_get( 'monitor_bug_threshold' ), $f_bug_id );

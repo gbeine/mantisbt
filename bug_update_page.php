@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_update_page.php,v 1.87 2004-10-13 23:35:07 thraxisp Exp $
+	# $Id: bug_update_page.php,v 1.89 2005-06-12 21:04:43 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -23,6 +23,17 @@
 ?>
 <?php
 	$f_bug_id = gpc_get_int( 'bug_id' );
+
+	$t_bug = bug_prepare_edit( bug_get( $f_bug_id, true ) );
+
+	if( $t_bug->project_id != helper_get_current_project() ) {
+		# in case the current project is not the same project of the bug we are viewing...
+		# ... override the current project. This to avoid problems with categories and handlers lists etc.
+		$g_project_override = $t_bug->project_id;
+		$t_changed_project = true;
+	} else {
+		$t_changed_project = false;
+	}
 
 	if ( ADVANCED_ONLY == config_get( 'show_update' ) ) {
 		print_header_redirect ( 'bug_update_advanced_page.php?bug_id=' . $f_bug_id );
@@ -95,6 +106,9 @@
 
 	<!-- Category -->
 	<td>
+		<?php if ( $t_changed_project ) {
+			echo "[" . project_get_field( $t_bug->project_id, 'name' ) . "] ";
+		} ?>
 		<select name="category">
 			<?php print_category_option_list( $t_bug->category, $t_bug->project_id ) ?>
 		</select>
@@ -226,8 +240,8 @@
 		<?php echo lang_get( 'status' ) ?>
 	</td>
 	<td bgcolor="<?php echo get_status_color( $t_bug->status ) ?>">
-		<?php print_status_option_list( 'status', $t_bug->status, 
-						( $t_bug->reporter_id == auth_get_current_user_id() && 
+		<?php print_status_option_list( 'status', $t_bug->status,
+						( $t_bug->reporter_id == auth_get_current_user_id() &&
 								( ON == config_get( 'allow_reporter_close' ) ) ), $t_bug->project_id ) ?>
 	</td>
 
@@ -247,10 +261,10 @@
 		}
 	?>
 <?php
-	$t_show_version = ( ON == config_get( 'show_product_version' ) ) 
-			|| ( ( AUTO == config_get( 'show_product_version' ) ) 
+	$t_show_version = ( ON == config_get( 'show_product_version' ) )
+			|| ( ( AUTO == config_get( 'show_product_version' ) )
 						&& ( count( version_get_all_rows( $t_bug->project_id ) ) > 0 ) );
-	if ( $t_show_version ) { 
+	if ( $t_show_version ) {
 ?>
 	<!-- Product Version -->
 	<td class="category">

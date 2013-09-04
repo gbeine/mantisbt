@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_actiongroup_page.php,v 1.43 2004-09-08 02:13:58 thraxisp Exp $
+	# $Id: bug_actiongroup_page.php,v 1.51 2005-06-16 02:26:48 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -14,19 +14,60 @@
 
 	require_once( 'core.php' );
 
-	auth_ensure_user_authenticated(); 
+	require_once( $t_core_path.'bug_group_action_api.php' );
+
+	auth_ensure_user_authenticated();
 
 	$f_action = gpc_get_string( 'action', '' );
 	$f_bug_arr = gpc_get_int_array( 'bug_arr', array() );
 
 	# redirects to all_bug_page if nothing is selected
-	if ( ( $f_action=='' ) || 0 == sizeof( $f_bug_arr ) ) {
+	if ( is_blank( $f_action ) || ( 0 == sizeof( $f_bug_arr ) ) ) {
 		print_header_redirect( 'view_all_bug_page.php' );
 	}
-	$c_project_id = helper_get_current_project();
+
+	# run through the issues to see if they are all from one project
+	$t_project_id = ALL_PROJECTS;
+	$t_multiple_projects = false;
+	foreach( $f_bug_arr as $t_bug_id ) {
+		$t_bug = bug_get( $t_bug_id );
+		if ( $t_project_id != $t_bug->project_id ) {
+			if ( ( $t_project_id != ALL_PROJECTS ) && !$t_multiple_projects ) {
+				$t_multiple_projects = true;
+			} else {
+				$t_project_id = $t_bug->project_id;
+			}
+		}
+	}
+	if ( $t_multiple_projects ) {
+		$t_project_id = ALL_PROJECTS;
+	}
+	# override the project if necessary
+	if( $t_project_id != helper_get_current_project() ) {
+		# in case the current project is not the same project of the bug we are viewing...
+		# ... override the current project. This to avoid problems with categories and handlers lists etc.
+		$g_project_override = $t_project_id;
+	}
 
 	$t_finished = false;
 	$t_request = '';
+
+	$t_custom_group_actions = config_get( 'custom_group_actions' );
+
+	foreach( $t_custom_group_actions as $t_custom_group_action ) {
+		if ( $f_action == $t_custom_group_action['action'] ) {
+			require_once( $t_custom_group_action['form_page'] );
+			exit;
+		}
+	}
+
+	# Check if user selected to update a custom field.
+	$t_custom_fields_prefix = 'custom_field_';
+	if ( strpos( $f_action, $t_custom_fields_prefix ) === 0 ) {
+		$t_custom_field_id = (int)substr( $f_action, strlen( $t_custom_fields_prefix ) );
+		$f_action = 'CUSTOM';
+	}
+
 	switch ( $f_action )  {
 		# Use a simple confirmation page, if close or delete...
 		case 'CLOSE' :
@@ -39,6 +80,12 @@
 			$t_finished 			= true;
 			$t_question_title		= lang_get( 'delete_bugs_conf_msg' );
 			$t_button_title 		= lang_get( 'delete_group_bugs_button' );
+			break;
+
+		case 'SET_STICKY' :
+			$t_finished 			= true;
+			$t_question_title		= lang_get( 'set_sticky_bugs_conf_msg' );
+			$t_button_title 		= lang_get( 'set_sticky_group_bugs_button' );
 			break;
 
 		# ...else we define the variables used in the form
@@ -65,7 +112,7 @@
 			$t_button_title 		= lang_get( 'resolve_group_bugs_button' );
 			$t_form 				= 'resolution';
 			$t_request 				= 'resolution'; # the "request" vars allow to display the adequate list
-			if ( ALL_PROJECTS != $c_project_id ) {
+			if ( ALL_PROJECTS != $t_project_id ) {
 				$t_question_title2 = lang_get( 'fixed_in_version' );
 				$t_form2 = 'fixed_in_version';
 			}
@@ -85,19 +132,36 @@
 			$t_request 				= 'status';
 			break;
 
-		case 'VIEW_STATUS':
+		case 'UP_CATEGORY' :
+			$t_question_title		= lang_get( 'category_bugs_conf_msg' );
+			$t_button_title			= lang_get( 'category_group_bugs_button' );
+			$t_form					= 'category';
+			$t_request				= 'category';
+			break;
+
+		case 'VIEW_STATUS' :
 			$t_question_title		= lang_get( 'view_status_bugs_conf_msg' );
 			$t_button_title			= lang_get( 'view_status_group_bugs_button' );
 			$t_form				= 'view_status';
 			$t_request			= 'view_status';
 			break;
 
+		case 'CUSTOM' :
+			$t_custom_field_def = custom_field_get_definition( $t_custom_field_id );
+			$t_question_title = sprintf( lang_get( 'actiongroup_menu_update_field' ), lang_get_defaulted( $t_custom_field_def['name'] ) );
+			$t_button_title = $t_question_title;
+			$t_form = "custom_field_$t_custom_field_id";
+			break;
+
 		default:
 			trigger_error( ERROR_GENERIC, ERROR );
 	}
 
-	html_page_top1();
-	html_page_top2();
+	bug_group_action_print_top();
+	
+	if ( $t_multiple_projects ) {
+		echo '<p class="bold">' . lang_get( 'multiple_projects' ) . '</p>';
+	}
 ?>
 
 <br />
@@ -105,21 +169,14 @@
 <div align="center">
 <form method="POST" action="bug_actiongroup.php">
 <input type="hidden" name="action" value="<?php echo string_attribute( $f_action ) ?>" />
-<table class="width75" cellspacing="1">
-<?php 
+<?php
+	bug_group_action_print_hidden_fields( $f_bug_arr );
 
-$t_bug_rows = "";
-$t_i = 1;
-
-foreach( $f_bug_arr as $t_bug_id ) { 
-	$t_class = sprintf( "row-%d", ($t_i++ % 2) + 1 );
-	$t_bug_rows .= sprintf( "<tr class=\"%s\"> <td>%s</td> <td>%s</td> </tr>\n"
-		, $t_class, string_get_bug_view_link( $t_bug_id ), bug_get_field( $t_bug_id, 'summary' ) 
-    );
-	echo '<input type="hidden" name="bug_arr[]" value="' . $t_bug_id . '" />' . "\n";
-}
+	if ( $f_action === 'CUSTOM' ) {
+		echo "<input type=\"hidden\" name=\"custom_field_id\" value=\"$t_custom_field_id\" />";
+	}
 ?>
-
+<table class="width75" cellspacing="1">
 <?php
 if ( !$t_finished ) {
 ?>
@@ -128,40 +185,59 @@ if ( !$t_finished ) {
 		<?php echo $t_question_title ?>
 	</td>
 	<td>
-		<select name="<?php echo $t_form ?>">
-			<?php
-				switch ( $f_action ) {
-					case 'COPY':
-					case 'MOVE':
-						print_project_option_list( null, false );
-						break;
-					case 'ASSIGN':
-						$t_new_status = ( ON == config_get( 'auto_set_status_to_assigned' ) ) ? config_get( 'bug_assigned_status' ) : NEW_;
-						$t_assign_threshold = access_get_status_threshold( $t_new_status, $c_project_id );
-						# threshold is correct if auto_set_status_to_assigned is set, false thresholds will be caught when the bug is assigned
-						print_assign_to_option_list( 0, $c_project_id, $t_assign_threshold);
-						break;
-					case 'VIEW_STATUS':
-						print_enum_string_option_list( 'view_state', config_get( 'default_bug_view_status' ) );
-						break;
-				}
+	<?php
+		if ( $f_action === 'CUSTOM' ) {
+			$t_custom_field_def = custom_field_get_definition( $t_custom_field_id );
 
-				#other forms use the same function to display the list
-				if ( $t_request > '' ) {
-					print_enum_string_option_list( $t_request, FIXED );
-				}
-			?>
-		</select>
+			$t_bug_id = null;
+
+			# if there is only one issue, use its current value as default, otherwise,
+			# use the default value specified in custom field definition.
+			if ( sizeof( $f_bug_arr ) == 1 ) {
+				$t_bug_id = $f_bug_arr[0];
+			}
+
+			print_custom_field_input( $t_custom_field_def, $t_bug_id );
+		} else {
+			echo "<select name=\"$t_form\">";
+
+			switch ( $f_action ) {
+				case 'COPY':
+				case 'MOVE':
+					print_project_option_list( null, false );
+					break;
+				case 'ASSIGN':
+					$t_new_status = ( ON == config_get( 'auto_set_status_to_assigned' ) ) ? config_get( 'bug_assigned_status' ) : NEW_;
+					$t_assign_threshold = access_get_status_threshold( $t_new_status, $t_project_id );
+					# threshold is correct if auto_set_status_to_assigned is set, false thresholds will be caught when the bug is assigned
+					print_assign_to_option_list( 0, $t_project_id, $t_assign_threshold);
+					break;
+				case 'VIEW_STATUS':
+					print_enum_string_option_list( 'view_state', config_get( 'default_bug_view_status' ) );
+					break;
+				case 'UP_CATEGORY':
+					print_category_option_list();
+					break;
+			}
+
+			# other forms use the same function to display the list
+			if ( $t_request > '' ) {
+				print_enum_string_option_list( $t_request, FIXED );
+			}
+
+			echo '</select>';
+		}
+		?>
 	</td>
 </tr>
 	<?php
 	if ( isset( $t_question_title2 ) ) {
 		switch ( $f_action ) {
 			case 'RESOLVE':
-				$t_show_version = ( ON == config_get( 'show_product_version' ) ) 
-					|| ( ( AUTO == config_get( 'show_product_version' ) ) 
-								&& ( count( version_get_all_rows( $c_project_id ) ) > 0 ) );
-				if ( $t_show_version ) { 
+				$t_show_version = ( ON == config_get( 'show_product_version' ) )
+					|| ( ( AUTO == config_get( 'show_product_version' ) )
+								&& ( count( version_get_all_rows( $t_project_id ) ) > 0 ) );
+				if ( $t_show_version ) {
 	?>
 		<tr class="row-2">
 			<td class="category">
@@ -176,7 +252,7 @@ if ( !$t_finished ) {
 	<?php
 				}
 				break;
-		}			
+		}
 	}
 	?>
 <?php
@@ -198,23 +274,14 @@ if ( !$t_finished ) {
 	</td>
 </tr>
 </table>
-
 <br />
 
-<table class="width75" cellspacing="1">
-<tr class="row-1">
-	<td class="category" colspan="2">
-		<?php echo lang_get( 'actiongroup_bugs' ); ?>
-	</td>
-</tr>
 <?php
-	echo $t_bug_rows;
+	bug_group_action_print_bug_list( $f_bug_arr );
 ?>
-</table>
 </form>
 </div>
 
-
 <?php
-	html_page_bottom1( __FILE__ );
+	bug_group_action_print_bottom();
 ?>

@@ -6,14 +6,15 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: meta_inc.php,v 1.16 2004-05-16 12:22:06 vboctor Exp $
+	# $Id: meta_inc.php,v 1.18 2005-05-19 00:25:52 thraxisp Exp $
 	# --------------------------------------------------------
 
-	# prevent caching
-	$t_content_expire = config_get('content_expire');
+    global $g_allow_browser_cache;
+    if ( ! isset( $g_allow_browser_cache ) ) {
 ?>
 	<meta http-equiv="Pragma" content="no-cache" />
 	<meta http-equiv="Cache-Control" content="no-cache" />
 	<meta http-equiv="Pragma-directive" content="no-cache" />
 	<meta http-equiv="Cache-Directive" content="no-cache" />
-	<meta http-equiv="Expires" content="<?php echo $t_content_expire ?>" />
+<?php } # ! isset( $g_allow_browser_cache )  ?>
+	<meta http-equiv="Expires" content="<?php echo gmdate( 'D, d M Y H:i:s \G\M\T', time() ) ?>" />

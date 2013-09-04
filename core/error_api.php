@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: error_api.php,v 1.36 2004-10-24 14:12:47 vboctor Exp $
+	# $Id: error_api.php,v 1.46 2005-05-01 16:20:24 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### Error API ###
@@ -34,20 +34,28 @@
 	function error_handler( $p_type, $p_error, $p_file, $p_line, $p_context ) {
 		global $g_error_parameters, $g_error_handled, $g_error_proceed_url;
 		global $g_lang_overrides;
+		global $g_error_send_page_header;
 
 		# check if errors were disabled with @ somewhere in this call chain
 		if ( 0 == error_reporting() ) {
 			return;
 		}
 
+		$t_lang_pushed = false;
+
 		# flush any language overrides to return to user's natural default
-		lang_push( config_get ( 'default_language' ) );
-		
+		if ( function_exists( 'db_is_connected' ) ) {
+			if ( db_is_connected() ) {
+				lang_push( lang_get_default() );
+				$t_lang_pushed = true;
+			}
+		}
+
 		$t_short_file	= basename( $p_file );
 		$t_method_array = config_get( 'display_errors' );
 		if ( isset( $t_method_array[$p_type] ) ) {
 			$t_method = $t_method_array[$p_type];
-		}else{
+		} else {
 			$t_method		= 'none';
 		}
 
@@ -84,7 +92,7 @@
 
 		if ( 'halt' == $t_method ) {
 			$t_old_contents = ob_get_contents();
-			# ob_end_clean() still sems to call the output handler which
+			# ob_end_clean() still seems to call the output handler which
 			#  outputs the headers indicating compression. If we had
 			#  PHP > 4.2.0 we could use ob_clean() instead but as it is
 			#  we need to disable compression.
@@ -94,8 +102,11 @@
 				ob_end_clean();
 			}
 
-			html_page_top1();
-			html_page_top2();
+			# don't send the page header information if it has already been sent
+			if ( $g_error_send_page_header ) {
+				html_page_top1();
+				html_page_top2();
+			}
 
 			PRINT '<br /><div align="center"><table class="width50" cellspacing="1">';
 			PRINT "<tr><td class=\"form-title\">$t_error_type</td></tr>";
@@ -119,7 +130,7 @@
 			}
 			PRINT '</table></div>';
 
-			if ( $g_error_handled ) {
+			if ( $g_error_handled && !is_blank( $t_old_contents ) ) {
 				PRINT '<p>Previous non-fatal errors occurred.  Page contents follow.</p>';
 
 				PRINT '<div style="border: solid 1px black;padding: 4px">';
@@ -135,7 +146,10 @@
 			# do nothing
 		}
 
-		lang_pop();
+		if ( $t_lang_pushed ) {
+			lang_pop();
+		}
+
 		$g_error_parameters = array();
 		$g_error_handled = true;
 		$g_error_proceed_url = null;
@@ -211,7 +225,7 @@
 
 			foreach ( $t_stack as $t_frame ) {
 				PRINT '<tr ' . helper_alternate_class() . '>';
-				PRINT '<td>' . htmlentities( $t_frame['file'] ) . '</td><td>' . $t_frame['line'] . '</td><td>' . $t_frame['function'] . '</td>';
+				PRINT '<td>' . htmlentities( $t_frame['file'] ) . '</td><td>' . $t_frame['line'] . '</td><td>' . ( isset( $t_frame['function'] ) ? $t_frame['function'] : '???' ) . '</td>';
 
 				$t_args = array();
 				if ( isset( $t_frame['params'] ) ) {

@@ -6,18 +6,18 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: news_rss.php,v 1.2 2004-02-10 13:41:03 vboctor Exp $
+	# $Id: news_rss.php,v 1.8 2005-07-18 13:09:36 vboctor Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path . 'class.RSSBuilder.inc.php' );
 	require_once( $t_core_path . 'news_api.php' );
 	require_once( $t_core_path . 'project_api.php' );
-	require_once( dirname( __FILE__ ) . DIRECTORY_SEPARATOR . 'news_inc.php' );
+	require_once( $t_core_path . 'print_api.php' );
 
 	# only allow RSS generation of anonymous login is enabled.
 	# @@@ consider adding an explicit option to enable/disable RSS syndication.
@@ -34,13 +34,13 @@
 	# construct rss file
 
 	$encoding = lang_get( 'charset' );
-	$about = config_get( 'path' );
-	$title = config_get( 'window_title' );
-	$description = '';
-	$image_link = '';
+	$about = string_rss_links( config_get( 'path' ) );
+	$title = string_rss_links( config_get( 'window_title' ) . ' - ' . lang_get( 'news' ) );
+	$description = $title;
+	$image_link = config_get( 'path' ) . 'images/mantis_logo_button.gif';
 
 	# only rss 2.0
-	$category = project_get_name( $f_project_id );
+	$category = string_rss_links( project_get_name( $f_project_id ) );
 
 	# in minutes (only rss 2.0)
 	$cache = '60';
@@ -54,7 +54,7 @@
 	# person, an organization, or a service
 	$creator = '';
 
-	$date = (string) date('Y-m-d\TH:i:sO');
+	$date = (string) date( 'r' );
 	$language = lang_get( 'phpmailer_language' );
 	$rights = '';
 
@@ -64,8 +64,11 @@
 	# person, an organization, or a service
 	$contributor = (string) '';
 
-	$rssfile->addDCdata(	$publisher, $creator, $date, $language, $rights, $coverage, 
-				$contributor);
+	$rssfile->setPublisher( $publisher );
+	$rssfile->setCreator( $creator );
+	$rssfile->setRights( $rights );
+	$rssfile->setCoverage( $coverage );
+	$rssfile->setContributor( $contributor );
 
 	# hourly / daily / weekly / ...
 	$period = (string) 'daily';
@@ -74,6 +77,11 @@
 	$frequency = (int) 1;
 
 	$base = (string) date('Y-m-d\TH:i:sO');
+
+	# add missing : in the O part of the date.  PHP 5 supports a 'c' format which will output the format
+	# exactly as we want it.
+	# // 2002-10-02T10:00:00-0500 -> // 2002-10-02T10:00:00-05:00
+	$base = substr( $base, 0, 22 ) . ':' . substr( $base, -2 );
 
 	$rssfile->addSYdata( $period, $frequency, $base );
 
@@ -84,14 +92,14 @@
 		$row = $news_rows[$i];
 		extract( $row, EXTR_PREFIX_ALL, 'v' );
 
-		# skip news item if private, or 
+		# skip news item if private, or
 		# belongs to a private project (will only happen
 		if ( VS_PRIVATE == $v_view_state ) {
 			continue;
 		}
 
-		$v_headline 	= string_display_links( $v_headline );
-		$v_body 	= string_display_links( $v_body );
+		$v_headline 	= string_rss_links( $v_headline );
+		$v_body 	= string_rss_links( $v_body );
 		$v_date_posted 	= date( 'Y-m-d\TH:i:sO', $v_date_posted );
 
 		$about = $link = config_get( 'path' ) . "news_view_page.php?news_id=$v_id";
@@ -105,7 +113,16 @@
 		$date = $v_date_posted;
 
 		# author of item
-		$author = user_get_name( $v_poster_id );
+		$author = string_rss_links( user_get_name( $v_poster_id ) );
+		if ( access_has_global_level( config_get( 'show_user_email_threshold' ) ) ) {
+			$t_author_email = user_get_field( $v_poster_id, 'email' );
+			if ( is_blank( $t_author_email ) ) {
+				$t_author_email = $author . '@example.com';
+			}
+		} else {
+			$t_author_email = $author . '@example.com';
+		}
+		$author .= ' &lt;' . $t_author_email . '&gt;';
 
 		# $comments = 'http://www.example.com/sometext.php?somevariable=somevalue&comments=1';	# url to comment page rss 2.0 value
 		$comments = '';
@@ -113,7 +130,7 @@
 		# optional mod_im value for dispaying a different pic for every item
 		$image = '';
 
-		$rssfile->addItem(	$about, $title, $link, $description, $subject, $date,	
+		$rssfile->addItem(	$about, $title, $link, $description, $subject, $date,
 					$author, $comments, $image);
 	}
 

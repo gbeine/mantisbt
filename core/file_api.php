@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: file_api.php,v 1.60 2004-10-17 01:58:57 thraxisp Exp $
+	# $Id: file_api.php,v 1.70 2005-06-27 14:07:41 vboctor Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -31,17 +31,17 @@
 		$t_name = preg_split($t_doc_match, $p_filename);
 		if ( isset( $t_name[1] ) ) {
 			return $t_name[1];
-		}else{
+		} else {
 			$t_bug_match = '/^\d{7}-/';
 			$t_name = preg_split($t_bug_match, $p_filename);
 			if ( isset( $t_name[1] ) ) {
 				return $t_name[1];
-			}else{
+			} else {
 				return $p_filename;
 			}
 		}
 	}
-	
+
 	# --------------------
 	# Check the number of attachments a bug has (if any)
 	function file_bug_attachment_count( $p_bug_id ) {
@@ -133,30 +133,20 @@
 	# --------------------
 	# List the attachments belonging to the specified bug.  This is used from within
 	# bug_view_page.php and bug_view_advanced_page.php
-	function file_list_attachments ( $p_bug_id ) {
-		if ( !file_can_view_bug_attachments( $p_bug_id ) ) {
+	function file_list_attachments( $p_bug_id ) {
+		$t_attachment_rows = bug_get_attachments( $p_bug_id );
+
+		$num_files = sizeof( $t_attachment_rows );
+		if ( $num_files === 0 ) {
 			return;
 		}
-
-		$c_bug_id = db_prepare_int( $p_bug_id );
-
-		$t_bug_file_table = config_get( 'mantis_bug_file_table' );
-
-		$query = "SELECT id, title, diskfile, filename, filesize, date_added
-				FROM $t_bug_file_table
-				WHERE bug_id='$c_bug_id'
-				ORDER BY date_added";
-		$result = db_query( $query );
-
-		$t_bug = bug_get( $c_bug_id, false );
 
 		$t_can_download = file_can_download_bug_attachments( $p_bug_id );
 		$t_can_delete   = file_can_delete_bug_attachments( $p_bug_id );
 
-		$num_files = db_num_rows( $result );
 		$image_previewed = false;
 		for ( $i = 0 ; $i < $num_files ; $i++ ) {
-			$row = db_fetch_array( $result );
+			$row = $t_attachment_rows[$i];
 			extract( $row, EXTR_PREFIX_ALL, 'v' );
 
 			$t_file_display_name = file_get_display_name( $v_filename );
@@ -196,7 +186,7 @@
 			if ( $t_can_download &&
 				( $v_filesize <= config_get( 'preview_attachments_inline_max_size' ) ) &&
 				( $v_filesize != 0 ) &&
-				( in_array( strtolower( file_get_extension( $t_file_display_name ) ), array( 'png', 'jpg', 'gif', 'bmp' ), true ) ) ) {
+				( in_array( strtolower( file_get_extension( $t_file_display_name ) ), array( 'png', 'jpg', 'jpeg', 'gif', 'bmp' ), true ) ) ) {
 
 				PRINT "<br /><img src=\"file_download.php?file_id=$v_id&amp;type=bug\" />";
 				$image_previewed = true;
@@ -361,27 +351,27 @@
 	}
 	# --------------------
 	function file_delete( $p_file_id, $p_table = 'bug' ) {
-		$c_file_id			= db_prepare_int( $p_file_id );
 		$t_upload_method	= config_get( 'file_upload_method' );
-		$t_filename			= file_get_field( $p_file_id, 'filename' );
 
-		if ( ( DISK == $t_upload_method ) || ( FTP == $t_upload_method ) ) {
-			$t_diskfile = file_get_field( $p_file_id, 'diskfile' );
+		$c_file_id = db_prepare_int( $p_file_id );
+		$t_filename = file_get_field( $p_file_id, 'filename', $p_table );
+		$t_diskfile = file_get_field( $p_file_id, 'diskfile', $p_table );
 
+		if( ( DISK == $t_upload_method ) || ( FTP == $t_upload_method ) ) {
 			if ( FTP == $t_upload_method ) {
 				$ftp = file_ftp_connect();
-				file_ftp_delete ( $ftp, $t_diskfile );
+				file_ftp_delete( $ftp, $t_diskfile );
 				file_ftp_disconnect( $ftp );
 			}
 
 			if ( file_exists( $t_diskfile ) ) {
-				file_delete_local ( $t_diskfile );
+				file_delete_local( $t_diskfile );
 			}
 		}
 
-		if ( 'bug' == $p_table ) {
-			$t_bug_id			= file_get_field( $p_file_id, 'bug_id', 'bug' );
+		if( 'bug' == $p_table ) {
 			# log file deletion
+			$t_bug_id			= file_get_field( $p_file_id, 'bug_id', 'bug' );
 			history_log_event_special( $t_bug_id, FILE_DELETED, file_get_display_name ( $t_filename ) );
 		}
 
@@ -429,7 +419,7 @@
 	# --------------------
 	# clean file name by removing sensitive characters and replacing them with underscores
 	function file_clean_name( $p_filename ) {
-		return preg_replace( "/[\/\\ :&]/", "_", $p_filename); 
+		return preg_replace( "/[\/\\ :&]/", "_", $p_filename);
 	}
 
 	# --------------------
@@ -495,97 +485,124 @@
 	}
 
 	# --------------------
-	function file_add( $p_bug_id, $p_tmp_file, $p_file_name, $p_file_type='', $p_table = 'bug', $p_title = '', $p_desc = '' ) {
+	function file_add( $p_bug_id, $p_tmp_file, $p_file_name, $p_file_type='', $p_table = 'bug', $p_file_error = 0, $p_title = '', $p_desc = '' ) {
 
-		if ( !is_readable( $p_tmp_file ) && DISK != config_get( 'file_upload_method' ) ) {
+		if ( php_version_at_least( '4.2.0' ) ) {
+		    switch ( (int) $p_file_error ) {
+		        case UPLOAD_ERR_INI_SIZE:
+		        case UPLOAD_ERR_FORM_SIZE:
+                    trigger_error( ERROR_FILE_TOO_BIG, ERROR );
+                    break;
+		        case UPLOAD_ERR_PARTIAL:
+		        case UPLOAD_ERR_NO_FILE:
+                    trigger_error( ERROR_FILE_NO_UPLOAD_FAILURE, ERROR );
+                    break;
+                default:
+                    break;
+            }
+        }
+
+	    if ( ( '' == $p_tmp_file ) || ( '' == $p_file_name ) ) {
+		    trigger_error( ERROR_FILE_NO_UPLOAD_FAILURE, ERROR );
+        }
+		if ( !is_readable( $p_tmp_file ) ) {
 			trigger_error( ERROR_UPLOAD_FAILURE, ERROR );
 		}
 
 		if ( !file_type_check( $p_file_name ) ) {
 			trigger_error( ERROR_FILE_NOT_ALLOWED, ERROR );
-		}  
+		}
 
 		if ( !file_is_name_unique( $p_file_name, $p_bug_id ) ) {
 			trigger_error( ERROR_DUPLICATE_FILE, ERROR );
-		}  
+		}
 
-		if ( is_uploaded_file( $p_tmp_file ) ) {
-			if ( 'bug' == $p_table ) {
-				$t_project_id	= bug_get_field( $p_bug_id, 'project_id' );
-				$t_bug_id		= bug_format_id( $p_bug_id );
-			}else{
-				$t_project_id	= helper_get_current_project();
-				$t_bug_id		= 0;
+		if ( 'bug' == $p_table ) {
+			$t_project_id	= bug_get_field( $p_bug_id, 'project_id' );
+			$t_bug_id		= bug_format_id( $p_bug_id );
+		} else {
+			$t_project_id	= helper_get_current_project();
+			$t_bug_id		= 0;
+		}
+
+		# prepare variables for insertion
+		$c_bug_id		= db_prepare_int( $p_bug_id );
+		$c_project_id		= db_prepare_int( $t_project_id );
+		$c_file_type	= db_prepare_string( $p_file_type );
+		$c_title = db_prepare_string( $p_title );
+		$c_desc = db_prepare_string( $p_desc );
+
+		if( $t_project_id == ALL_PROJECTS ) {
+			$t_file_path = config_get( 'absolute_path_default_upload_folder' );
+		}
+		else {
+		    $t_file_path = project_get_field( $t_project_id, 'file_path' );
+			if( $t_file_path == '' ) {
+			    $t_file_path = config_get( 'absolute_path_default_upload_folder' );
 			}
+		}
+		$c_file_path = db_prepare_string( $t_file_path );
+		$c_new_file_name = db_prepare_string( $p_file_name );
 
-			# prepare variables for insertion
-			$c_bug_id		= db_prepare_int( $p_bug_id );
-			$c_project_id		= db_prepare_int( $t_project_id );
-			$c_file_type	= db_prepare_string( $p_file_type );
-			$c_title = db_prepare_string( $p_title );
-			$c_desc = db_prepare_string( $p_desc );
-			$t_file_path = project_get_field( $t_project_id, 'file_path' );
-			$c_file_path = db_prepare_string( $t_file_path );
-			$c_new_file_name = db_prepare_string( $p_file_name );
+		$t_file_hash = ( 'bug' == $p_table ) ? $t_bug_id : config_get( 'document_files_prefix' ) . '-' . $t_project_id;
+		$t_disk_file_name = $t_file_path . file_generate_unique_name( $t_file_hash . '-' . $p_file_name, $t_file_path );
+		$c_disk_file_name = db_prepare_string( $t_disk_file_name );
 
-			$t_file_hash = ( 'bug' == $p_table ) ? $t_bug_id : config_get( 'document_files_prefix' ) . '-' . $t_project_id;
-			$t_disk_file_name = $t_file_path . file_generate_unique_name( $t_file_hash . '-' . $p_file_name, $t_file_path );
-			$c_disk_file_name = db_prepare_string( $t_disk_file_name );
+		$t_file_size = filesize( $p_tmp_file );
+	    if ( 0 == $t_file_size ) {
+		    trigger_error( ERROR_FILE_NO_UPLOAD_FAILURE, ERROR );
+        }
+		$t_max_file_size = (int)min( ini_get_number( 'upload_max_filesize' ), ini_get_number( 'post_max_size' ), config_get( 'max_file_size' ) );
+        if ( $t_file_size > $t_max_file_size ) {
+            trigger_error( ERROR_FILE_TOO_BIG, ERROR );
+        }
+		$c_file_size = db_prepare_int( $t_file_size );
 
-			if ( is_readable ( $p_tmp_file ) ) { 
-				$t_file_size = filesize( $p_tmp_file );
-			} else {
-				//try to get filesize from 'post' data
-				//@@@ fixme - this should support >1 file ? 
-				global $HTTP_POST_FILES;
-				$t_file_size = $HTTP_POST_FILES['file']['size'];
-			}
-			$c_file_size = db_prepare_int( $t_file_size );
+		$t_method			= config_get( 'file_upload_method' );
 
-			$t_method			= config_get( 'file_upload_method' );
+		switch ( $t_method ) {
+			case FTP:
+			case DISK:
+				file_ensure_valid_upload_path( $t_file_path );
 
-			switch ( $t_method ) {
-				case FTP:
-				case DISK:
-					file_ensure_valid_upload_path( $t_file_path );
-
-					if ( !file_exists( $t_disk_file_name ) ) {
-						if ( FTP == $t_method ) {
-							$conn_id = file_ftp_connect();
-							file_ftp_put ( $conn_id, $t_disk_file_name, $p_tmp_file );
-							file_ftp_disconnect ( $conn_id );
-						}
-
-						move_uploaded_file( $p_tmp_file, $t_disk_file_name );
-						chmod( $t_disk_file_name, 0400 );
-
-						$c_content = '';
-					} else {
-						trigger_error( ERROR_FILE_DUPLICATE, ERROR );
+				if ( !file_exists( $t_disk_file_name ) ) {
+					if ( FTP == $t_method ) {
+						$conn_id = file_ftp_connect();
+						file_ftp_put ( $conn_id, $t_disk_file_name, $p_tmp_file );
+						file_ftp_disconnect ( $conn_id );
 					}
-					break;
-				case DATABASE:
-					$c_content = db_prepare_string( fread ( fopen( $p_tmp_file, 'rb' ), $t_file_size ) );
-					break;
-				default:
-					trigger_error( ERROR_GENERIC, ERROR );
-			}
 
-			$t_file_table	= config_get( 'mantis_' . $p_table . '_file_table' );
-			$c_id = ( 'bug' == $p_table ) ? $c_bug_id : $c_project_id;
-			$query = "INSERT INTO $t_file_table
+					if ( !move_uploaded_file( $p_tmp_file, $t_disk_file_name ) ) {
+					    trigger_error( FILE_MOVE_FAILED, ERROR );
+					}
+					chmod( $t_disk_file_name, 0400 );
+
+					$c_content = '';
+				} else {
+					trigger_error( ERROR_FILE_DUPLICATE, ERROR );
+				}
+				break;
+			case DATABASE:
+				$c_content = db_prepare_string( fread ( fopen( $p_tmp_file, 'rb' ), $t_file_size ) );
+				break;
+			default:
+				trigger_error( ERROR_GENERIC, ERROR );
+		}
+
+		$t_file_table	= config_get( 'mantis_' . $p_table . '_file_table' );
+		$c_id = ( 'bug' == $p_table ) ? $c_bug_id : $c_project_id;
+		$query = "INSERT INTO $t_file_table
 						(" . $p_table . "_id, title, description, diskfile, filename, folder, filesize, file_type, date_added, content)
 					  VALUES
 						($c_id, '$c_title', '$c_desc', '$c_disk_file_name', '$c_new_file_name', '$c_file_path', $c_file_size, '$c_file_type', " . db_now() .", '$c_content')";
-			db_query( $query );
+		db_query( $query );
 
-			if ( 'bug' == $p_table ) {
-				# updated the last_updated date
-				$result = bug_update_date( $p_bug_id );
+		if ( 'bug' == $p_table ) {
+			# updated the last_updated date
+			$result = bug_update_date( $p_bug_id );
 
-				# log new bug
-				history_log_event_special( $p_bug_id, FILE_ADDED, $p_file_name );
-			}
+			# log new bug
+			history_log_event_special( $p_bug_id, FILE_ADDED, $p_file_name );
 		}
 
 	}
@@ -612,15 +629,8 @@
 		if ( null === $p_user_id ) {
 			$p_user_id = auth_get_current_user_id();
 		}
-
-		$t_access = user_get_access_level( $p_user_id, $p_project_id );
-
-		if ( !file_is_uploading_enabled() ||
-			 ( $t_access < config_get( 'upload_project_file_threshold' ) ) ) {
-			return false;
-		}
-
-		return true;
+		return ( file_is_uploading_enabled() &&
+			 ( access_has_project_level( config_get( 'upload_project_file_threshold' ), $p_project_id, $p_user_id ) ) );
 	}
 
 	# --------------------
@@ -659,15 +669,8 @@
 			return true;
 		}
 
-		# Get the user's access level
-		$t_access = user_get_access_level( $p_user_id, $t_project_id );
-
 		# Check the access level against the config setting
-		if ( $t_access >= config_get( 'upload_bug_file_threshold' ) ) {
-			return true;
-		} else {
-			return false;
-		}
+        return access_has_project_level( config_get( 'upload_bug_file_threshold' ), $t_project_id, $p_user_id );
 	}
 
 	# --------------------

@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_report.php,v 1.39 2004-10-05 21:12:41 prichards Exp $
+	# $Id: bug_report.php,v 1.44 2005-07-19 23:26:21 vboctor Exp $
 	# --------------------------------------------------------
 
 	# This page stores the reported bug
@@ -41,31 +41,22 @@
 	$t_bug_data->steps_to_reproduce	= gpc_get_string( 'steps_to_reproduce', '' );
 	$t_bug_data->additional_information	= gpc_get_string( 'additional_info', '' );
 
-	$f_file					= gpc_get_file( 'file', null );
+	$f_file					= gpc_get_file( 'file', null ); #@@@ (thraxisp) Note that this always returns a structure
+															# size = 0, if no file
 	$f_report_stay			= gpc_get_bool( 'report_stay' );
 	$t_bug_data->project_id			= gpc_get_int( 'project_id' );
 
 	$t_bug_data->reporter_id		= auth_get_current_user_id();
-	$t_upload_method	= config_get( 'file_upload_method' );
 
 	$t_bug_data->summary			= trim( $t_bug_data->summary );
 
-	# If a file was uploaded, and we need to store it on disk, let's make
-	#  sure that the file path for this project exists
-	if ( is_uploaded_file( $f_file['tmp_name'] ) &&
-		  file_allow_bug_upload() &&
-		  ( DISK == $t_upload_method || FTP == $t_upload_method ) ) {
-		$t_file_path = project_get_field( $t_bug_data->project_id, 'file_path' );
-
-		if ( !file_exists( $t_file_path ) ) {
-			trigger_error( ERROR_NO_DIRECTORY, ERROR );
-		}
-	}
-
-
 	# if a profile was selected then let's use that information
 	if ( 0 != $t_bug_data->profile_id ) {
-		$row = user_get_profile_row( $t_bug_data->reporter_id, $t_bug_data->profile_id );
+		if ( profile_is_global( $t_bug_data->profile_id ) ) {
+			$row = user_get_profile_row( ALL_USERS, $t_bug_data->profile_id );
+		} else {
+			$row = user_get_profile_row( $t_bug_data->reporter_id, $t_bug_data->profile_id );
+		}
 
 		if ( is_blank( $t_bug_data->platform ) ) {
 			$t_bug_data->platform = $row['platform'];
@@ -98,12 +89,10 @@
 	$t_bug_id = bug_create( $t_bug_data );
 
 	# Handle the file upload
-	if ( is_uploaded_file( $f_file['tmp_name'] ) &&
-		  0 != $f_file['size'] &&
-		  file_allow_bug_upload() ) {
-		file_add( $t_bug_id, $f_file['tmp_name'], $f_file['name'], $f_file['type'] );
+	if ( !is_blank( $f_file['tmp_name'] ) && ( 0 < $f_file['size'] ) ) {
+    	$f_file_error =  ( isset( $f_file['error'] ) ) ? $f_file['error'] : 0;
+		file_add( $t_bug_id, $f_file['tmp_name'], $f_file['name'], $f_file['type'], 'bug', $f_file_error );
 	}
-
 
 	# Handle custom field submission
 	foreach( $t_related_custom_field_ids as $t_id ) {
@@ -159,7 +148,7 @@
 <div align="center">
 <?php
 	echo lang_get( 'operation_successful' ) . '<br />';
-	print_bracket_link( string_get_bug_view_url( $t_bug_id ), lang_get( 'view_submitted_bug_link' ) . " $t_bug_id", true );
+	print_bracket_link( string_get_bug_view_url( $t_bug_id ), lang_get( 'view_submitted_bug_link' ) . " $t_bug_id" );
 	print_bracket_link( 'view_all_bug_page.php', lang_get( 'view_bugs_link' ) );
 
 	if ( $f_report_stay ) {

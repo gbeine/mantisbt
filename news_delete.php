@@ -6,14 +6,14 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: news_delete.php,v 1.21 2004-04-21 14:15:25 vboctor Exp $
+	# $Id: news_delete.php,v 1.23 2005-05-16 19:20:32 marcelloscata Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'news_api.php' );
 ?>
 <?php
@@ -32,5 +32,17 @@
 	news_delete( $f_news_id );
 
 	$t_redirect_url = 'news_menu_page.php';
-	print_header_redirect( $t_redirect_url );
+	html_page_top1();
+	html_meta_redirect( $t_redirect_url );
+	html_page_top2();
 ?>
+
+<br />
+<div align="center">
+<?php
+	echo lang_get( 'operation_successful' ) . '<br />';
+	print_bracket_link( $t_redirect_url, lang_get( 'proceed' ) );
+?>
+</div>
+
+<?php html_page_bottom1( __FILE__ ) ?>

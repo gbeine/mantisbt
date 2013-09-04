@@ -6,20 +6,20 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: account_prefs_update.php,v 1.34 2004-08-08 11:39:00 jlatour Exp $
+	# $Id: account_prefs_update.php,v 1.36 2005-07-05 18:50:49 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	# Updates prefs then redirect to account_prefs_page.php3
 ?>
-<?php 
+<?php
 	require_once( 'core.php' );
-		
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'user_pref_api.php' );
 ?>
-<?php 
+<?php
 	auth_ensure_user_authenticated();
 ?>
 <?php
@@ -57,16 +57,16 @@
 	$t_prefs->email_on_bugnote	= gpc_get_bool( 'email_on_bugnote' );
 	$t_prefs->email_on_status	= gpc_get_bool( 'email_on_status' );
 	$t_prefs->email_on_priority	= gpc_get_bool( 'email_on_priority' );
-	$t_prefs->email_on_new_minimum_severity			= gpc_get_int( 'email_on_new_minimum_severity' );
-	$t_prefs->email_on_assigned_minimum_severity	= gpc_get_int( 'email_on_assigned_minimum_severity' );
-	$t_prefs->email_on_feedback_minimum_severity	= gpc_get_int( 'email_on_feedback_minimum_severity' );
-	$t_prefs->email_on_resolved_minimum_severity	= gpc_get_int( 'email_on_resolved_minimum_severity' );
-	$t_prefs->email_on_closed_minimum_severity		= gpc_get_int( 'email_on_closed_minimum_severity' );
-	$t_prefs->email_on_reopened_minimum_severity	= gpc_get_int( 'email_on_reopened_minimum_severity' );
-	$t_prefs->email_on_bugnote_minimum_severity		= gpc_get_int( 'email_on_bugnote_minimum_severity' );
-	$t_prefs->email_on_status_minimum_severity		= gpc_get_int( 'email_on_status_minimum_severity' );
-	$t_prefs->email_on_priority_minimum_severity	= gpc_get_int( 'email_on_priority_minimum_severity' );
-	
+	$t_prefs->email_on_new_min_severity			= gpc_get_int( 'email_on_new_min_severity' );
+	$t_prefs->email_on_assigned_min_severity	= gpc_get_int( 'email_on_assigned_min_severity' );
+	$t_prefs->email_on_feedback_min_severity	= gpc_get_int( 'email_on_feedback_min_severity' );
+	$t_prefs->email_on_resolved_min_severity	= gpc_get_int( 'email_on_resolved_min_severity' );
+	$t_prefs->email_on_closed_min_severity		= gpc_get_int( 'email_on_closed_min_severity' );
+	$t_prefs->email_on_reopened_min_severity	= gpc_get_int( 'email_on_reopened_min_severity' );
+	$t_prefs->email_on_bugnote_min_severity		= gpc_get_int( 'email_on_bugnote_min_severity' );
+	$t_prefs->email_on_status_min_severity		= gpc_get_int( 'email_on_status_min_severity' );
+	$t_prefs->email_on_priority_min_severity	= gpc_get_int( 'email_on_priority_min_severity' );
+
 	$t_prefs->bugnote_order = gpc_get_string( 'bugnote_order' );
 	$t_prefs->email_bugnote_limit = gpc_get_int( 'email_bugnote_limit' );
 

@@ -1,18 +1,20 @@
 <?php
 	# Mantis - a php based bugtracking system
 	# Copyright (C) 2000 - 2002  Kenzaburo Ito - kenito@300baud.org
-	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
+	# Copyright (C) 2002 - 2005  Mantis Team   - mantisbt-dev@lists.sourceforge.net
 	# This program is distributed under the terms and conditions of the GPL
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: print_api.php,v 1.106 2004-10-13 23:35:07 thraxisp Exp $
+	# $Id: print_api.php,v 1.143 2005-07-19 13:42:48 vboctor Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
 
 	require_once( $t_core_dir . 'current_user_api.php' );
 	require_once( $t_core_dir . 'string_api.php' );
+	require_once( $t_core_dir . 'prepare_api.php' );
+	require_once( $t_core_dir . 'profile_api.php' );
 
 	### Print API ###
 
@@ -31,12 +33,17 @@
 			return false;
 		}
 
-		header( 'Content-Type: text/html; charset=' . lang_get( 'charset' ) );
+		# don't send more headers if they have already been sent (guideweb)
+		if ( ! headers_sent() ) {
+			header( 'Content-Type: text/html; charset=' . lang_get( 'charset' ) );
 
-		if ( ON == $t_use_iis ) {
-			header( "Refresh: 0;url=$p_url" );
+			if ( ON == $t_use_iis ) {
+				header( "Refresh: 0;url=$p_url" );
+			} else {
+				header( "Location: $p_url" );
+			}
 		} else {
-			header( "Location: $p_url" );
+			return false;
 		}
 
 		if ( $p_die ) {
@@ -92,22 +99,7 @@
 	# --------------------
 	# prints the name of the user given the id.  also makes it an email link.
 	function print_user( $p_user_id ) {
-		# Catch a user_id of NO_USER (like when a handler hasn't been assigned)
-		if ( NO_USER == $p_user_id ) {
-			return;
-		}
-
-		$t_username = user_get_name( $p_user_id );
-		if ( user_exists( $p_user_id ) ) {
-			$t_email = user_get_email( $p_user_id );
-			if ( !is_blank( $t_email ) ) {
-				print_email_link( $t_email, $t_username );
-			} else {
-				PRINT $t_username;
-			}
-		} else {
-			PRINT $t_username;
-		}
+	    echo prepare_user_name( $p_user_id );
 	}
 	# --------------------
 	# same as print_user() but fills in the subject with the bug summary
@@ -119,11 +111,13 @@
 		}
 
 		$t_username = user_get_name( $p_user_id );
-		if ( user_exists( $p_user_id ) ) {
+		if ( user_exists( $p_user_id ) && user_get_field( $p_user_id, 'enabled' ) ) {
 			$t_email = user_get_field( $p_user_id, 'email' );
 			print_email_link_with_subject( $t_email, $t_username, $p_bug_id );
 		} else {
-			PRINT $t_username;
+			echo '<font STYLE="text-decoration: line-through">';
+			echo $t_username;
+			echo '</font>';
 		}
 	}
 	# --------------------
@@ -166,6 +160,47 @@
 		}
 	}
 	# --------------------
+	# This populates an option list with the appropriate users by access level
+	#
+	# @@@ from print_reporter_option_list
+	function print_user_option_list( $p_user_id, $p_project_id = null, $p_access = ANYBODY ) {
+		$t_users = array();
+
+		if ( null === $p_project_id ) {
+			$p_project_id = helper_get_current_project();
+		}
+
+		$t_users = project_get_all_user_rows( $p_project_id, $p_access ); # handles ALL_PROJECTS case
+
+		$t_display = array();
+		$t_sort = array();
+		$t_show_realname = ( ON == config_get( 'show_realname' ) );
+		$t_sort_by_last_name = ( ON == config_get( 'sort_by_last_name' ) );
+		foreach ( $t_users as $t_user ) {
+			$t_user_name = string_attribute( $t_user['username'] );
+			$t_sort_name = strtolower( $t_user_name );
+			if ( $t_show_realname && ( $t_user['realname'] <> "" ) ){
+				$t_user_name = string_attribute( $t_user['realname'] );
+				if ( $t_sort_by_last_name ) {
+					$t_sort_name_bits = split( ' ', strtolower( $t_user_name ), 2 );
+					$t_sort_name = ( isset( $t_sort_name_bits[1] ) ? $t_sort_name_bits[1] . ', ' : '' ) . $t_sort_name_bits[0];
+				} else {
+					$t_sort_name = strtolower( $t_user_name );
+				}
+			}
+			$t_display[] = $t_user_name;
+			$t_sort[] = $t_sort_name;
+		}
+		array_multisort( $t_sort, SORT_ASC, SORT_STRING, $t_users, $t_display );
+		for ($i = 0; $i < count( $t_sort ); $i++ ) {
+			$t_row = $t_users[$i];
+			PRINT '<option value="' . $t_row['id'] . '" ';
+			check_selected( $p_user_id, $t_row['id'] );
+			PRINT '>' . $t_display[$i] . '</option>';
+		}
+	}
+
+	# --------------------
 	# ugly functions  need to be refactored
 	# This populates the reporter option list with the appropriate users
 	#
@@ -176,66 +211,7 @@
 	#  who are listed as the reporter in any bug?  It would probably be a
 	#  faster query actually.
 	function print_reporter_option_list( $p_user_id, $p_project_id = null ) {
-		$t_users = array();
-
-		if ( null === $p_project_id ) {
-			$p_project_id = helper_get_current_project();
-		}
-
-		# if current user is a reporter, and limited reports set to ON.
-		if ( ( ON == config_get( 'limit_reporters' ) ) && ( current_user_get_access_level() <= config_get( 'report_bug_threshold' ) ) ) {
-			$t_user['id'] = auth_get_current_user_id();
-			$t_user['username'] = user_get_field( $t_user['id'], 'username' );
-			$t_user['realname'] = user_get_field( $t_user['id'], 'realname' );
-			$t_users[] = $t_user;
-		}
-		else
-		# checking if it's per project or all projects
-		if ( ALL_PROJECTS == $p_project_id ) {
-			$t_adm = ADMINISTRATOR;
-			$t_rep = config_get( 'report_bug_threshold' );
-			$t_pub = VS_PUBLIC;
-			$t_prv = VS_PRIVATE;
-
-			$t_user_table = config_get( 'mantis_user_table' );
-			$t_project_user_list_table = config_get( 'mantis_project_user_list_table' );
-			$t_project_table = config_get( 'mantis_project_table' );
-
-			$query = "SELECT DISTINCT u.id, u.username, u.realname
-					FROM 	$t_user_table u,
-							$t_project_user_list_table l,
-							$t_project_table p
-					WHERE	((p.view_state='$t_pub'
-							  AND u.access_level>='$t_rep') OR
-							 (l.access_level>='$t_rep' AND
-							  l.user_id=u.id) OR
-							 u.access_level>='$t_adm') AND
-							p.id=l.project_id
-					ORDER BY u.realname, u.username";
-			$result = db_query( $query );
-			$user_count = db_num_rows( $result );
-			for ( $i=0 ; $i < $user_count ; $i++ ) {
-				$row = db_fetch_array( $result );
-				$t_users[] = $row;
-			}
-		} else {
-			$t_users = project_get_all_user_rows( $p_project_id );
-		}
-
-		$t_display = array();
-		foreach ( $t_users as $t_user ) {
-			$t_user_name = string_attribute( $t_user['username'] );
-			if ( ( isset( $t_user['realname'] ) ) && ( $t_user['realname'] > "" ) && ( ON == config_get( 'show_realname' ) ) ){
-				$t_user_name = string_attribute( $t_user['realname'] );
-			}
-			$t_display[$t_user['id']] = $t_user_name;
-		}
-		natcasesort( $t_display );
-		foreach ($t_display as $t_id => $t_name ) {
-			PRINT '<option value="' . $t_id . '" ';
-			check_selected( $p_user_id, $t_id );
-			PRINT '>' . $t_name . '</option>';
-		}
+		print_user_option_list( $p_user_id, $p_project_id, config_get( 'report_bug_threshold' ) );
 	}
 
 	# --------------------
@@ -257,17 +233,17 @@
 	# --------------------
 	# Get current headlines and id  prefix with v_
 	function print_news_item_option_list() {
-		global	$g_mantis_news_table;
+		$t_mantis_news_table = config_get( 'mantis_news_table' );
 
 		$t_project_id = helper_get_current_project();
 
 		if ( access_has_project_level( ADMINISTRATOR ) ) {
 			$query = "SELECT id, headline, announcement, view_state
-				FROM $g_mantis_news_table
+				FROM $t_mantis_news_table
 				ORDER BY date_posted DESC";
 		} else {
 			$query = "SELECT id, headline, announcement, view_state
-				FROM $g_mantis_news_table
+				FROM $t_mantis_news_table
 				WHERE project_id='$t_project_id'
 				ORDER BY date_posted DESC";
 		}
@@ -293,12 +269,78 @@
 			PRINT "<option value=\"$v_id\">$v_headline$t_note_string</option>";
 		}
 	}
+	#---------------
+	# Constructs the string for one news entry given the row retrieved from the news table.
+	function print_news_entry( $p_headline, $p_body, $p_poster_id, $p_view_state, $p_announcement, $p_date_posted ) {
+		$t_headline = string_display_links( $p_headline );
+		$t_body = string_display_links( $p_body );
+		$t_date_posted = date( config_get( 'normal_date_format' ), $p_date_posted );
+
+		if ( VS_PRIVATE == $p_view_state ) {
+			$t_news_css = 'news-heading-private';
+		} else {
+			$t_news_css = 'news-heading-public';
+		}
+
+		$output = '<div align="center">';
+		$output .= '<table class="width75" cellspacing="0">';
+		$output .= '<tr>';
+		$output .= "<td class=\"$t_news_css\">";
+		$output .= "<span class=\"bold\">$t_headline</span> - ";
+		$output .= "<span class=\"italic-small\">$t_date_posted</span> - ";
+		echo $output;
+
+		# @@@ eventually we should replace print's with methods to construct the
+		#     strings.
+		print_user( $p_poster_id );
+		$output = '';
+
+		$output .= ' <span class="small">';
+		if ( 1 == $p_announcement ) {
+			$output .= '[' . lang_get( 'announcement' ) . ']';
+		}
+		if ( VS_PRIVATE == $p_view_state ) {
+			$output .= '[' . lang_get( 'private' ) . ']';
+		}
+
+		$output .= '</span>';
+		$output .= '</td>';
+		$output .= '</tr>';
+		$output .= '<tr>';
+		$output .= "<td class=\"news-body\">$t_body</td>";
+		$output .= '</tr>';
+		$output .= '</table>';
+		$output .= '</div>';
+
+		echo $output;
+	}
+
+	# --------------------
+	# print a news item given a row in the news table.
+        function print_news_entry_from_row( $p_news_row ) {
+		extract( $p_news_row, EXTR_PREFIX_ALL, 'v' );
+		print_news_entry( $v_headline, $v_body, $v_poster_id, $v_view_state, $v_announcement, $v_date_posted );
+	}
+
+	# --------------------
+	# print a news item
+	function print_news_string_by_news_id( $p_news_id ) {
+		$row = news_get_row( $p_news_id );
+
+		# only show VS_PRIVATE posts to configured threshold and above
+		if ( ( VS_PRIVATE == $row['view_state'] ) &&
+			 !access_has_project_level( config_get( 'private_news_threshold' ) ) ) {
+			continue;
+		}
+
+		print_news_entry_from_row( $row );
+	}
 	# --------------------
 	# Used for update pages
 	function print_field_option_list( $p_list, $p_item='' ) {
-		global $g_mantis_bug_table;
+		$t_mantis_bug_table = config_get( 'mantis_bug_table' );
 
-		$t_category_string = get_enum_string( $g_mantis_bug_table, $p_list );
+		$t_category_string = get_enum_string( $t_mantis_bug_table, $p_list );
 	    $t_arr = explode_enum_string( $t_category_string );
 		$entry_count = count( $t_arr );
 		for ($i=0;$i<$entry_count;$i++) {
@@ -310,65 +352,17 @@
 	}
 	# --------------------
 	function print_assign_to_option_list( $p_user_id='', $p_project_id = null, $p_threshold = null ) {
-		$t_users = array();
-
-		if ( null === $p_project_id ) {
-			$p_project_id = helper_get_current_project();
-		}
 
 		if ( null === $p_threshold ) {
 			$p_threshold = config_get( 'handle_bug_threshold' );
 		}
 
-		# checking if it's per project or all projects
-		if ( ALL_PROJECTS == $p_project_id ) {
-			$t_adm = ADMINISTRATOR;
-			$t_pub = VS_PUBLIC;
-			$t_prv = VS_PRIVATE;
-
-			$t_user_table = config_get( 'mantis_user_table' );
-			$t_project_user_list_table = config_get( 'mantis_project_user_list_table' );
-			$t_project_table = config_get( 'mantis_project_table' );
-
-			$query = "SELECT DISTINCT u.id, u.username, u.realname
-					FROM 	$t_user_table u,
-							$t_project_user_list_table l,
-							$t_project_table p
-					WHERE	((p.view_state='$t_pub' AND
-							  u.access_level>='$p_threshold') OR
-							 (l.access_level>='$p_threshold' AND
-							  l.user_id=u.id) OR
-							 u.access_level>='$t_adm') AND
-							p.id = l.project_id
-					ORDER BY u.realname, u.username";
-			$result = db_query( $query );
-			$user_count = db_num_rows( $result );
-			for ( $i=0 ; $i < $user_count ; $i++ ) {
-				$row = db_fetch_array( $result );
-				$t_users[$row['username']] = $row;
-			}
-		} else {
-			$t_users = project_get_all_user_rows( $p_project_id, $p_threshold );
-		}
-
-		$t_display = array();
-		foreach ( $t_users as $t_user ) {
-			$t_user_name = string_attribute( $t_user['username'] );
-			if ( ( isset( $t_user['realname'] ) ) && ( $t_user['realname'] > "" ) && ( ON == config_get( 'show_realname' ) ) ){
-				$t_user_name = string_attribute( $t_user['realname'] );
-			}
-			$t_display[$t_user['id']] = $t_user_name;
-		}
-		natcasesort( $t_display );
-		foreach ($t_display as $t_id => $t_name ) {
-			PRINT '<option value="' . $t_id . '" ';
-			check_selected( $p_user_id, $t_id );
-			PRINT '>' . $t_name . '</option>';
-		}
+		print_user_option_list( $p_user_id, $p_project_id, $p_threshold );
 	}
 	# --------------------
 	# List projects that the current user has access to
-	function print_project_option_list( $p_project_id = null, $p_include_all_projects = true ) {
+	function print_project_option_list( $p_project_id = null, $p_include_all_projects = true, $p_filter_project_id = null, $p_trace = false ) {
+		project_cache_all();
 		$t_project_ids = current_user_get_accessible_projects();
 		if ( $p_include_all_projects ) {
 			PRINT '<option value="' . ALL_PROJECTS . '"';
@@ -379,58 +373,88 @@
 		$t_project_count = count( $t_project_ids );
 		for ($i=0;$i<$t_project_count;$i++) {
 			$t_id = $t_project_ids[$i];
-			PRINT "<option value=\"$t_id\"";
-			check_selected( $p_project_id, $t_id );
-			PRINT '>' . string_display( project_get_field( $t_id, 'name' ) ) . '</option>' . "\n";
+			if ( $t_id != $p_filter_project_id ) {
+				PRINT "<option value=\"$t_id\"";
+				check_selected( $p_project_id, $t_id );
+				PRINT '>' . string_display( project_get_field( $t_id, 'name' ) ) . '</option>' . "\n";
+				print_subproject_option_list( $t_id, $p_project_id, $p_filter_project_id, $p_trace );
+			}
+		}
+	}
+	# --------------------
+	# List projects that the current user has access to
+	function print_subproject_option_list( $p_parent_id, $p_project_id = null, $p_filter_project_id = null, $p_trace = false, $p_parents = Array() ) {
+		array_push( $p_parents, $p_parent_id );
+		$t_project_ids = current_user_get_accessible_subprojects( $p_parent_id );
+		$t_project_count = count( $t_project_ids );
+		for ($i=0;$i<$t_project_count;$i++) {
+			$t_full_id = $t_id = $t_project_ids[$i];
+			if ( $t_id != $p_filter_project_id ) {
+				PRINT "<option value=\"";
+				if ( $p_trace ) {
+				  $t_full_id = join( $p_parents, ";") . ';' . $t_id;
+				}
+				PRINT "$t_full_id\"";
+				check_selected( $p_project_id, $t_full_id );
+				PRINT '>' . str_repeat( "&raquo; ", count( $p_parents ) ) . string_display( project_get_field( $t_id, 'name' ) ) . '</option>' . "\n";
+				print_subproject_option_list( $t_id, $p_project_id, $p_filter_project_id, $p_trace, $p_parents );
+			}
 		}
 	}
 	# --------------------
 	# prints the profiles given the user id
 	function print_profile_option_list( $p_user_id, $p_select_id='' ) {
-		global $g_mantis_user_profile_table, $g_mantis_user_pref_table;
-
-		$c_user_id = db_prepare_int( $p_user_id );
-
-		$query = "SELECT default_profile
-			FROM $g_mantis_user_pref_table
-			WHERE user_id='$c_user_id'";
-	    $result = db_query( $query );
-	    $v_default_profile = db_result( $result, 0, 0 );
-
-		# Get profiles
-		$query = "SELECT id, platform, os, os_build
-			FROM $g_mantis_user_profile_table
-			WHERE user_id='$c_user_id'
-			ORDER BY id";
-	    $result = db_query( $query );
-	    $profile_count = db_num_rows( $result );
+		if ( '' === $p_select_id ) {
+			$p_select_id = profile_get_default( $p_user_id );
+		}
+		$t_profiles = profile_get_all_for_user( $p_user_id );
 
 		PRINT '<option value=""></option>';
-		for ($i=0;$i<$profile_count;$i++) {
-			# prefix data with v_
-			$row = db_fetch_array( $result );
-			extract( $row, EXTR_PREFIX_ALL, 'v' );
+		foreach ( $t_profiles as $t_profile ) {
+			extract( $t_profile, EXTR_PREFIX_ALL, 'v' );
 			$v_platform	= string_display( $v_platform );
 			$v_os		= string_display( $v_os );
 			$v_os_build	= string_display( $v_os_build );
 
 			PRINT "<option value=\"$v_id\"";
-			check_selected( $v_id, $v_default_profile );
+			check_selected( $p_select_id, $v_id );
+			PRINT ">$v_platform $v_os $v_os_build</option>";
+		}
+	}
+	# --------------------
+	# prints the profiles used in a certain project
+	function print_profile_option_list_for_project( $p_project_id, $p_select_id='') {
+		if ( '' === $p_select_id ) {
+			$p_select_id = profile_get_default( $p_user_id );
+		}
+
+		$t_profiles = profile_get_all_for_project( $p_project_id );
+
+		PRINT '<option value=""></option>';
+		foreach ( $t_profiles as $t_profile ) {
+			extract( $t_profile, EXTR_PREFIX_ALL, 'v' );
+			$v_platform	= string_display( $v_platform );
+			$v_os		= string_display( $v_os );
+			$v_os_build	= string_display( $v_os_build );
+
+			PRINT "<option value=\"$v_id\"";
+			check_selected( $p_select_id, $v_id );
 			PRINT ">$v_platform $v_os $v_os_build</option>";
 		}
 	}
 	# --------------------
 	function print_news_project_option_list( $p_project_id ) {
-		global 	$g_mantis_project_table, $g_mantis_project_user_list_table;
+		$t_mantis_project_table = config_get( 'mantis_project_table' );
+		$t_mantis_project_user_list_table = config_get( 'mantis_project_user_list_table' );
 
 		if ( access_has_project_level( ADMINISTRATOR ) ) {
 			$query = "SELECT *
-					FROM $g_mantis_project_table
+					FROM $t_mantis_project_table
 					ORDER BY name";
 		} else {
 			$t_user_id = auth_get_current_user_id();
 			$query = "SELECT p.id, p.name
-					FROM $g_mantis_project_table p, $g_mantis_project_user_list_table m
+					FROM $t_mantis_project_table p, $t_mantis_project_user_list_table m
 					WHERE 	p.id=m.project_id AND
 							m.user_id='$t_user_id' AND
 							p.enabled='1'";
@@ -451,7 +475,7 @@
 	# We check in the project category table and in the bug table
 	# We put them all in one array and make sure the entries are unique
 	function print_category_option_list( $p_category='', $p_project_id = null ) {
-		global $g_mantis_bug_table, $g_mantis_project_category_table;
+		$t_mantis_project_category_table = config_get( 'mantis_project_category_table' );
 
 		if ( null === $p_project_id ) {
 			$c_project_id = helper_get_current_project();
@@ -459,11 +483,13 @@
 			$c_project_id = db_prepare_int( $p_project_id );
 		}
 
+		$t_project_where = helper_project_specific_where( $c_project_id );
+
 		# grab all categories in the project category table
 		$cat_arr = array();
-		$query = "SELECT DISTINCT( category ) as category
-				FROM $g_mantis_project_category_table
-				WHERE project_id='$c_project_id'
+		$query = "SELECT DISTINCT category
+				FROM $t_mantis_project_category_table
+				WHERE $t_project_where
 				ORDER BY category";
 		$result = db_query( $query );
 		$category_count = db_num_rows( $result );
@@ -485,19 +511,22 @@
 	# We check in the project category table and in the bug table
 	# We put them all in one array and make sure the entries are unique
 	function print_category_complete_option_list( $p_category='', $p_project_id = null ) {
-		global $g_mantis_bug_table, $g_mantis_project_category_table;
+		$t_mantis_project_category_table = config_get( 'mantis_project_category_table' );
+		$t_mantis_bug_table = config_get( 'mantis_bug_table' );
 
 		if ( null === $p_project_id ) {
-			$c_project_id = helper_get_current_project();
+			$t_project_id = helper_get_current_project();
 		} else {
-			$c_project_id = db_prepare_int( $p_project_id );
+			$t_project_id = $p_project_id;
 		}
+
+		$t_project_where = helper_project_specific_where( $t_project_id );
 
 		# grab all categories in the project category table
 		$cat_arr = array();
-		$query = "SELECT DISTINCT( category ) as category
-				FROM $g_mantis_project_category_table
-				WHERE project_id='$c_project_id'
+		$query = "SELECT DISTINCT category
+				FROM $t_mantis_project_category_table
+				WHERE $t_project_where
 				ORDER BY category";
 		$result = db_query( $query );
 		$category_count = db_num_rows( $result );
@@ -507,9 +536,9 @@
 		}
 
 		# grab all categories in the bug table
-		$query = "SELECT DISTINCT( category ) as category
-				FROM $g_mantis_bug_table
-				WHERE project_id='$c_project_id'
+		$query = "SELECT DISTINCT category
+				FROM $t_mantis_bug_table
+				WHERE $t_project_where
 				ORDER BY category";
 		$result = db_query( $query );
 		$category_count = db_num_rows( $result );
@@ -532,18 +561,26 @@
 	# $p_version = currently selected version.
 	# $p_project_id = project id, otherwise current project will be used.
 	# $p_released = null to get all, 1: only released, 0: only future versions
-	function print_version_option_list( $p_version='', $p_project_id = null, $p_released = null ) {
+	# $p_leading_black = allow selection of no version
+	# $p_with_subs = include subprojects
+	function print_version_option_list( $p_version='', $p_project_id = null, $p_released = null, $p_leading_blank = true, $p_with_subs=false ) {
 		if ( null === $p_project_id ) {
 			$c_project_id = helper_get_current_project();
 		} else {
 			$c_project_id = db_prepare_int( $p_project_id );
 		}
 
-		$versions = version_get_all_rows( $c_project_id, $p_released );
+		if ( $p_with_subs ) {
+			$versions = version_get_all_rows_with_subs( $c_project_id, $p_released );
+		} else {
+			$versions = version_get_all_rows( $c_project_id, $p_released );
+		}
 
-		echo '<option value=""></option>';
+		if ( $p_leading_blank ) {
+			echo '<option value=""></option>';
+		}
 		foreach( $versions as $version ) {
-			$t_version = string_attribute( $version['version'] );
+			$t_version = string_shorten( string_attribute( $version['version'] ) );
 			echo "<option value=\"$t_version\"";
 			check_selected( $p_version, $t_version );
 			echo ">$t_version</option>";
@@ -556,10 +593,12 @@
 
 		$t_project_id = helper_get_current_project();
 
+		$t_project_where = helper_project_specific_where( $t_project_id );
+
 		# Get the "found in" build list
 		$query = "SELECT DISTINCT build
 				FROM $t_bug_table
-				WHERE project_id='$t_project_id'
+				WHERE $t_project_where
 				ORDER BY build DESC";
 		$result = db_query( $query );
 		$option_count = db_num_rows( $result );
@@ -572,7 +611,7 @@
 		foreach( $t_overall_build_arr as $t_build ) {
 			PRINT "<option value=\"$t_build\"";
 			check_selected( $p_build, $t_build );
-			PRINT ">$t_build</option>";
+			PRINT ">" . string_shorten( $t_build ) . "</option>";
 		}
 	}
 
@@ -588,9 +627,10 @@
 		$t_enum_count = count( $t_arr );
 		for ( $i = 0; $i < $t_enum_count; $i++) {
 			$t_elem  = explode_enum_arr( $t_arr[$i] );
-			$t_elem2 = get_enum_element( $p_enum_name, $t_elem[0] );
-			echo "<option value=\"$t_elem[0]\"";
-			check_selected( $p_val, $t_elem[0] );
+			$t_key = trim( $t_elem[0] );
+			$t_elem2 = get_enum_element( $p_enum_name, $t_key );
+			echo "<option value=\"$t_key\"";
+			check_selected( $p_val, $t_key );
 			echo ">$t_elem2</option>";
 		} # end for
 	}
@@ -610,7 +650,7 @@
 			# workflow defined - find allowed states
 			if ( isset( $t_enum_workflow[$p_current_value] ) ) {
 				$t_arr  = explode_enum_string( $t_enum_workflow[$p_current_value] );
-			}else{
+			} else {
 				# workflow was not set for this status, this shouldn't happen
 				$t_arr  = explode_enum_string( $t_config_var_value );
 			}
@@ -642,6 +682,9 @@
 		$t_enum_list = get_status_option_list( $t_current_auth, $p_current_value, true, $p_allow_close );
 
 		if ( count( $t_enum_list ) > 0 ) {
+			# resort the list into ascending order
+			ksort( $t_enum_list );
+			reset( $t_enum_list );
 			echo '<select name="' . $p_select_label . '">';
 			foreach ( $t_enum_list as $key => $val ) {
 				echo "<option value=\"$key\"";
@@ -658,39 +701,27 @@
 	# prints the list of a project's users
 	# if no project is specified uses the current project
 	function print_project_user_option_list( $p_project_id=null ) {
- 		if ( null === $p_project_id ) {
-			$p_project_id = helper_get_current_project();
-		}
-
-		$t_rows = project_get_all_user_rows( $p_project_id );
-		foreach ( $t_rows as $t_row ) {
-			$t_user_id = $t_row['id'];
-			$t_username = string_attribute( $t_row['username'] );
-			if ( isset( $t_row['realname'] ) && $t_row['realname'] > "" ) {
-				$t_username = string_attribute( $t_row['realname'] );
-			}
-			PRINT "<option value=\"$t_user_id\">$t_username</option>";
-		}
+ 		print_user_option_list( 0, $p_project_id );
 	}
 	# --------------------
 	# prints the list of access levels exluding ADMINISTRATOR
 	# this is used when adding users to projects
 	function print_project_access_levels_option_list( $p_val ) {
-		global $g_mantis_project_table, $g_access_levels_enum_string;
+		$t_access_levels_enum_string = config_get( 'access_levels_enum_string' );
 
 		# Add [default access level] to add the user to a project
 		# with his default access level.
 		PRINT "<option value=\"" . DEFAULT_ACCESS_LEVEL . "\"";
 		PRINT ">[" . lang_get( 'default_access_level' ) . "]</option>";
 
-		$t_arr = explode_enum_string( $g_access_levels_enum_string );
+		$t_arr = explode_enum_string( $t_access_levels_enum_string );
 		$enum_count = count( $t_arr );
 		for ($i=0;$i<$enum_count;$i++) {
 			$t_elem = explode_enum_arr( $t_arr[$i] );
 
-			if ( $t_elem[0] >= ADMINISTRATOR ) {
-				continue;
-			}
+#			if ( $t_elem[0] >= ADMINISTRATOR ) {
+#				continue;
+#			}
 
 			$t_access_level = get_enum_element( 'access_levels', $t_elem[0] );
 			PRINT "<option value=\"$t_elem[0]\"";
@@ -700,9 +731,7 @@
 	}
 	# --------------------
 	function print_language_option_list( $p_language ) {
-		global $g_language_choices_arr;
-
-		$t_arr = $g_language_choices_arr;
+		$t_arr = config_get( 'language_choices_arr' );
 		$enum_count = count( $t_arr );
 		for ($i=0;$i<$enum_count;$i++) {
 			$t_language = string_attribute( $t_arr[$i] );
@@ -720,9 +749,37 @@
 							'CLOSE' => lang_get('actiongroup_menu_close'),
 							'DELETE' => lang_get('actiongroup_menu_delete'),
 							'RESOLVE' => lang_get('actiongroup_menu_resolve'),
+							'SET_STICKY' => lang_get( 'actiongroup_menu_set_sticky' ),
 							'UP_PRIOR' => lang_get('actiongroup_menu_update_priority'),
 							'UP_STATUS' => lang_get('actiongroup_menu_update_status'),
+							'UP_CATEGORY' => lang_get('actiongroup_menu_update_category'),
 							'VIEW_STATUS' => lang_get( 'actiongroup_menu_update_view_status' ) );
+
+		$t_project_id = helper_get_current_project();
+
+		if ( ALL_PROJECTS != $t_project_id ) {
+			$t_user_id = auth_get_current_user_id();
+			$t_custom_field_ids = custom_field_get_linked_ids( $t_project_id );
+
+			foreach( $t_custom_field_ids as $t_custom_field_id ) {
+				# if user has not access right to modify the field, then there is no
+				# point in showing it.
+				if ( !custom_field_has_write_access_to_project( $t_custom_field_id, $t_project_id, $t_user_id ) ) {
+					continue;
+				}
+
+				$t_custom_field_def = custom_field_get_definition( $t_custom_field_id );
+				$t_command_id = 'custom_field_' . $t_custom_field_id;
+				$t_command_caption = sprintf( lang_get( 'actiongroup_menu_update_field' ), lang_get_defaulted( $t_custom_field_def['name'] ) );
+				$commands[$t_command_id] = $t_command_caption;
+			}
+		}
+
+		$t_custom_group_actions = config_get( 'custom_group_actions' );
+
+		foreach( $t_custom_group_actions as $t_custom_group_action ) {
+			$commands[$t_custom_group_action['action']] = lang_get_defaulted( $t_custom_group_action['action'] );
+		}
 
 		while (list ($key,$val) = each ($commands)) {
 			PRINT "<option value=\"".$key."\">".$val."</option>";
@@ -731,50 +788,67 @@
 	# --------------------
 	# list of users that are NOT in the specified project and that are enabled
 	# if no project is specified use the current project
+	# also exclude any administrators
 	function print_project_user_list_option_list( $p_project_id=null ) {
-		global	$g_mantis_project_user_list_table, $g_mantis_user_table;
+		$t_mantis_project_user_list_table = config_get( 'mantis_project_user_list_table' );
+		$t_mantis_user_table = config_get( 'mantis_user_table' );
 
-		if ( null == $p_project_id ) {
+		if ( null === $p_project_id ) {
 			$p_project_id = helper_get_current_project();
 		}
 		$c_project_id = (int)$p_project_id;
 
 		$t_adm = ADMINISTRATOR;
 		$query = "SELECT DISTINCT u.id, u.username, u.realname
-				FROM $g_mantis_user_table u
-				LEFT JOIN $g_mantis_project_user_list_table p
+				FROM $t_mantis_user_table u
+				LEFT JOIN $t_mantis_project_user_list_table p
 				ON p.user_id=u.id AND p.project_id='$c_project_id'
 				WHERE u.access_level<$t_adm AND
 					u.enabled = 1 AND
-					p.user_id IS NULL AND
-					u.access_level<'$t_adm'
+					p.user_id IS NULL
 				ORDER BY u.realname, u.username";
 		$result = db_query( $query );
+		$t_display = array();
+		$t_sort = array();
+		$t_users = array();
+		$t_show_realname = ( ON == config_get( 'show_realname' ) );
+		$t_sort_by_last_name = ( ON == config_get( 'sort_by_last_name' ) );
 		$category_count = db_num_rows( $result );
 		for ($i=0;$i<$category_count;$i++) {
 			$row = db_fetch_array( $result );
-			$t_username = string_attribute(	$row['username'] );
-			if ( $row['realname'] > "" ) {
-				$t_username .= " (" . string_attribute( $row['realname'] ) . ")";
+			$t_users[] = $row['id'];
+			$t_user_name = string_attribute( $row['username'] );
+			$t_sort_name = $t_user_name;
+			if ( ( isset( $row['realname'] ) ) && ( $row['realname'] <> "" ) && $t_show_realname ) {
+				$t_user_name = string_attribute( $row['realname'] );
+				if ( $t_sort_by_last_name ) {
+					$t_sort_name_bits = split( ' ', strtolower( $t_user_name ), 2 );
+					$t_sort_name = ( isset( $t_sort_name_bits[1] ) ? $t_sort_name_bits[1] . ', ' : '' ) . $t_sort_name_bits[0];
+				} else {
+					$t_sort_name = strtolower( $t_user_name );
+				}
 			}
-			$t_user_id = $row['id'];
-			PRINT "<option value=\"$t_user_id\">$t_username</option>";
+			$t_display[] = $t_user_name;
+			$t_sort[] = $t_sort_name;
+		}
+		array_multisort( $t_sort, SORT_ASC, SORT_STRING, $t_users, $t_display );
+		for ($i = 0; $i < count( $t_sort ); $i++ ) {
+			PRINT '<option value="' . $t_users[$i] . '">' . $t_display[$i] . '</option>';
 		}
 	}
 	# --------------------
 	# list of projects that a user is NOT in
 	function print_project_user_list_option_list2( $p_user_id ) {
-		global	$g_mantis_project_user_list_table, $g_mantis_project_table;
+		$t_mantis_project_user_list_table = config_get( 'mantis_project_user_list_table' );
+		$t_mantis_project_table = config_get( 'mantis_project_table' );
 
 		$c_user_id = db_prepare_int( $p_user_id );
 
-		$t_prv = VS_PRIVATE;
 		$query = "SELECT DISTINCT p.id, p.name
-				FROM $g_mantis_project_table p
-				LEFT JOIN $g_mantis_project_user_list_table u
+				FROM $t_mantis_project_table p
+				LEFT JOIN $t_mantis_project_user_list_table u
 				ON p.id=u.project_id AND u.user_id='$c_user_id'
 				WHERE p.enabled=1 AND
-					p.view_state='$t_prv' AND
 					u.user_id IS NULL
 				ORDER BY p.name";
 		$result = db_query( $query );
@@ -787,15 +861,16 @@
 		}
 	}
 	# --------------------
-	# list of projects that a user is NOT in
+	# list of projects that a user is in
 	function print_project_user_list( $p_user_id, $p_include_remove_link = true ) {
-		global	$g_mantis_project_user_list_table, $g_mantis_project_table;
+		$t_mantis_project_user_list_table = config_get( 'mantis_project_user_list_table' );
+		$t_mantis_project_table = config_get( 'mantis_project_table' );
 
 		$c_user_id = db_prepare_int( $p_user_id );
 
 		$query = "SELECT DISTINCT p.id, p.name, p.view_state, u.access_level
-				FROM $g_mantis_project_table p
-				LEFT JOIN $g_mantis_project_user_list_table u
+				FROM $t_mantis_project_table p
+				LEFT JOIN $t_mantis_project_user_list_table u
 				ON p.id=u.project_id
 				WHERE p.enabled=1 AND
 					u.user_id='$c_user_id'
@@ -866,12 +941,12 @@
 	}
 	# --------------------
 	function print_project_category_string( $p_project_id ) {
-		global $g_mantis_project_category_table, $g_mantis_project_table;
+		$t_mantis_project_category_table = config_get( 'mantis_project_category_table' );
 
 		$c_project_id = db_prepare_int( $p_project_id );
 
 		$query = "SELECT category
-				FROM $g_mantis_project_category_table
+				FROM $t_mantis_project_category_table
 				WHERE project_id='$c_project_id'
 				ORDER BY category";
 		$result = db_query( $query );
@@ -893,12 +968,13 @@
 	}
 	# --------------------
 	function print_project_version_string( $p_project_id ) {
-		global $g_mantis_project_version_table, $g_mantis_project_table;
+		$t_mantis_project_version_table = config_get( 'mantis_project_version_table' );
+		$t_mantis_project_table = config_get( 'mantis_project_table' );
 
 		$c_project_id = db_prepare_int( $p_project_id );
 
 		$query = "SELECT version
-				FROM $g_mantis_project_version_table
+				FROM $t_mantis_project_version_table
 				WHERE project_id='$c_project_id'";
 		$result = db_query( $query );
 		$version_count = db_num_rows( $result );
@@ -922,34 +998,37 @@
 	# Link Printing API
 	###########################################################################
 	# --------------------
-	function print_view_bug_sort_link( $p_string, $p_sort_field, $p_sort, $p_dir ) {
-		if ( $p_sort_field == $p_sort ) {
-			# we toggle between ASC and DESC if the user clicks the same sort order
-			if ( 'ASC' == $p_dir ) {
-				$p_dir = 'DESC';
-			} else {
-				$p_dir = 'ASC';
+	# $p_columns_target: see COLUMNS_TARGET_* in constant_inc.php
+	function print_view_bug_sort_link( $p_string, $p_sort_field, $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+		if ( $p_columns_target == COLUMNS_TARGET_PRINT_PAGE ) {
+			if ( $p_sort_field == $p_sort ) {
+				# We toggle between ASC and DESC if the user clicks the same sort order
+				if ( 'ASC' == $p_dir ) {
+					$p_dir = 'DESC';
+				} else {
+					$p_dir = 'ASC';
+				}
+			} else {                        # Otherwise always start with ASCending
+				$t_dir = 'ASC';
 			}
-		} else {                        # Otherwise always start with ASCending
-			$t_dir = 'ASC';
-		}
 
-		PRINT '<a href="view_all_set.php?sort='.$p_sort_field.'&amp;dir='.$p_dir.'&amp;type=2">'.$p_string.'</a>';
-	}
-	# --------------------
-	function print_view_bug_sort_link2( $p_string, $p_sort_field, $p_sort, $p_dir ) {
-		if ( $p_sort_field == $p_sort ) {
-			# We toggle between ASC and DESC if the user clicks the same sort order
-			if ( 'ASC' == $p_dir ) {
-				$p_dir = 'DESC';
-			} else {
-				$p_dir = 'ASC';
+			echo '<a href="view_all_set.php?sort='.$p_sort_field.'&amp;dir='.$p_dir.'&amp;type=2&amp;print=1">'.$p_string.'</a>';
+		} else if ( $p_columns_target == COLUMNS_TARGET_VIEW_PAGE ) {
+			if ( $p_sort_field == $p_sort ) {
+				# we toggle between ASC and DESC if the user clicks the same sort order
+				if ( 'ASC' == $p_dir ) {
+					$p_dir = 'DESC';
+				} else {
+					$p_dir = 'ASC';
+				}
+			} else {                        # Otherwise always start with ASCending
+				$t_dir = 'ASC';
 			}
-		} else {                        # Otherwise always start with ASCending
-			$t_dir = 'ASC';
-		}
 
-		PRINT '<a href="view_all_set.php?sort='.$p_sort_field.'&amp;dir='.$p_dir.'&amp;type=2&amp;print=1">'.$p_string.'</a>';
+			echo '<a href="view_all_set.php?sort='.$p_sort_field.'&amp;dir='.$p_dir.'&amp;type=2">'.$p_string.'</a>';
+		} else {
+			echo $p_string;
+		}
 	}
 	# --------------------
 	function print_manage_user_sort_link( $p_page, $p_string, $p_field, $p_dir, $p_sort_by, $p_hide=0 ) {
@@ -978,6 +1057,13 @@
 		}
 
 		PRINT '<a href="' . $p_page . '?sort=' . $p_field . '&amp;dir=' . $t_dir . '">' . $p_string . '</a>';
+	}
+	# --------------------
+	# print a button which presents a standalone form.
+	# if the $p_link is blank then the text is printed but no link is created
+	# if $p_new_window is true, link will open in a new window, default false.
+	function print_button( $p_action_page, $p_label ) {
+		echo '<form method="POST" action="', $p_action_page, '"><input type="submit" class="button-small" value="', $p_label, '" /></form>';
 	}
 	# --------------------
 	# print the bracketed links used near the top
@@ -1087,17 +1173,7 @@
 	# --------------------
 	# return the mailto: href string link instead of printing it
 	function get_email_link( $p_email, $p_text ) {
-		if ( !access_has_project_level( config_get( 'show_user_email_threshold' ) ) ) {
-			return $p_text;
-		}
-
-		# If we apply string_url() to the whole mailto: link then the @
-		#  gets turned into a %40 and you can't right click in browsers to
-		#  do Copy Email Address.
-		$t_mailto	= string_attribute( "mailto:$p_email" );
-		$p_text		= string_display( $p_text );
-
-		return "<a href=\"$t_mailto\">$p_text</a>";
+	    return prepare_email_link( $p_email, $p_text );
 	}
 	# --------------------
 	# print a mailto: href link with subject
@@ -1170,7 +1246,8 @@
 	# --------------------
 	# prints the signup link
 	function print_signup_link() {
-		if( ON == config_get( 'allow_signup' ) ) {
+		if( ( ON == config_get( 'allow_signup' ) ) &&
+		    ( ON == config_get( 'enable_email_notification' ) ) ) {
 			print_bracket_link( 'signup_page.php', lang_get( 'signup_link' ) );
 		}
 	}
@@ -1184,7 +1261,8 @@
 	function print_lost_password_link() {
 		# lost password feature disabled or reset password via email disabled -> stop here!
 		if( ( ON == config_get( 'lost_password_feature' ) ) &&
-			( ON == config_get( 'send_reset_password' ) ) ) {
+			( ON == config_get( 'send_reset_password' ) ) &&
+			( ON == config_get( 'enable_email_notification' ) ) ) {
 			print_bracket_link( 'lost_pwd_page.php', lang_get( 'lost_password_link' ) );
 		}
 	}
@@ -1232,14 +1310,22 @@
 	# --------------------
 	# Get icon corresponding to the specified filename
 	function print_file_icon( $p_filename ) {
-		global $g_file_type_icons;
+		$t_file_type_icons = config_get( 'file_type_icons' );
 
 		$ext = strtolower( file_get_extension( $p_filename ) );
-		if ( is_blank( $ext ) || !isset( $g_file_type_icons[$ext] ) ) {
+		if ( is_blank( $ext ) || !isset( $t_file_type_icons[$ext] ) ) {
 			$ext = '?';
 		}
 
-		$t_name = $g_file_type_icons[$ext];
+		$t_name = $t_file_type_icons[$ext];
 		PRINT '<img src="' . config_get( 'path' ) . 'images/'. $t_name . '" width="16" height="16" border="0" />';
+	}
+
+
+	# --------------------
+	# Prints an RSS image that is hyperlinked to an RSS feed.
+	function print_rss( $p_feed_url, $p_title = '' ) {
+		$t_path = config_get( 'path' );
+		echo '<a href="', $p_feed_url, '" title="', $p_title, '"><img src="', $t_path, '/images/', 'rss.gif" border="0" alt="', $p_title, '" width="26" height="13" /></a>';
 	}
 ?>

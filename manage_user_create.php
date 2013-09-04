@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: manage_user_create.php,v 1.20 2004-08-20 13:18:09 thraxisp Exp $
+	# $Id: manage_user_create.php,v 1.22 2005-03-21 20:48:55 vwegert Exp $
 	# --------------------------------------------------------
 
 	require_once( 'core.php' );
@@ -43,7 +43,7 @@
 
 	$f_email = email_append_domain( $f_email );
 
-	if ( ON == config_get( 'send_reset_password' ) ) {
+	if ( ( ON == config_get( 'send_reset_password' ) ) && ( ON == config_get( 'enable_email_notification' ) ) ) {
 		# Check code will be sent to the user directly via email. Dummy password set to random
 		# Create random password
 		$t_seed = $f_email . $f_username;
@@ -58,9 +58,15 @@
 		}
 	}
 
-	user_create( $f_username, $f_password, $f_email, $f_access_level, $f_protected, $f_enabled, $f_realname );
+	$t_cookie = user_create( $f_username, $f_password, $f_email, $f_access_level, $f_protected, $f_enabled, $f_realname );
 
-	$t_redirect_url = 'manage_user_page.php';
+	if ( $t_cookie === false ) {
+		$t_redirect_url = 'manage_user_page.php';
+	} else {
+		# ok, we created the user, get the row again
+		$t_user_id = user_get_id_by_name( $f_username );
+		$t_redirect_url = 'manage_user_edit_page.php?user_id=' . $t_user_id;
+	}
 
 	html_page_top1();
 	html_meta_redirect( $t_redirect_url );

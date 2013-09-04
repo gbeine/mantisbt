@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: config_defaults_inc.php,v 1.220 2004-11-06 10:54:15 vboctor Exp $
+	# $Id: config_defaults_inc.php,v 1.278 2005-07-22 23:37:07 vboctor Exp $
 	# --------------------------------------------------------
 
 
@@ -32,7 +32,7 @@
 	# --- database variables ---------
 
 	# set these values to match your setup
-	
+
 	# hostname should be either a hostname or connection string to supply to adodb.
 	# For example, if you would like to connect to a mysql server on the local machine,
 	# set hostname to 'localhost', and db_type to 'mysql'.
@@ -90,7 +90,7 @@
 
 	# path to your images directory (for icons)
 	# requires trailing /
-	$g_icon_path			= $g_path.'images/';
+	$g_icon_path			= '%path%images/';
 
 	# absolute path to your installation.  Requires trailing / or \
 	# Symbolic links are allowed since release 0.17.3
@@ -98,7 +98,7 @@
 
 	# absolute patch to your core files. The default is usually OK,
 	# unless you moved the 'core' directory out of your webroot (recommended).
-	$g_core_path			= $g_absolute_path.'core' . DIRECTORY_SEPARATOR;
+	$g_core_path			= $g_absolute_path . 'core' . DIRECTORY_SEPARATOR;
 
 	# Used to link to manual for User Documentation.
 	$g_manual_url = 'http://manual.mantisbt.org/';
@@ -113,6 +113,20 @@
 	} else {
 		$g_use_iis = OFF;
 	}
+
+
+	#############################
+	# Configuration Settings
+	#############################
+
+	# The following list of variables should never be in the database.
+	# These patterns will be concatenated and used as a regular expression
+	# to bypass the database lookup and look here for appropriate global settings.
+	$g_global_settings = array(
+		'_table$', 'cookie', '^db_', 'hostname', 'database_name',
+		'_path$', 'use_iis', 'language', 'use_javascript', 'display_errors', 'stop_on_errors', 'login_method', '_file$',
+		'anonymous', 'content_expire', 'html_valid_tags', 'custom_headers'
+	);
 
 	#############################
 	# Signup and Lost Password
@@ -148,7 +162,7 @@
 	$g_signup_use_captcha	= ON;
 
 	# absolute path (with trailing slash!) to folder which contains your TrueType-Font files
-	# used to create the captcha image
+	# used to create the captcha image and since 0.19.3 for the Relationship Graphs
 	$g_system_font_folder	= 'c:/winnt/fonts/';
 
 	# font name used to create the captcha image. i.e. arial.ttf
@@ -181,7 +195,7 @@
 
 	# allow email notification
 	#  note that if this is disabled, sign-up and password reset messages will
-	#  not be sent.  
+	#  not be sent.
 	$g_enable_email_notification	= ON;
 
 	# The following two config options allow you to control who should get email
@@ -206,8 +220,8 @@
  	#         'deleted': a bug has been deleted
 	#         'updated': a bug has been updated
 	#         'bugnote': a bugnote has been added to a bug
-	#         'sponsor': sponsorship has changed on this bug 
-	#        'relation': a relationship has changed on this bug 
+	#         'sponsor': sponsorship has changed on this bug
+	#        'relation': a relationship has changed on this bug
 	#        '<status>': eg: 'resolved', 'closed', 'feedback', 'acknowledged', ...etc.
 	#                     this list corresponds to $g_status_enum_string
 
@@ -298,7 +312,7 @@
 	#############################
 
 	# --- version variables -----------
-	$g_mantis_version		= '0.19.1';
+	$g_mantis_version		= '1.0.0rc1';
 	$g_show_version			= ON;
 
 	################################
@@ -314,38 +328,41 @@
 
 	# list the choices that the users are allowed to choose
 	$g_language_choices_arr	= array(
-		'auto', 
-		'chinese_simplified', 
-		'chinese_traditional', 
+		'auto',
+		'chinese_simplified',
+		'chinese_traditional',
+		'chinese_traditional_utf8',
 		'croatian',
 		'czech',
-		'danish', 
-		'dutch', 
-		'english', 
-		'estonian', 
+		'danish',
+		'dutch',
+		'english',
+		'estonian',
 		'finnish',
-		'french', 
-		'german', 
+		'french',
+		'french_canadian',
+		'german',
 		'hungarian',
-		'italian', 
-		'japanese_euc', 
-		'japanese_sjis', 
-		'japanese_utf8', 
-		'korean', 
+		'icelandic',
+		'italian',
+		'japanese_euc',
+		'japanese_sjis',
+		'japanese_utf8',
+		'korean',
 		'latvian',
-		'lithuanian', 
-		'norwegian', 
-		'polish', 
-		'portuguese_brazil', 
+		'lithuanian',
+		'norwegian',
+		'polish',
+		'portuguese_brazil',
 		'portuguese_standard',
-		'romanian', 
-		'russian', 
-		'russian_koi8', 
-		'serbian', 
-		'slovak', 
-		'slovene', 
-		'spanish', 
-		'swedish', 
+		'romanian',
+		'russian',
+		'russian_koi8',
+		'serbian',
+		'slovak',
+		'slovene',
+		'spanish',
+		'swedish',
 		'turkish',
 		'ukrainian'
 	);
@@ -381,7 +398,7 @@
 		'tr' => 'turkish'
 	);
 
-	# Fallback for automatic language selection 
+	# Fallback for automatic language selection
 	$g_fallback_language	= 'english';
 
 	###############################
@@ -390,7 +407,7 @@
 
 	# --- sitewide variables ----------
 	$g_window_title			= 'Mantis';	 # browser window title
-	$g_page_title			= 'Mantis';	 # title at top of html page
+	$g_page_title			= '';	 # title at top of html page (empty by default, since there is a logo now)
 
 	# --- advanced views --------------
 	# BOTH, SIMPLE_ONLY, ADVANCED_ONLY
@@ -425,6 +442,15 @@
 	# --- see constant_inc.php. (*: BOTTOM or TOP)
 	$g_status_legend_position	= STATUS_LEGEND_POSITION_BOTTOM;
 
+	# --- Position of the filter box, can be: FILTER_POSITION_*
+	# FILTER_POSITION_TOP, FILTER_POSITION_BOTTOM, or 0 for none.
+	$g_filter_position	= FILTER_POSITION_TOP;
+
+	# --- Show a legend with percentage of bug status
+	# --- x% of all bugs are new, y% of all bugs are assigned and so on.
+	# --- If set to ON it will printed below the status colour legend.
+	$g_status_percentage_legend = OFF;
+
 	# --- show product versions in create, view and update screens
 	#  ON forces display even if none are defined
 	#  OFF suppresses display
@@ -434,6 +460,9 @@
 	# -- show users with their real name or not
 	$g_show_realname = OFF;
 	$g_differentiate_duplicates = OFF;  # leave off for now
+
+	# -- sorting for names in dropdown lists. If turned on, "Jane Doe" will be sorted with the "D"s
+	$g_sort_by_last_name = OFF;
 
 	############################
 	# Mantis JPGRAPH Addon
@@ -450,6 +479,19 @@
 
 	$g_use_jpgraph			= OFF;
 	$g_jpgraph_path			= '.' . DIRECTORY_SEPARATOR . 'jpgraph' . DIRECTORY_SEPARATOR;   # dont forget the ending slash!
+
+	# what truetype font will the graphs use. Allowed values are 'arial', 'verdana', 'courier', 'book', 'comic', 'times',
+	#  'georgia', 'trebuche', 'vera', 'veramono', or 'veraserif'. Refer to the jpgraph manual for details.
+	# NOTE: these fonts need to be installed in the TTF_DIR as specified to jpgraph
+	$g_graph_font = '';
+
+	# what width is used to scale the graphs.
+	$g_graph_window_width = 800;
+	# bar graph aspect ration (height / width)
+	$g_graph_bar_aspect = 0.9;
+
+	# how many graphs to put in each row in the advanced summary page
+	$g_graph_summary_graphs_per_row = 2;
 
 	############################
 	# Mantis Time Settings
@@ -511,11 +553,17 @@
 	# look in constant_inc.php for values
 	$g_default_new_account_access_level	= REPORTER;
 
-        # Default Bug View Status (VS_PUBLIC or VS_PRIVATE)
-        $g_default_bug_view_status = VS_PUBLIC;
+	# Default Bug View Status (VS_PUBLIC or VS_PRIVATE)
+	$g_default_bug_view_status = VS_PUBLIC;
 
-        # Default Bugnote View Status (VS_PUBLIC or VS_PRIVATE)
-        $g_default_bugnote_view_status = VS_PUBLIC;
+	# Default value for steps to reproduce field.
+	$g_default_bug_steps_to_reproduce = '';
+
+	# Default value for addition information field.
+	$g_default_bug_additional_info = '';
+
+	# Default Bugnote View Status (VS_PUBLIC or VS_PRIVATE)
+	$g_default_bugnote_view_status = VS_PUBLIC;
 
 	# Default bug severity when reporting a new bug
 	$g_default_bug_severity = MINOR;
@@ -528,6 +576,7 @@
 	$g_default_limit_view	= 50;
 	$g_default_show_changed	= 6;
 	$g_hide_status_default 	= CLOSED;
+	$g_show_sticky_issues   = 'on';
 
 	# make sure people aren't refreshing too often
 	$g_min_refresh_delay	= 10;    # in minutes
@@ -548,15 +597,15 @@
 	$g_default_email_on_bugnote		= ON;
 	$g_default_email_on_status		= 0; # @@@ Unused
 	$g_default_email_on_priority	= 0; # @@@ Unused
-	$g_default_email_on_new_minimum_severity		= 'any';
-	$g_default_email_on_assigned_minimum_severity	= 'any';
-	$g_default_email_on_feedback_minimum_severity	= 'any';
-	$g_default_email_on_resolved_minimum_severity	= 'any';
-	$g_default_email_on_closed_minimum_severity		= 'any';
-	$g_default_email_on_reopened_minimum_severity	= 'any';
-	$g_default_email_on_bugnote_minimum_severity	= 'any';
-	$g_default_email_on_status_minimum_severity		= 'any'; # @@@ Unused
-	$g_default_email_on_priority_minimum_severity	= 'any'; # @@@ Unused
+	$g_default_email_on_new_minimum_severity		= OFF; # 'any'
+	$g_default_email_on_assigned_minimum_severity	= OFF; # 'any'
+	$g_default_email_on_feedback_minimum_severity	= OFF; # 'any'
+	$g_default_email_on_resolved_minimum_severity	= OFF; # 'any'
+	$g_default_email_on_closed_minimum_severity		= OFF; # 'any'
+	$g_default_email_on_reopened_minimum_severity	= OFF; # 'any'
+	$g_default_email_on_bugnote_minimum_severity	= OFF; # 'any'
+	$g_default_email_on_status_minimum_severity		= OFF; # 'any'
+	$g_default_email_on_priority_minimum_severity	= OFF; # @@@ Unused
 	$g_default_email_bugnote_limit					= 0;
 	# default_language - is set to site language
 
@@ -682,6 +731,9 @@
 	# Eg: doc-001-myprojdoc.zip
 	$g_document_files_prefix = 'doc';
 
+	# absolute path to the default upload folder.  Requires trailing / or \
+	$g_absolute_path_default_upload_folder = '';
+
 	############################
 	# Mantis HTML Settings
 	############################
@@ -695,6 +747,15 @@
 	# do NOT include href or img tags here
 	# do NOT include tags that have parameters (eg. <font face="arial">)
 	$g_html_valid_tags		= 'p, li, ul, ol, br, pre, i, b, u';
+
+	# maximum length of the description in a dropdown menu (for search)
+	# set to 0 to disable truncations
+	$g_max_dropdown_length = 40;
+
+	# This flag conntrolls whether pre-formatted text (delimited by <pre> tags
+	#  is wrapped to a maximum linelength (defaults to 100 chars in strings_api)
+	#  If turned off, the display may be wide when viewing the text
+	$g_wrap_in_preformatted_text = ON;
 
 	##########################
 	# Mantis HR Settings
@@ -714,7 +775,7 @@
 	$g_ldap_server			= 'ldaps://ldap.example.com.au/';
 	$g_ldap_port			= '636';
 	$g_ldap_root_dn			= 'dc=example,dc=com,dc=au';
-	$g_ldap_organization		= '';    # e.g. '(organizationname=*Traffic)'
+	$g_ldap_organization	= '';    # e.g. '(organizationname=*Traffic)'
 	$g_ldap_uid_field		= 'uid'; # Use 'sAMAccountName' for Active Directory
 	$g_ldap_bind_dn			= '';
 	$g_ldap_bind_passwd		= '';
@@ -751,17 +812,17 @@
 	# the bug is in progress, rather than just put in a person's queue.
 	$g_auto_set_status_to_assigned	= ON;
 
-	# 'status_enum_workflow' defines the workflow, and reflects a simple 
+	# 'status_enum_workflow' defines the workflow, and reflects a simple
 	#  2-dimensional matrix. For each existing status, you define which
-	#  statuses you can go to from that status, e.g. from NEW_ you might list statuses 
+	#  statuses you can go to from that status, e.g. from NEW_ you might list statuses
 	#  '10:new,20:feedback,30:acknowledged' but not higher ones.
 	# The following example can be transferred to config_inc.php
-	# $g_status_enum_workflow[NEW_]='10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved';
-	# $g_status_enum_workflow[FEEDBACK] ='10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved';
-	# $g_status_enum_workflow[ACKNOWLEDGED] ='20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved';
-	# $g_status_enum_workflow[CONFIRMED] ='20:feedback,40:confirmed,50:assigned,80:resolved';
-	# $g_status_enum_workflow[ASSIGNED] ='20:feedback,50:assigned,80:resolved,90:closed';
-	# $g_status_enum_workflow[RESOLVED] ='50:assigned,80:resolved,90:closed';
+	# $g_status_enum_workflow[NEW_]='20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved';
+	# $g_status_enum_workflow[FEEDBACK] ='10:new,30:acknowledged,40:confirmed,50:assigned,80:resolved';
+	# $g_status_enum_workflow[ACKNOWLEDGED] ='20:feedback,40:confirmed,50:assigned,80:resolved';
+	# $g_status_enum_workflow[CONFIRMED] ='20:feedback,50:assigned,80:resolved';
+	# $g_status_enum_workflow[ASSIGNED] ='20:feedback,80:resolved,90:closed';
+	# $g_status_enum_workflow[RESOLVED] ='50:assigned,90:closed';
 	# $g_status_enum_workflow[CLOSED] ='50:assigned';
 	$g_status_enum_workflow = array();
 
@@ -828,11 +889,11 @@
 
 	# access level needed to be able to be listed in the assign to field.
 	$g_handle_bug_threshold			= DEVELOPER;
-	# access level needed to show the Assign To: button bug_view*_page or 
+	# access level needed to show the Assign To: button bug_view*_page or
 	#  the Assigned list in bug_update*_page.
 	#  This allows control over who can route bugs
 	# This defaults to $g_handle_bug_threshold
-	# $g_update_bug_assign_threshold			= DEVELOPER;
+	$g_update_bug_assign_threshold			= '%handle_bug_threshold%';
 
 	# access level needed to view private bugnotes
 	# Look in the constant_inc.php file if you want to set a different value
@@ -901,7 +962,7 @@
 	$g_delete_bug_threshold = DEVELOPER;
 
 	# Delete bugnote threshold
-	$g_delete_bugnote_threshold = $g_delete_bug_threshold;
+	$g_delete_bugnote_threshold = '%delete_bug_threshold%';
 
 	# Are users allowed to change and delete their own bugnotes?
 	$g_bugnote_allow_user_edit_delete = ON;
@@ -928,24 +989,30 @@
 	# Threshold needed to be able to create shared stored queries
 	$g_stored_query_create_shared_threshold = MANAGER;
 
-	# Threshold needed to update readonly bugs.  Readonly bugs are identified via 
+	# Threshold needed to update readonly bugs.  Readonly bugs are identified via
 	# $g_bug_readonly_status_threshold.
 	$g_update_readonly_bug_threshold = MANAGER;
+
+	# Threshold needed to be able to create and modify global profiles
+	$g_manage_global_profile_threshold = MANAGER;
 
 	# threshold for viewing changelog
 	$g_view_changelog_threshold = VIEWER;
 
 	# status change thresholds
 	$g_update_bug_status_threshold = DEVELOPER;
-	
+
 	# access level needed to re-open bugs
 	$g_reopen_bug_threshold			= DEVELOPER;
+
+	# access level needed to set a bug sticky
+	$g_set_bug_sticky_threshold			= MANAGER;
 
 	# this array sets the access thresholds needed to enter each status listed.
 	# if a status is not listed, it falls back to $g_update_bug_status_threshold
 	# example: $g_set_status_threshold = array( ACKNOWLEDGED => MANAGER, CONFIRMED => DEVELOPER, CLOSED => MANAGER );
 	$g_set_status_threshold = array();
-	
+
 	# --- login method ----------------
 	# CRYPT or PLAIN or MD5 or LDAP or BASIC_AUTH
 	# You can simply change this at will. Mantis will try to figure out how the passwords were encrypted.
@@ -984,9 +1051,9 @@
 	# insert the URL to your CVSweb or ViewCVS
 	# eg: http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/mantisbt/mantisbt/
 	$g_cvs_web				= '';
-	
+
 	# --- Source Control Integration ------
-	
+
 	# For open source projects it is expected that the notes be public, however,
 	# for non-open source it will probably be VS_PRIVATE.
 	$g_source_control_notes_view_status = VS_PRIVATE;
@@ -996,14 +1063,24 @@
 	# private ones (DEVELOPER access recommended).
 	$g_source_control_account           = '';
 
-	# If set to a status, then after a checkin, the issue status is set to the 
-	# specified status, otherwise if set to OFF, the issue status is not affected.
+	# If set to a status, then after a checkin with a log message that matches the regular expression in
+	# $g_source_control_fixed_regexp, the issue status is set to the specified status.  If set to OFF, the
+	# issue status is not changed.
 	$g_source_control_set_status_to     = OFF;
+
+	# Whenever an issue status is set to $g_source_control_set_status_to, the issue resolution is set to
+	# the value specified for this configuration.
+	$g_source_control_set_resolution_to = FIXED;
 
 	# Regular expression used to detect issue ids within checkin comments.
 	# see preg_match_all() documentation at
 	# http://www.php.net/manual/en/function.preg-match-all.php
 	$g_source_control_regexp = "/\bissue [#]{0,1}(\d+)\b/i";
+
+	# Regular expression used to detect the fact that an issue is fixed and extracts
+	# its issue id.  If there is a match to this regular expression, then the issue
+	# will be marked as resolved and the resolution will be set to fixed.
+	$g_source_control_fixed_regexp = "%source_control_regexp%";
 
 	# --- Bug Linking ---------------
 	# if a number follows this tag it will create a link to a bug.
@@ -1040,6 +1117,13 @@
 	# the manage users page takes a long time.
 	$g_default_manage_user_prefix = 'ALL';
 
+	# --- CSV Export ---------------
+	# Set the csv separator
+	$g_csv_separator = ',';
+
+	# threshold for users to view the system configurations
+	$g_view_configuration_threshold = DEVELOPER;
+
 	################################
 	# Mantis Look and Feel Variables
 	################################
@@ -1066,6 +1150,10 @@
 	#  The bugnote id will be padded with 0's up to the size given
 	$g_display_bugnote_padding	= 7;
 
+	# colours for configuration display
+	$g_colour_project = 'LightGreen';
+	$g_colour_global = 'LightBlue';
+
 	###############################
 	# Mantis Cookie Variables
 	###############################
@@ -1076,60 +1164,69 @@
 	$g_cookie_path			= '/';
 	$g_cookie_domain		= '';
 	# cookie version for view_all_page
-	$g_cookie_version		= 'v5';
+	$g_cookie_version		= 'v7';
 
 	# --- cookie prefix ---------------
 	# set this to a unique identifier.  No spaces.
 	$g_cookie_prefix		= 'MANTIS';
 
 	# --- cookie names ----------------
-	$g_string_cookie		= $g_cookie_prefix.'_STRING_COOKIE';
-	$g_project_cookie		= $g_cookie_prefix.'_PROJECT_COOKIE';
-	$g_view_all_cookie		= $g_cookie_prefix.'_VIEW_ALL_COOKIE';
-	$g_manage_cookie		= $g_cookie_prefix.'_MANAGE_COOKIE';
-	$g_logout_cookie		= $g_cookie_prefix.'_LOGOUT_COOKIE';
-	$g_bug_list_cookie		= $g_cookie_prefix.'_BUG_LIST_COOKIE';
+	$g_string_cookie		= '%cookie_prefix%_STRING_COOKIE';
+	$g_project_cookie		= '%cookie_prefix%_PROJECT_COOKIE';
+	$g_view_all_cookie		= '%cookie_prefix%_VIEW_ALL_COOKIE';
+	$g_manage_cookie		= '%cookie_prefix%_MANAGE_COOKIE';
+	$g_logout_cookie		= '%cookie_prefix%_LOGOUT_COOKIE';
+	$g_bug_list_cookie		= '%cookie_prefix%_BUG_LIST_COOKIE';
 
 	#######################################
 	# Mantis Filter Variables
 	#######################################
 	$g_filter_by_custom_fields = ON;
-	$g_filter_custom_fields_per_row = 7;
+	$g_filter_custom_fields_per_row = 8;
 	$g_view_filters = SIMPLE_DEFAULT;
+
+	# This switch enables the use of xmlhttprequest protocol to speed up the filter display.
+	# Rather than launching a separate page, the filters are updated in-line in the
+	# view_all_bugs_page.
+	$g_dhtml_filters = ON;
 
 	#######################################
 	# Mantis Database Table Variables
 	#######################################
 
 	# --- table prefix ----------------
-	# if you change this remember to reflect the changes in the database
 	$g_db_table_prefix		= 'mantis';
+	$g_db_table_suffix		= '_table';
 
 	# --- table names -----------------
-	$g_mantis_bug_file_table				= $g_db_table_prefix.'_bug_file_table';
-	$g_mantis_bug_history_table				= $g_db_table_prefix.'_bug_history_table';
-	$g_mantis_bug_monitor_table				= $g_db_table_prefix.'_bug_monitor_table';
-	$g_mantis_bug_relationship_table		= $g_db_table_prefix.'_bug_relationship_table';
-	$g_mantis_bug_table						= $g_db_table_prefix.'_bug_table';
-	$g_mantis_bug_text_table				= $g_db_table_prefix.'_bug_text_table';
-	$g_mantis_bugnote_table					= $g_db_table_prefix.'_bugnote_table';
-	$g_mantis_bugnote_text_table			= $g_db_table_prefix.'_bugnote_text_table';
-	$g_mantis_news_table					= $g_db_table_prefix.'_news_table';
-	$g_mantis_project_category_table		= $g_db_table_prefix.'_project_category_table';
-	$g_mantis_project_file_table			= $g_db_table_prefix.'_project_file_table';
-	$g_mantis_project_table					= $g_db_table_prefix.'_project_table';
-	$g_mantis_project_user_list_table		= $g_db_table_prefix.'_project_user_list_table';
-	$g_mantis_project_version_table			= $g_db_table_prefix.'_project_version_table';
-	$g_mantis_user_table					= $g_db_table_prefix.'_user_table';
-	$g_mantis_user_profile_table			= $g_db_table_prefix.'_user_profile_table';
-	$g_mantis_user_pref_table				= $g_db_table_prefix.'_user_pref_table';
-	$g_mantis_user_print_pref_table			= $g_db_table_prefix.'_user_print_pref_table';
-	$g_mantis_custom_field_project_table	= $g_db_table_prefix.'_custom_field_project_table';
-	$g_mantis_custom_field_table      	    = $g_db_table_prefix.'_custom_field_table';
-	$g_mantis_custom_field_string_table     = $g_db_table_prefix.'_custom_field_string_table';
-	$g_mantis_upgrade_table					= $g_db_table_prefix.'_upgrade_table';
-	$g_mantis_filters_table					= $g_db_table_prefix.'_filters_table';
-	$g_mantis_sponsorship_table				= $g_db_table_prefix.'_sponsorship_table';
+	$g_mantis_bug_file_table				= '%db_table_prefix%_bug_file%db_table_suffix%';
+	$g_mantis_bug_history_table				= '%db_table_prefix%_bug_history%db_table_suffix%';
+	$g_mantis_bug_monitor_table				= '%db_table_prefix%_bug_monitor%db_table_suffix%';
+	$g_mantis_bug_relationship_table		= '%db_table_prefix%_bug_relationship%db_table_suffix%';
+	$g_mantis_bug_table						= '%db_table_prefix%_bug%db_table_suffix%';
+	$g_mantis_bug_text_table				= '%db_table_prefix%_bug_text%db_table_suffix%';
+	$g_mantis_bugnote_table					= '%db_table_prefix%_bugnote%db_table_suffix%';
+	$g_mantis_bugnote_text_table			= '%db_table_prefix%_bugnote_text%db_table_suffix%';
+	$g_mantis_news_table					= '%db_table_prefix%_news%db_table_suffix%';
+	$g_mantis_project_category_table		= '%db_table_prefix%_project_category%db_table_suffix%';
+	$g_mantis_project_file_table			= '%db_table_prefix%_project_file%db_table_suffix%';
+	$g_mantis_project_table					= '%db_table_prefix%_project%db_table_suffix%';
+	$g_mantis_project_user_list_table		= '%db_table_prefix%_project_user_list%db_table_suffix%';
+	$g_mantis_project_version_table			= '%db_table_prefix%_project_version%db_table_suffix%';
+	$g_mantis_user_table					= '%db_table_prefix%_user%db_table_suffix%';
+	$g_mantis_user_profile_table			= '%db_table_prefix%_user_profile%db_table_suffix%';
+	$g_mantis_user_pref_table				= '%db_table_prefix%_user_pref%db_table_suffix%';
+	$g_mantis_user_print_pref_table			= '%db_table_prefix%_user_print_pref%db_table_suffix%';
+	$g_mantis_custom_field_project_table	= '%db_table_prefix%_custom_field_project%db_table_suffix%';
+	$g_mantis_custom_field_table      	    = '%db_table_prefix%_custom_field%db_table_suffix%';
+	$g_mantis_custom_field_string_table     = '%db_table_prefix%_custom_field_string%db_table_suffix%';
+	$g_mantis_upgrade_table					= '%db_table_prefix%_upgrade%db_table_suffix%';
+	$g_mantis_filters_table					= '%db_table_prefix%_filters%db_table_suffix%';
+	$g_mantis_sponsorship_table				= '%db_table_prefix%_sponsorship%db_table_suffix%';
+	$g_mantis_tokens_table					= '%db_table_prefix%_tokens%db_table_suffix%';
+	$g_mantis_project_hierarchy_table		= '%db_table_prefix%_project_hierarchy%db_table_suffix%';
+	$g_mantis_config_table					= '%db_table_prefix%_config%db_table_suffix%';
+	$g_mantis_database_table					= '%db_table_prefix%_database%db_table_suffix%';
 
 	###########################
 	# Mantis Enum Strings
@@ -1149,13 +1246,14 @@
 	$g_status_enum_string				= '10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved,90:closed';
 	  # @@@ for documentation, the values in this list are also used to define variables in the language files
 	  #  (e.g., $s_new_bug_title referenced in bug_change_status_page.php )
-	  # Embedded spaces are converted to underscores (e.g., "working on" references $s_working_on_bug_title). 
+	  # Embedded spaces are converted to underscores (e.g., "working on" references $s_working_on_bug_title).
 	  # they are also expected to be english names for the states
 	$g_resolution_enum_string			= '10:open,20:fixed,30:reopened,40:unable to duplicate,50:not fixable,60:duplicate,70:not a bug,80:suspended,90:wont fix';
 	$g_projection_enum_string			= '10:none,30:tweak,50:minor fix,70:major rework,90:redesign';
 	$g_eta_enum_string					= '10:none,20:< 1 day,30:2-3 days,40:< 1 week,50:< 1 month,60:> 1 month';
+	$g_sponsorship_enum_string          = '0:Unpaid,1:Requested,2:Paid';
 
-	$g_custom_field_type_enum_string    = '0:string,1:numeric,2:float,3:enum,4:email,5:checkbox,6:list,7:multiselection list';
+	$g_custom_field_type_enum_string    = '0:string,1:numeric,2:float,3:enum,4:email,5:checkbox,6:list,7:multiselection list,8:date';
 
 	#############################
 	# Mantis Javascript Variables
@@ -1189,19 +1287,20 @@
 	###########################
 
 	# Specify your top/bottom include file (logos, banners, etc)
-	$g_bottom_include_page			= $g_absolute_path.'';
-	$g_top_include_page				= $g_absolute_path.'';
+	# if a top file is supplied, the default Mantis logo at the top will be hidden
+	$g_bottom_include_page			= '%absolute_path%';
+	$g_top_include_page				= '%absolute_path%';
 	# CSS file
-	$g_css_include_file				= $g_path.'css/default.css';
+	$g_css_include_file				= '%path%css/default.css';
 	# meta tags
-	$g_meta_include_file			= $g_absolute_path.'meta_inc.php';
+	$g_meta_include_file			= '%absolute_path%meta_inc.php';
 
 	###########################
 	# Redirections
 	###########################
 
 	# Specify where the user should be sent after logging out.
-	$g_logout_redirect_page			= $g_path.'login_page.php';
+	$g_logout_redirect_page			= '%path%login_page.php';
 
 	###########################
 	# Headers
@@ -1218,6 +1317,19 @@
 
 	$g_custom_headers				= array();
 	#$g_custom_headers[]			= 'P3P: CP="CUR ADM"';
+
+	# Browser Caching Control
+	# By default, we try to prevent the browser from caching anything. These two settings
+	# will defeat this for some cases.
+	#
+	# Browser Page caching - This will allow the browser to cache all pages. The upside will
+	#  be better performance, but there may be cases where obsolete information is displayed.
+	#  Note that this will be bypassed (and caching is allowed) for the bug report pages.
+	# $g_allow_browser_cache = ON;
+	#
+	# File caching - This will allow the browser to cache downloaded files. Without this set,
+	# there may be issues with IE receiving files, and launching support programs.
+	# $g_allow_file_cache = ON;
 
 	###########################
 	# Debugging
@@ -1254,7 +1366,7 @@
 	#  'halt' - stop and display traceback
 	#  'inline' - display 1 line error and continue
 	#  'none' - no error displayed
-	# obsoletes $g_show_notices (E_NOTICE and E_USER_NOTICE) and 
+	# obsoletes $g_show_notices (E_NOTICE and E_USER_NOTICE) and
 	#   $g_show_warnings (E_WARNING and E_USER_WARNING)
 	# A developer might set this in config_inc.php as:
 	#	$g_display_errors = array(
@@ -1266,10 +1378,10 @@
 	#	);
 
 	$g_display_errors = array(
-		E_WARNING => 'none',
+		E_WARNING => 'inline',
 		E_NOTICE => 'none',
 		E_USER_ERROR => 'halt',
-		E_USER_WARNING => 'none',
+		E_USER_WARNING => 'inline',
 		E_USER_NOTICE => 'none'
 	);
 
@@ -1292,6 +1404,16 @@
 	#  allowing you to see the errors.
 	# Only turn this option on for debugging
 	$g_stop_on_errors		= OFF;
+
+	# --- system logging ---
+	# This controls the logging of information to a separate file for debug or audit
+	# $g_log_level controls what information is logged
+	#  it is formed by ORing constants like LOG_EMAIL | LOG_PROJECT
+	#  see constant_inc for details on the log channels
+	# $g_log_destination specifies where the data goes
+	#   right now, only "file:<file path>" is supported
+	$g_log_level = 0;
+	$g_log_destination = '';
 
 	##################
 	# Custom Fields
@@ -1397,7 +1519,7 @@
 		'recent_mod'	=> '5',
 		'monitored'	=> '6'
 	);
-	
+
 	# Toggle whether 'My View' boxes are shown in a fixed position (i.e. adjacent boxes start at the same vertical position)
 	$g_my_view_boxes_fixed_position = ON;
 
@@ -1433,8 +1555,7 @@
 	$g_relationship_graph_fontname		= 'Arial';
 	$g_relationship_graph_fontsize		= 8;
 
-	# Local path where the above font is found on your system.
-	# 
+	# Local path where the above font is found on your system for Relationship Graphs
 	# You shouldn't care about this on Windows since there is only one system
 	# folder where fonts are installed and Graphviz already knows where it
 	# is. On Linux and other unices, the default font search path is defined
@@ -1447,7 +1568,8 @@
 	# the DOTFONTPATH environment variable in your webserver startup script
 	# or (2) use this config option conveniently available here. If you need
 	# to list more than one directory, use colons to separate them.
-	$g_relationship_graph_fontpath		= '';
+
+	# Since 0.19.3 we use the $g_system_font_folder variable to define the font folder
 
 	# Default dependency orientation. If you have issues with lots of childs
 	# or parents, leave as 'horizontal', otherwise, if you have lots of
@@ -1471,19 +1593,53 @@
 	$g_dot_tool							= '/usr/bin/dot';
 	$g_neato_tool						= '/usr/bin/neato';
 
+	# Number of years in the future that custom date fields will display in
+	# drop down boxes.
+	$g_forward_year_count 				= 4 ;
+
+	# Custom Group Actions
+	# Sample:
+	#
+	# array(
+	#	array(	'action' => 'my_custom_action',
+	#			'form_page' => 'my_custom_action_page.php',
+	#			'action_page' => 'my_custom_action.php'
+	#   )
+	#	array(	'action' => 'my_custom_action2',
+	#			'form_page' => 'my_custom_action2_page.php',
+	#			'action_page' => 'my_custom_action2.php'
+	#   )
+	# );
+	$g_custom_group_actions = array();
+
+
 	######################
 	# Mail Reporting
 	######################
 
 	# --- mail reporting settings -----
 	# This tells Mantis to report all the Mail with only one account
-	$g_mail_use_reporter    = ON;
+	$g_mail_use_reporter	= ON;
 
 	# The account's name for mail reporting
 	# Also used for fallback if a user is not found in database
-	$g_mail_reporter        = 'Mail';
+	$g_mail_reporter	= 'Mail';
 
 	# Signup new users automatically (possible security risk!)
 	# Default is OFF, ignored if mail_use_reporter is ON
 	$g_mail_auto_signup	= OFF;
+
+	# Write complete mail into the "Additional Information"
+	$g_mail_additional	= OFF;
+
+	# Write sender of the message into the bug report
+	$g_mail_save_from	= OFF;
+
+	# Parse MIME mails (may require a lot of memory)
+	$g_mail_parse_mime	= OFF;
+
+	# How many mails should be fetched at the same time
+	# If big mails with attachments should be received, specify only one
+	$g_mail_fetch_max	= 1;
+
 ?>

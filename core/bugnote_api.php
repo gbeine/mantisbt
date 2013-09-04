@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bugnote_api.php,v 1.29 2004-10-05 17:20:33 thraxisp Exp $
+	# $Id: bugnote_api.php,v 1.37 2005-06-26 02:05:47 vboctor Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -22,12 +22,15 @@
 	# Bugnote Data Structure Definition
 	#===================================
 	class BugnoteData {
+		var $id;
+		var $bug_id;
+		var $reporter_id;
 		var $note;
 		var $view_state;
-		var $type;
-		var $attr;
-		var $reporter_name;
+		var $date_submitted;
 		var $last_modified;
+		var $note_type;
+		var $note_attr;
 	}
 
 	#===================================
@@ -83,7 +86,7 @@
 	# Add a bugnote to a bug
 	#
 	# return the ID of the new bugnote
-	function bugnote_add ( $p_bug_id, $p_bugnote_text, $p_private = false, $p_type = 0, $p_attr = '' ) {
+	function bugnote_add ( $p_bug_id, $p_bugnote_text, $p_private = false, $p_type = 0, $p_attr = '', $p_user_id = null ) {
 		$c_bug_id            	= db_prepare_int( $p_bug_id );
 		$c_bugnote_text      	= db_prepare_string( $p_bugnote_text );
 		$c_private           	= db_prepare_bool( $p_private );
@@ -103,21 +106,26 @@
 		# retrieve bugnote text id number
 		$t_bugnote_text_id = db_insert_id( $t_bugnote_text_table );
 
+		# get user information
+		if ( $p_user_id === null ) {
+			$c_user_id = auth_get_current_user_id();
+		} else {
+			$c_user_id = db_prepare_int( $p_user_id );
+		}
+
 		# Check for private bugnotes.
-		if ( $p_private && access_has_project_level( config_get( 'private_bugnote_threshold' ) ) ) {
+		# @@@ VB: Should we allow users to report private bugnotes, and possibly see only their own private ones
+		if ( $p_private && access_has_bug_level( config_get( 'private_bugnote_threshold' ), $p_bug_id, $c_user_id ) ) {
 			$t_view_state = VS_PRIVATE;
 		} else {
 			$t_view_state = VS_PUBLIC;
 		}
 
-		# get user information
-		$t_user_id = auth_get_current_user_id();
-
 		# insert bugnote info
 		$query = "INSERT INTO $t_bugnote_table
 		          		(bug_id, reporter_id, bugnote_text_id, view_state, date_submitted, last_modified, note_type, note_attr )
 		          	 VALUES
-		          		('$c_bug_id', '$t_user_id','$t_bugnote_text_id', '$t_view_state', " . db_now() . "," . db_now() . ", '$c_type', '$c_attr')";
+		          		('$c_bug_id', '$c_user_id','$t_bugnote_text_id', '$t_view_state', " . db_now() . "," . db_now() . ", '$c_type', '$c_attr')";
 		db_query( $query );
 
 		# get bugnote id
@@ -225,6 +233,21 @@
 	}
 
 	# --------------------
+	# Get latest bugnote id
+	function bugnote_get_latest_id( $p_bug_id ) {
+		$c_bug_id   	= db_prepare_int( $p_bug_id );
+		$t_bugnote_table 	= config_get( 'mantis_bugnote_table' );
+
+		$query = "SELECT id
+		          	FROM $t_bugnote_table
+		          	WHERE bug_id='$c_bug_id'
+		          	ORDER by last_modified DESC";
+		$result = db_query( $query, 1 );
+
+		return db_result( $result );
+	}
+
+	# --------------------
 	# Build the bugnotes array for the given bug_id filtered by specified $p_user_access_level.
 	# Bugnotes are sorted by date_submitted according to 'bugnote_order' configuration setting.
 	#
@@ -234,11 +257,7 @@
 		$t_all_bugnotes	            	= bugnote_get_all_bugnotes( $p_bug_id, $p_user_bugnote_order, $p_user_bugnote_limit );
 		$t_private_bugnote_threshold	= config_get( 'private_bugnote_threshold' );
 
-		if ( $p_user_access_level >= $t_private_bugnote_threshold ) {
-			$t_private_bugnote_visible = true;
-		} else {
-			$t_private_bugnote_visible = false ;
-		}
+		$t_private_bugnote_visible = access_compare_level( $p_user_access_level, config_get( 'private_bugnote_threshold' ) );
 
 		$t_bugnotes = array();
 		foreach ( $t_all_bugnotes as $t_note_index => $t_bugnote ) {
@@ -263,11 +282,12 @@
 			$g_cache_bugnotes = array();
 		}
 
-		if ( !isset( $g_cache_bugnotes[$p_bug_id] ) )  {
+		# the cache should be aware of the sorting order
+		if ( !isset( $g_cache_bugnotes[$p_bug_id][$p_user_bugnote_order] ) )  {
 			$c_bug_id            	= db_prepare_int( $p_bug_id );
 			$t_bugnote_table     	= config_get( 'mantis_bugnote_table' );
 			$t_bugnote_text_table	= config_get( 'mantis_bugnote_text_table' );
-			
+
 			if ( 0 == $p_user_bugnote_limit ) {
 				## Show all bugnotes
 				$t_bugnote_limit = -1;
@@ -277,20 +297,22 @@
 				if ( 'ASC' == $p_user_bugnote_order ) {
 					$result = db_query( "SELECT COUNT(*) AS row_count FROM $t_bugnote_table WHERE bug_id = '$c_bug_id'" );
 					$row    = db_fetch_array( $result );
-					
-					$t_bugnote_offset = $row['row_count'] - $p_user_bugnote_limit;				
+
+					$t_bugnote_offset = $row['row_count'] - $p_user_bugnote_limit;
 				} else {
 					$t_bugnote_offset = -1;
 				}
-					
+
 				$t_bugnote_limit = $p_user_bugnote_limit;
 			}
 
+			# sort by bugnote id which should be more accurate than submit date, since two bugnotes
+			# may be submitted at the same time if submitted using a script (eg: MantisConnect).
 			$query = "SELECT b.*, t.note
-			          	FROM      $t_bugnote_table AS b
-			          	LEFT JOIN $t_bugnote_text_table AS t ON b.bugnote_text_id = t.id
+			          	FROM      $t_bugnote_table b
+			          	LEFT JOIN $t_bugnote_text_table t ON b.bugnote_text_id = t.id
 			          	WHERE b.bug_id = '$c_bug_id'
-			          	ORDER BY b.date_submitted $p_user_bugnote_order";
+			          	ORDER BY b.id $p_user_bugnote_order";
 			$t_bugnotes = array();
 
 			# BUILD bugnotes array
@@ -301,19 +323,22 @@
 
 				$t_bugnote = new BugnoteData;
 
+				$t_bugnote->id            = $row['id'];
+				$t_bugnote->bug_id        = $row['bug_id'];
 				$t_bugnote->note          = $row['note'];
 				$t_bugnote->view_state    = $row['view_state'];
-				$t_bugnote->reporter_name = user_get_name( $row['reporter_id'] );
+				$t_bugnote->reporter_id   = $row['reporter_id'];
+				$t_bugnote->date_submitted = db_unixtimestamp( $row['date_submitted'] );
 				$t_bugnote->last_modified = db_unixtimestamp( $row['last_modified'] );
-				$t_bugnote->type          = $row['note_type'];
-				$t_bugnote->attr          = $row['note_attr'];
+				$t_bugnote->note_type     = $row['note_type'];
+				$t_bugnote->note_attr     = $row['note_attr'];
 
 				$t_bugnotes[] = $t_bugnote;
 			}
-			$g_cache_bugnotes[$p_bug_id] = $t_bugnotes;
+			$g_cache_bugnotes[$p_bug_id][$p_user_bugnote_order] = $t_bugnotes;
 		}
 
-		return $g_cache_bugnotes[$p_bug_id];
+		return $g_cache_bugnotes[$p_bug_id][$p_user_bugnote_order];
 	}
 
 	#===================================

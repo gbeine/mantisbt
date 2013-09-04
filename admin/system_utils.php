@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: system_utils.php,v 1.4 2004-09-23 21:22:12 thraxisp Exp $
+	# $Id: system_utils.php,v 1.8 2005-07-18 12:55:14 vboctor Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -23,7 +23,6 @@
 	<tr class="top-bar">
 		<td class="links">
 			[ <a href="index.php">Back to Mantis Administration</a> ]
-			[ <a href="upgrade_escaping.php">Refresh view</a> ]
 		</td>
 		<td class="title">
 			System Utilities
@@ -54,7 +53,7 @@
 	<form method="post" action="copy_field.php">
 	   From
 		<SELECT name="source_id">
-			<?php 
+			<?php
 				$t_custom_ids = custom_field_get_ids();
 				foreach ( $t_custom_ids as $t_id ) {
 					printf("<OPTION VALUE=\"%d\">%s", $t_id, custom_field_get_field($t_id, 'name' ) );
@@ -75,11 +74,10 @@
 	</form>
 	</center></td></tr>
 
-	<!-- move database project files to disk -->
-	<tr bgcolor="#ffffff"><td>Analyse Workflow</td><td><center>
-	<?php html_button( 'workflow.php', 'Analyse' ); ?>
+	<!-- Database Statistics -->
+	<tr bgcolor="#ffffff"><td>Show database statistics.</td><td><center>
+	<?php html_button( 'db_stats.php', 'Display', array() ); ?>
 	</center></td></tr>
-
 
 </table>
 </body>

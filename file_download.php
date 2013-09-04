@@ -6,17 +6,18 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: file_download.php,v 1.30 2004-10-15 18:49:31 thraxisp Exp $
+	# $Id: file_download.php,v 1.37 2005-05-19 12:19:18 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	# Add file and redirect to the referring page
 ?>
 <?php
+	$g_bypass_headers = true; # suppress headers as we will send our own later
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'file_api.php' );
 ?>
 <?php auth_ensure_user_authenticated() ?>
@@ -65,19 +66,32 @@
 			access_ensure_project_level( config_get( 'view_proj_doc_threshold' ), $v_project_id );
 			break;
 	}
-	
+
+	# flush output buffer to protect download
+	@ob_end_clean();
 	# Make sure that IE can download the attachments under https.
 	header( 'Pragma: public' );
-	
-	header( 'Content-type: ' . $v_file_type );
+
+	header( 'Content-Type: ' . $v_file_type );
 	header( 'Content-Length: ' . $v_filesize );
-	
+
 	# Added Quotes (") around file name.
-	header( 'Content-Disposition: filename="' . file_get_display_name( $v_filename ) . '"' );
+	header( 'Content-Disposition: attachment; filename="' . file_get_display_name( $v_filename ) . '"' );
 	header( 'Content-Description: Download Data' );
-	# prevent file caching @@@ (thraxisp) we may want to suppress this for small files
-	header( 'Pragma: no-cache' );
-	header( 'Expires: 0' );
+	header( 'Last-Modified: ' . gmdate( 'D, d M Y H:i:s \G\M\T', db_unixtimestamp( $v_date_added ) ) );
+
+	# To fix an IE bug which causes problems when downloading
+	# attached files via HTTPS, we disable the "Pragma: no-cache"
+	# command when IE is used over HTTPS.
+	global $g_allow_file_cache;
+	if ( ( isset( $_SERVER["HTTPS"] ) && "on" == $_SERVER["HTTPS"] ) && preg_match( "/MSIE/", $_SERVER["HTTP_USER_AGENT"] ) ) {
+		# Suppress "Pragma: no-cache" header.
+	} else {
+		if ( ! isset( $g_allow_file_cache ) ) {
+		    header( 'Pragma: no-cache' );
+		}
+	}
+	header( 'Expires: ' . gmdate( 'D, d M Y H:i:s \G\M\T', time() ) );
 
 	# dump file content to the connection.
 	switch ( config_get( 'file_upload_method' ) ) {
@@ -99,4 +113,5 @@
 		default:
 			echo $v_content;
 	}
+	exit();
 ?>

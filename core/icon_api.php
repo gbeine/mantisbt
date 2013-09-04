@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: icon_api.php,v 1.11 2004-04-08 17:40:45 prescience Exp $
+	# $Id: icon_api.php,v 1.13 2005-06-08 15:02:21 vboctor Exp $
 	# --------------------------------------------------------
 
 	### Icon API ###
@@ -18,7 +18,7 @@
 		$t_status_icon_arr	= config_get( 'status_icon_arr' );
 
 		$t_none = NONE;
-		if ( !is_blank( $t_status_icon_arr[$p_icon] ) ) {
+		if ( isset( $t_status_icon_arr[$p_icon] ) && !is_blank( $t_status_icon_arr[$p_icon] ) ) {
 			return "<img src=\"$t_icon_path$t_status_icon_arr[$p_icon]\" alt=\"\" />";
 		} else {
 			return "&nbsp;";

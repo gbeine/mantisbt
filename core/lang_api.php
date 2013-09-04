@@ -1,12 +1,12 @@
 <?php
 	# Mantis - a php based bugtracking system
 	# Copyright (C) 2000 - 2002  Kenzaburo Ito - kenito@300baud.org
-	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
+	# Copyright (C) 2002 - 2005  Mantis Team   - mantisbt-dev@lists.sourceforge.net
 	# This program is distributed under the terms and conditions of the GPL
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: lang_api.php,v 1.34 2004-09-26 02:05:14 thraxisp Exp $
+	# $Id: lang_api.php,v 1.38 2005-06-01 13:19:31 vboctor Exp $
 	# --------------------------------------------------------
 
 	### Language (Internationalization) API ##
@@ -154,7 +154,7 @@
 		}
 
 		$g_lang_overrides[] = $t_lang;
-		
+
 		# Remember the language
 		$g_active_language = $t_lang;
 
@@ -176,14 +176,14 @@
 
 		if (count($g_lang_overrides) > 0 ) {
 			$t_lang = $g_lang_overrides[ count( $g_lang_overrides ) - 1];
-		}else{
+		} else {
 			$t_lang = lang_get_default();
 		}
-		
+
 		return $t_lang;
   }
 
-  
+
 
 
 	# ------------------
@@ -212,15 +212,20 @@
 		#  because we don't have a concept of falling back on a language.  The
 		#  language files actually *contain* English strings if none has been
 		#  defined in the correct language
-		# @@@ thraxisp - not sure if this is still true. Strings from last language loaded 
+		# @@@ thraxisp - not sure if this is still true. Strings from last language loaded
 		#      may still be in memeory if a new language is loaded.
 
 		if ( lang_exists( $p_string, $t_lang ) ) {
 			return $g_lang_strings[ $t_lang ][ $p_string];
 		} else {
-			error_parameters( $p_string );
-			trigger_error( ERROR_LANG_STRING_NOT_FOUND, WARNING );
-			return '';
+			if ( $t_lang == 'english' ) {
+				error_parameters( $p_string );
+				trigger_error( ERROR_LANG_STRING_NOT_FOUND, WARNING );
+				return '';
+			} else {
+				# if string is not found in a language other than english, then retry using the english language.
+				return lang_get( $p_string, 'english' );
+			}
 		}
 	}
 

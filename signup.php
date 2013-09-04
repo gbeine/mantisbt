@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: signup.php,v 1.38 2004-09-28 13:57:37 thraxisp Exp $
+	# $Id: signup.php,v 1.40 2005-05-25 19:57:13 marcelloscata Exp $
 	# --------------------------------------------------------
 
 	require_once( 'core.php' );
@@ -24,13 +24,18 @@
 	$f_email = email_append_domain( trim( $f_email ) );
 	$f_captcha = strtolower( trim( $f_captcha ) );
 
+	# forse logout on the current user if already authenticated
+	if( auth_is_user_authenticated() ) {
+		auth_logout();
+	}
+
 	# Check to see if signup is allowed
 	if ( OFF == config_get( 'allow_signup' ) ) {
 		print_header_redirect( 'login_page.php' );
 		exit;
 	}
 
-	if( ON == config_get( 'signup_use_captcha' ) && get_gd_version() > 0 	&& 
+	if( ON == config_get( 'signup_use_captcha' ) && get_gd_version() > 0 	&&
 				helper_call_custom_function( 'auth_can_change_password', array() ) ) {
 		# captcha image requires GD library and related option to ON
 		$t_key = strtolower( substr( md5( config_get( 'password_confirm_hash_magic_string' ) . $f_public_key ), 1, 5) );

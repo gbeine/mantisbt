@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: relationship_api.php,v 1.25 2004-10-25 19:45:05 marcelloscata Exp $
+	# $Id: relationship_api.php,v 1.36 2005-06-28 11:04:06 vboctor Exp $
 	# --------------------------------------------------------
 
 	### Relationship API ###
@@ -501,6 +501,7 @@
 	# return formatted string with all the details on the requested relationship
 	function relationship_get_details( $p_bug_id, $p_relationship, $p_html = false, $p_html_preview = false, $p_show_project = false ) {
 		$t_summary_wrap_at = strlen( config_get( 'email_separator2' ) ) - 28;
+		$t_icon_path = config_get( 'icon_path' );
 
 		$p_user_id = auth_get_current_user_id();
 
@@ -555,7 +556,7 @@
 		# get the handler name of the related bug
 		$t_relationship_info_html .= $t_td;
 		if ( $t_bug->handler_id > 0 )  {
-			$t_relationship_info_html .= '<nobr>' . user_get_name(  $t_bug->handler_id ) . '</nobr>';
+			$t_relationship_info_html .= '<nobr>' . prepare_user_name(  $t_bug->handler_id ) . '</nobr>';
 		}
 		$t_relationship_info_html .= '&nbsp;</td>';
 
@@ -566,6 +567,9 @@
 
 		# add summary
 		$t_relationship_info_html .= $t_td . $t_bug->summary;
+		if ( VS_PRIVATE == $t_bug->view_state ) {
+			$t_relationship_info_html .= sprintf( ' <img src="%s" alt="(%s)" title="%s" />', $t_icon_path . 'protected.gif', lang_get( 'private' ), lang_get( 'private' ) );
+		}
 		if( strlen( $t_bug->summary ) <= $t_summary_wrap_at ) {
 			$t_relationship_info_text .= $t_bug->summary;
 		}
@@ -678,9 +682,14 @@
 
  	# --------------------
  	# print HTML relationship listbox
-	function relationship_list_box( $p_default_rel_type = -1 ) {
+	function relationship_list_box( $p_default_rel_type = -1, $p_select_name = "rel_type", $p_include_any = false) {
 ?>
-<select name="rel_type">
+<select name="<?php echo $p_select_name?>">
+<?php if ($p_include_any) { ?>
+<option value="-1" <?php echo ( $p_default_rel_type == -1 ? ' selected' : '' ) ?>>[<?php echo lang_get( 'any' ) ?>]</option>
+<?php
+    }
+?>
 <option value="<?php echo BUG_RELATED ?>"<?php echo ( $p_default_rel_type == BUG_RELATED ? ' selected' : '' ) ?>><?php echo lang_get( 'related_to' ) ?></option>
 <option value="<?php echo BUG_DEPENDANT ?>"<?php echo ( $p_default_rel_type == BUG_DEPENDANT ? ' selected' : '' ) ?>><?php echo lang_get( 'dependant_on' ) ?></option>
 <option value="<?php echo BUG_BLOCKS ?>" <?php echo ( $p_default_rel_type == BUG_BLOCKS ? ' selected' : '' ) ?>><?php echo lang_get( 'blocks' ) ?></option>
@@ -718,8 +727,8 @@
 			echo lang_get( 'bug_relationships' );
 			if ( ON == config_get( 'relationship_graph_enable' ) ) {
 		?>
-		<span class="small"><?php print_bracket_link( 'bug_relationship_graph.php?bug_id=' . $p_bug_id . '&graph=relation', lang_get( 'relation_graph' ) ) ?></span>
-		<span class="small"><?php print_bracket_link( 'bug_relationship_graph.php?bug_id=' . $p_bug_id . '&graph=dependency', lang_get( 'dependency_graph' ) ) ?></span>
+		<span class="small"><?php print_bracket_link( 'bug_relationship_graph.php?bug_id=' . $p_bug_id . '&amp;graph=relation', lang_get( 'relation_graph' ) ) ?></span>
+		<span class="small"><?php print_bracket_link( 'bug_relationship_graph.php?bug_id=' . $p_bug_id . '&amp;graph=dependency', lang_get( 'dependency_graph' ) ) ?></span>
 		<?php
 			}
 		?>
@@ -727,7 +736,7 @@
 </tr>
 <?php
 		# bug not read-only and user authenticated
-		if ( !bug_is_readonly( $p_bug_id ) && !current_user_is_anonymous() ) {
+		if ( !bug_is_readonly( $p_bug_id ) ) {
 
 			# user access level at least updater
 			if ( access_has_bug_level( config_get( 'update_bug_threshold' ), $p_bug_id ) ) {
@@ -737,7 +746,7 @@
 	<td><?php echo lang_get( 'this_bug' ) ?>
 		<form method="POST" action="bug_relationship_add.php">
 		<input type="hidden" name="src_bug_id" value="<?php echo $p_bug_id ?>" size="4" />
-		<? relationship_list_box( -1 ) ?>
+		<?php relationship_list_box( -1 ) ?>
 		<input type="text" name="dest_bug_id" value="" maxlength="7" />
 		<input type="submit" name="add_relationship" class="button" value="<?php echo lang_get( 'add_new_relationship_button' ) ?>" />
 		</form>

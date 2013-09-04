@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: utility_api.php,v 1.16 2004-10-24 19:04:38 thraxisp Exp $
+	# $Id: utility_api.php,v 1.20 2005-07-17 21:56:21 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### Utility API ###
@@ -41,6 +41,19 @@
 	# num will be first (element 0) value second (element 1)
 	function explode_enum_arr( $p_enum_elem ) {
 		return explode( ':', $p_enum_elem );
+	}
+
+	# --------------------
+	# Get the string associated with the $p_enum value
+	function get_enum_to_array( $p_enum_string ) {
+		$t_arr = explode_enum_string( $p_enum_string );
+		$enum_count = count( $t_arr );
+		for ($i=0; $i < $enum_count;$i++) {
+			$t_s = explode_enum_arr( $t_arr[$i] );
+			$t_index = (int) $t_s[0];
+			$t_array[$t_index] = $t_s[1];
+		}
+		return $t_array;
 	}
 
 	# --------------------
@@ -154,7 +167,7 @@
 		}
 		return $t_result;
 	}
-	
+
 
 
 	# --------------------
@@ -197,4 +210,11 @@
 	   	}
 	  }
 	}
+	
+	# ---------------------
+	# return true or false if string matches current page name
+	function is_page_name( $p_string ) {
+	   return isset( $_SERVER['PHP_SELF'] ) && ( 0 < strpos( $_SERVER['PHP_SELF'], $p_string ) );
+	}
+	
 ?>

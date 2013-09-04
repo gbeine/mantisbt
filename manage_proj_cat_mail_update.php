@@ -29,10 +29,10 @@
 	else {
 		if ( is_blank( $f_pop3_user ) ) {
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
-        }
+	}
 		if ( is_blank( $f_pop3_pass ) ) {
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
-        }
+		}
 	}
 
 	mail_category_update( $f_project_id, $f_category, $f_pop3_host, $f_pop3_user, $f_pop3_pass );
@@ -56,3 +56,4 @@
 </div>
 
 <?php html_page_bottom1( __FILE__ ) ?>
+

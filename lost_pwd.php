@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: lost_pwd.php,v 1.3 2004-10-25 19:45:04 marcelloscata Exp $
+	# $Id: lost_pwd.php,v 1.5 2005-05-25 19:57:12 marcelloscata Exp $
 	# --------------------------------------------------------
 
 	# ======================================================================
@@ -17,8 +17,14 @@
 
 	# lost password feature disabled or reset password via email disabled -> stop here!
 	if( OFF == config_get( 'lost_password_feature' ) ||
-		OFF == config_get( 'send_reset_password' ) ) {
+		OFF == config_get( 'send_reset_password' ) ||
+		OFF == config_get( 'enable_email_notification' ) ) {
 		trigger_error( ERROR_LOST_PASSWORD_NOT_ENABLED, ERROR );
+	}
+
+	# force logout on the current user if already authenticated
+	if( auth_is_user_authenticated() ) {
+		auth_logout();
 	}
 
 	$f_username = gpc_get_string('username');

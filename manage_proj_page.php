@@ -6,12 +6,12 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: manage_proj_page.php,v 1.11 2004-07-20 15:51:50 vboctor Exp $
+	# $Id: manage_proj_page.php,v 1.19 2005-05-16 12:56:06 vboctor Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
 
 	require_once( $t_core_path . 'icon_api.php' );
@@ -42,7 +42,7 @@
 		<?php
 		# Check the user's global access level before allowing project creation
 		if ( access_has_global_level ( config_get( 'create_project_threshold' ) ) ) {
-			print_bracket_link( 'manage_proj_create_page.php', lang_get( 'create_new_project_link' ) );
+			print_button( 'manage_proj_create_page.php', lang_get( 'create_new_project_link' ) );
 		}
 		?>
 	</td>
@@ -70,21 +70,33 @@
 	</td>
 </tr>
 <?php
-	$t_projects = project_get_all_rows();
+	$t_manage_project_threshold = config_get( 'manage_project_threshold' );
+	$t_projects = user_get_accessible_projects( auth_get_current_user_id(), true );
+	$t_full_projects = array();
+	foreach ( $t_projects as $t_project_id ) {
+		$t_full_projects[] = project_get_row( $t_project_id );
+	}
+	$t_projects = multi_sort( $t_full_projects, $f_sort, $t_direction );
+	$t_stack 	= array( $t_projects );
 
-	$t_projects = multi_sort( $t_projects, $f_sort, $t_direction );
+	while ( 0 < count( $t_stack ) ) {
+		$t_projects   = array_shift( $t_stack );
 
-	foreach ( $t_projects as $t_project ) {
-		extract( $t_project, EXTR_PREFIX_ALL, 'v' );
-
-        if ( !access_has_project_level ( config_get( 'manage_project_threshold' ), $v_id ) ) {
-		  continue;
+		if ( 0 == count( $t_projects ) ) {
+			continue;
 		}
+
+		$t_project = array_shift( $t_projects );
+		$t_project_id = $t_project['id'];
+		$t_level      = count( $t_stack );
+
+		# only print row if user has project management privileges
+		if (access_has_project_level( $t_manage_project_threshold, $t_project_id, auth_get_current_user_id() ) ) {
 
 ?>
 <tr <?php echo helper_alternate_class() ?>>
 	<td>
-		<a href="manage_proj_edit_page.php?project_id=<?php echo $t_project['id'] ?>"><?php echo string_display( $t_project['name'] ) ?></a>
+		<a href="manage_proj_edit_page.php?project_id=<?php echo $t_project['id'] ?>"><?php echo str_repeat( "&raquo; ", $t_level ) . string_display( $t_project['name'] ) ?></a>
 	</td>
 	<td>
 		<?php echo get_enum_element( 'project_status', $t_project['status'] ) ?>
@@ -100,7 +112,22 @@
 	</td>
 </tr>
 <?php
-	} # End of foreach loop over projects
+		}
+		$t_subprojects = project_hierarchy_get_subprojects( $t_project_id, true );
+
+		if ( 0 < count( $t_projects ) || 0 < count( $t_subprojects ) ) {
+			array_unshift( $t_stack, $t_projects );
+		}
+
+		if ( 0 < count( $t_subprojects ) ) {
+            $t_full_projects = array();
+		    foreach ( $t_subprojects as $t_project_id ) {
+                $t_full_projects[] = project_get_row( $t_project_id );
+            }
+			$t_subprojects = multi_sort( $t_full_projects, $f_sort, $t_direction );
+			array_unshift( $t_stack, $t_subprojects );
+		}
+	}
 ?>
 </table>
 

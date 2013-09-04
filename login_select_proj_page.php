@@ -6,19 +6,20 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: login_select_proj_page.php,v 1.35 2004-09-26 12:15:26 prichards Exp $
+	# $Id: login_select_proj_page.php,v 1.37 2005-06-09 13:05:38 vboctor Exp $
 	# --------------------------------------------------------
-?>
-<?php
+
 	# Allows the user to select a project that is visible to him
-?>
-<?php require_once( 'core.php' ) ?>
-<?php auth_ensure_user_authenticated() ?>
-<?php
+
+	require_once( 'core.php' );
+
+	auth_ensure_user_authenticated();
+
 	$f_ref = gpc_get_string( 'ref', '' );
+
+	html_page_top1( lang_get( 'select_project_button' ) );
+	html_page_top2();
 ?>
-<?php html_page_top1() ?>
-<?php html_page_top2a() ?>
 
 <!-- Project Select Form BEGIN -->
 <br />
@@ -37,7 +38,7 @@
 	</td>
 	<td width="60%">
 		<select name="project_id">
-		<?php print_project_option_list( ALL_PROJECTS ) ?>
+		<?php print_project_option_list( ALL_PROJECTS, false, null, true ) ?>
 		</select>
 	</td>
 </tr>

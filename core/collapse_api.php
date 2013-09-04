@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: collapse_api.php,v 1.2 2004-07-18 13:22:28 vboctor Exp $
+	# $Id: collapse_api.php,v 1.5 2005-05-10 12:28:53 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -87,7 +87,7 @@
 			$t_alt  = '+';
 		}
 
-		echo "<a href=\"\" onClick=\"ToggleDiv( '$p_name', g_div_$p_name ); return false;\"
+		echo "<a href=\"\" onclick=\"ToggleDiv( '$p_name', g_div_$p_name ); return false;\"
 			><img border=\"0\" src=\"images/$t_icon\" alt=\"$t_alt\" /></a>&nbsp;";
 	}
 
@@ -108,9 +108,9 @@
 		$g_open_collapse_section = false;
 
 		if ( ON == config_get( 'use_javascript' ) ) {
-			echo '<script type="text/JavaScript">';
-			echo '	SetDiv( "', $p_name, '", g_div_', $p_name, ' );';
-			echo '</script>';
+			echo '<script type="text/JavaScript"><!--' . "\n";
+			echo '	SetDiv( "', $p_name, '", g_div_', $p_name, ' );' . "\n";
+			echo '--></script>';
 
 			ob_end_flush();
 		} else {

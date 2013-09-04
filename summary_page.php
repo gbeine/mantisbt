@@ -6,14 +6,14 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: summary_page.php,v 1.42 2004-10-20 01:11:02 narcissus Exp $
+	# $Id: summary_page.php,v 1.45 2005-04-27 02:20:13 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'summary_api.php' );
 ?>
 <?php
@@ -22,17 +22,26 @@
 	$t_project_id = helper_get_current_project();
 	$t_user_id = auth_get_current_user_id();
 
-	#checking if it's a per project statistic or all projects
 	if ( ALL_PROJECTS == $t_project_id ) {
-		# Only projects to which the user have access
-		$t_accessible_projects_array = user_get_accessible_projects( $t_user_id );
-		if ( count( $t_accessible_projects_array ) > 0 ) {
-			$specific_where = ' (project_id='. implode( ' OR project_id=', $t_accessible_projects_array ).')';
-		} else {
-			$specific_where = '1=1';
+		$t_topprojects = $t_project_ids = user_get_accessible_projects( $t_user_id );
+		foreach ( $t_topprojects as $t_project ) {
+			$t_project_ids = array_merge( $t_project_ids, user_get_all_accessible_subprojects( $t_user_id, $t_project ) );
 		}
+
+		$t_project_ids = array_unique( $t_project_ids );
 	} else {
-		$specific_where = " project_id='$t_project_id'";
+		$t_project_ids = user_get_all_accessible_subprojects( $t_user_id, $t_project_id );
+		array_unshift( $t_project_ids, $t_project_id );
+	}
+
+	$t_project_ids = array_map( 'db_prepare_int', $t_project_ids );
+
+	if ( 0 == count( $t_project_ids ) ) {
+		$specific_where = ' 1 <> 1';
+	} elseif ( 1 == count( $t_project_ids ) ) {
+		$specific_where = ' project_id=' . $t_project_ids[0];
+	} else {
+		$specific_where = ' project_id IN (' . join( ',', $t_project_ids ) . ')';
 	}
 
 	$t_bug_table = config_get( 'mantis_bug_table' );
@@ -61,7 +70,7 @@
 		if ( $t_status <> $t_clo_val ) {
 			$query2 = "SELECT date_modified
 				FROM " . $t_history_table . "
-				WHERE bug_id=$t_id AND type=" . NORMAL_TYPE . 
+				WHERE bug_id=$t_id AND type=" . NORMAL_TYPE .
 							" AND field_name='status' AND new_value='$t_clo_val'
 				ORDER BY date_modified DESC";
 			$result2 = db_query( $query2 );
@@ -70,7 +79,7 @@
 				$row2 = db_fetch_array( $result2 );
 				$t_last_updated   = db_unixtimestamp( $row2['date_modified'] );
 			}
-		}		
+		}
 
 		if ($t_last_updated < $t_date_submitted) {
 			$t_last_updated   = 0;
@@ -92,7 +101,7 @@
 	$t_largest_diff 	= number_format( $t_largest_diff / 86400, 2 );
 	$t_total_time		= number_format( $t_total_time / 86400, 2 );
 	$t_average_time 	= number_format( $t_average_time / 86400, 2 );
-	
+
 	$t_orct_arr = preg_split( '/[\)\/\(]/', lang_get( 'orct' ), -1, PREG_SPLIT_NO_EMPTY );
 
 	$t_orcttab = "";
@@ -119,7 +128,7 @@
 <tr valign="top">
 	<td width="50%">
 		<?php # PROJECT # ?>
-		<?php if ( ALL_PROJECTS == $t_project_id ) { ?>
+		<?php if ( 1 < count( $t_project_ids ) ) { ?>
 		<table class="width100" cellspacing="1">
 		<tr>
 			<td class="form-title" colspan="1">
@@ -325,7 +334,7 @@
 				echo ucwords( get_enum_element( 'resolution', $c_s[0] ) );
 				print '</td>';
 			}
-			
+
 			print '<td>';
 			print lang_get( 'percentage_errors' );
 			print '</td>';
@@ -355,7 +364,7 @@
 				echo ucwords( get_enum_element( 'resolution', $c_s[0] ) );
 				print '</td>';
 			}
-			
+
 			print '<td>';
 			print lang_get( 'percentage_fixed' );
 			print '</td>';

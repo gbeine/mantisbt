@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_update.php,v 1.76 2004-10-08 18:57:51 thraxisp Exp $
+	# $Id: bug_update.php,v 1.86 2005-06-06 13:45:27 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -26,10 +26,13 @@
 	$f_update_mode = gpc_get_bool( 'update_mode', FALSE ); # set if called from generic update page
 	$f_new_status	= gpc_get_int( 'status', bug_get_field( $f_bug_id, 'status' ) );
 
-	if ( ! ( ( access_has_bug_level( access_get_status_threshold( $f_new_status, bug_get_field( $f_bug_id, 'project_id' ) ), $f_bug_id ) ) ||
-				( ( bug_get_field( $f_bug_id, 'reporter_id' ) == auth_get_current_user_id() ) && 
+	if ( ! (
+				( access_has_bug_level( access_get_status_threshold( $f_new_status, bug_get_field( $f_bug_id, 'project_id' ) ), $f_bug_id ) ) ||
+				( access_has_bug_level( config_get( 'update_bug_threshold' ) , $f_bug_id ) ) ||
+				( ( bug_get_field( $f_bug_id, 'reporter_id' ) == auth_get_current_user_id() ) &&
 						( ( ON == config_get( 'allow_reporter_reopen' ) ) ||
-								( ON == config_get( 'allow_reporter_close' ) ) ) ) ) ) {
+								( ON == config_get( 'allow_reporter_close' ) ) ) )
+			) ) {
 		access_denied();
 	}
 
@@ -74,20 +77,31 @@
 
 	helper_call_custom_function( 'issue_update_validate', array( $f_bug_id, $t_bug_data, $f_bugnote_text ) );
 
+	$t_resolved = config_get( 'bug_resolved_status_threshold' );
+
 	$t_custom_status_label = "update"; # default info to check
-	if ( $t_bug_data->status == config_get( 'bug_resolved_status_threshold' ) ) {
+	if ( $t_bug_data->status == $t_resolved ) {
 		$t_custom_status_label = "resolved";
 	}
 	if ( $t_bug_data->status == CLOSED ) {
 		$t_custom_status_label = "closed";
 	}
-	
+
 	$t_related_custom_field_ids = custom_field_get_linked_ids( $t_bug_data->project_id );
 	foreach( $t_related_custom_field_ids as $t_id ) {
 		$t_def = custom_field_get_definition( $t_id );
 		$t_custom_field_value = gpc_get_custom_field( "custom_field_$t_id", $t_def['type'], null );
 
-		# Only update the field if it is posted
+		# Only update the field if it would have been display for editing
+		if( !( ( ! $f_update_mode && $t_def['require_' . $t_custom_status_label] ) ||
+						( ! $f_update_mode && $t_def['display_' . $t_custom_status_label] && in_array( $t_custom_status_label, array( "resolved", "closed" ) ) ) ||
+						( $f_update_mode && $t_def['display_update'] ) ||
+						( $f_update_mode && $t_def['require_update'] ) ) ) {
+			continue;
+		}
+
+		# Only update the field if it is posted 
+		#  ( will fail in custom_field_set_value(), if it was required )
 		if ( $t_custom_field_value === null ) {
 			continue;
 		}
@@ -113,9 +127,9 @@
 		# handle status transitions that come from pages other than bug_*update_page.php
 		# this does the minimum to act on the bug and sends a specific message
 		switch ( $t_bug_data->status ) {
-			case config_get( 'bug_resolved_status_threshold' ):
-				# bug_resolve updates the status and bugnote and sends message
-				bug_resolve( $f_bug_id, $t_bug_data->resolution, $t_bug_data->fixed_in_version, 
+			case $t_resolved:
+				# bug_resolve updates the status, fixed_in_version, resolution, handler_id and bugnote and sends message
+				bug_resolve( $f_bug_id, $t_bug_data->resolution, $t_bug_data->fixed_in_version,
 						$f_bugnote_text, $t_bug_data->duplicate_id, $t_bug_data->handler_id);
 				$t_notify = false;
 				$t_bug_note_set = true;
@@ -123,6 +137,11 @@
 				if ( $f_close_now ) {
 					bug_set_field( $f_bug_id, 'status', CLOSED );
 				}
+
+				// update bug data with fields that may be updated inside bug_resolve(), otherwise changes will be overwritten
+				// in bug_update() call below.
+				$t_bug_data->handler_id = bug_get_field( $f_bug_id, 'handler_id' );
+				$t_bug_data->status = bug_get_field( $f_bug_id, 'status' );
 				break;
 
 			case CLOSED:
@@ -133,16 +152,22 @@
 				break;
 
 			case config_get( 'bug_reopen_status' ):
-				if ( $t_old_bug_status >= config_get( 'bug_resolved_status_threshold' ) ) {
+				if ( $t_old_bug_status >= $t_resolved ) {
+					bug_set_field( $f_bug_id, 'handler_id', $t_bug_data->handler_id ); # fix: update handler_id before calling bug_reopen
 					# bug_reopen updates the status and bugnote and sends message
 					bug_reopen( $f_bug_id, $f_bugnote_text );
 					$t_notify = false;
 					$t_bug_note_set = true;
+
+					// update bug data with fields that may be updated inside bug_resolve(), otherwise changes will be overwritten
+					// in bug_update() call below.
+					$t_bug_data->status = bug_get_field( $f_bug_id, 'status' );
+					$t_bug_data->resolution = bug_get_field( $f_bug_id, 'resolution' );
 					break;
 				} # else fall through to default
 		}
 	}
-		
+
 	# Add a bugnote if there is one
 	if ( ( !is_blank( $f_bugnote_text ) ) && ( false == $t_bug_note_set ) ) {
 		bugnote_add( $f_bug_id, $f_bugnote_text, $f_private );
@@ -152,6 +177,6 @@
 	bug_update( $f_bug_id, $t_bug_data, true, ( false == $t_notify ) );
 
 	helper_call_custom_function( 'issue_update_notify', array( $f_bug_id ) );
-  
+
 	print_successful_redirect_to_bug( $f_bug_id );
 ?>

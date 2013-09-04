@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: account_page.php,v 1.48 2004-09-28 13:57:28 thraxisp Exp $
+	# $Id: account_page.php,v 1.51 2005-07-17 21:56:21 thraxisp Exp $
 	# --------------------------------------------------------
 
 	# CALLERS
@@ -14,6 +14,7 @@
 	#	- print_menu()
 	#	- print_account_menu()
 	#	- header redirects from account_*.php
+	#   - included by verify.php to allow user to change their password
 
 	# EXPECTED BEHAVIOUR
 	#	- Display the user's current settings
@@ -31,9 +32,9 @@
 	#	- The user's account must not be protected
 
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'current_user_api.php' );
 
 	#============ Parameters ============
@@ -56,6 +57,10 @@
 	# In case we're using LDAP to get the email address... this will pull out
 	#  that version instead of the one in the DB
 	$u_email = user_get_email( $u_id, $u_username );
+	
+	# note if we are being included by a script of a different name, if so,
+	#  this is a mandatory password change request
+	$t_force_pw_reset = is_page_name( 'verify.php' );
 
 	html_page_top1( lang_get( 'account_link' ) );
 	html_page_top2();
@@ -63,6 +68,17 @@
 
 <!-- # Edit Account Form BEGIN -->
 <br />
+<?php if ( $t_force_pw_reset ) { ?>
+<center><div style="color:red; width:75%">
+		<?php 
+			echo lang_get( 'verify_warning' ); 
+			if ( helper_call_custom_function( 'auth_can_change_password', array() ) ) {
+				echo '<br />' . lang_get( 'verify_change_password' );
+			}
+		?>
+</div></center>
+<br />
+<?php } ?>
 <div align="center">
 <form method="post" action="account_update.php">
 <table class="width75" cellspacing="1">
@@ -115,6 +131,9 @@
 	<tr class="row-2">
 		<td class="category">
 			<?php echo lang_get( 'password' ) ?>
+			<?php if ( $t_force_pw_reset ) { ?>
+			<span class="required">*</span>
+			<?php } ?>
 		</td>
 		<td>
 			<input type="password" size="32" maxlength="32" name="password" />
@@ -125,6 +144,9 @@
 	<tr class="row-1">
 		<td class="category">
 			<?php echo lang_get( 'confirm_password' ) ?>
+			<?php if ( $t_force_pw_reset ) { ?>
+			<span class="required">*</span>
+			<?php } ?>
 		</td>
 		<td>
 			<input type="password" size="32" maxlength="32" name="password_confirm" />
@@ -201,7 +223,11 @@
 
 	<!-- BUTTONS -->
 	<tr>
-		<td>&nbsp;</td>
+		<td class="left">
+			<?php if ( $t_force_pw_reset ) { ?>
+			<span class="required"> * <?php echo lang_get( 'required' ) ?></span>
+			<?php } ?>
+		</td>
 		<!-- Update Button -->
 		<td>
 			<input type="submit" class="button" value="<?php echo lang_get( 'update_user_button' ) ?>" />

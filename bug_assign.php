@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_assign.php,v 1.39 2004-10-08 18:57:51 thraxisp Exp $
+	# $Id: bug_assign.php,v 1.42 2005-06-14 22:00:32 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -14,15 +14,24 @@
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'bug_api.php' );
 ?>
 <?php
 	$f_bug_id = gpc_get_int( 'bug_id' );
+	$t_bug = bug_get( $f_bug_id );
+	
+	if( $t_bug->project_id != helper_get_current_project() ) {
+		# in case the current project is not the same project of the bug we are viewing...
+		# ... override the current project. This to avoid problems with categories and handlers lists etc.
+		$g_project_override = $t_bug->project_id;
+	}
+
 	$f_handler_id = gpc_get_int( 'handler_id', auth_get_current_user_id() );
 
+	# check that current user has rights to assign the issue
 	access_ensure_bug_level( config_get( 'update_bug_assign_threshold', config_get( 'update_bug_threshold' ) ), $f_bug_id );
 
 	$t_bug_sponsored = sponsorship_get_amount( sponsorship_get_all_ids( $f_bug_id ) ) > 0;
@@ -33,6 +42,7 @@
 	}
 
 	if ( $f_handler_id != NO_USER ) {
+		# check that new handler has rights to handle the issue
 		access_ensure_bug_level( config_get( 'handle_bug_threshold' ), $f_bug_id, $f_handler_id );
 
 		if ( $t_bug_sponsored ) {

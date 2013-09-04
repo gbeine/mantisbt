@@ -6,14 +6,14 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: manage_user_update.php,v 1.34 2004-05-25 13:38:52 vboctor Exp $
+	# $Id: manage_user_update.php,v 1.37 2005-07-18 13:45:22 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'email_api.php' );
 ?>
 <?php
@@ -33,10 +33,11 @@
 	$t_old_username = user_get_field( $f_user_id, 'username' );
 
 	# check that the username is unique
-	if ( 0 != strcasecmp( $t_old_username, $f_username ) 
+	if ( 0 != strcasecmp( $t_old_username, $f_username )
         && false == user_is_name_unique( $f_username ) ) {
 		trigger_error( ERROR_USER_NAME_NOT_UNIQUE, ERROR );
 	}
+	user_ensure_realname_unique( $f_username, $f_realname );
 
 	$f_email = email_append_domain( $f_email );
 	email_ensure_valid( $f_email );
@@ -52,6 +53,12 @@
 	$t_user_table = config_get( 'mantis_user_table' );
 
 	$t_old_protected = user_get_field( $f_user_id, 'protected' );
+	
+	# check that we are not downgrading the last administrator
+	$t_old_access = user_get_field( $f_user_id, 'access_level' );
+	if ( ( ADMINISTRATOR == $t_old_access ) && ( $t_old_access <> $f_access_level ) && ( 1 >= user_count_level( ADMINISTRATOR ) ) ) {
+		trigger_error( ERROR_USER_CHANGE_LAST_ADMIN, ERROR );
+	}	   
 
 	# Project specific access rights override global levels, hence, for users who are changed
 	# to be administrators, we have to remove project specific rights.

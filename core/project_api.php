@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: project_api.php,v 1.62 2004-09-28 00:56:14 thraxisp Exp $
+	# $Id: project_api.php,v 1.75 2005-06-28 19:22:53 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -237,7 +237,8 @@
 	# Delete a project
 	function project_delete( $p_project_id ) {
 		$t_email_notifications = config_get( 'enable_email_notification' );
-		config_set( 'enable_email_notification', OFF );
+		# temporarily disable all notifications
+		config_set_cache( 'enable_email_notification', OFF );
 
 		$c_project_id = db_prepare_int( $p_project_id );
 
@@ -255,6 +256,9 @@
 		# Delete the project versions
 		version_remove_all( $p_project_id );
 
+		# Delete relations to other projects
+		project_hierarchy_remove_all( $p_project_id );
+
 		# Delete the project files
 		project_delete_all_files( $p_project_id );
 
@@ -263,6 +267,12 @@
 
 		# Delete all news entries associated with the project being deleted
 		news_delete_all( $p_project_id );
+		
+		# Delete project specific configurations
+		config_delete_project( $p_project_id );
+		
+		# Delete any user prefs that are project specific
+		user_pref_delete_project( $p_project_id );
 
 		# Delete the project entry
 		$query = "DELETE FROM $t_project_table
@@ -270,7 +280,7 @@
 
 		db_query( $query );
 
-		config_set( 'enable_email_notification', $t_email_notifications );
+		config_set_cache( 'enable_email_notification', $t_email_notifications );
 
 		project_clear_cache( $p_project_id );
 
@@ -333,7 +343,7 @@
 	# Get the id of the project with the specified name
 	function project_get_id_by_name( $p_project_name ) {
 		$c_project_name = db_prepare_string( $p_project_name );
-	
+
 		$t_project_table = config_get( 'mantis_project_table' );
 
 		$query = "SELECT id FROM $t_project_table WHERE name = '$c_project_name'";
@@ -449,34 +459,70 @@
 
 		$t_user_table = config_get( 'mantis_user_table' );
 		$t_project_user_list_table = config_get( 'mantis_project_user_list_table' );
+		$t_project_table = config_get( 'mantis_project_table' );
+		
+		$t_global_access_level = $p_access_level;
 
-		$t_on = ON;
-
-		$t_access_level = $p_access_level;
-
-		if( $c_project_id != ALL_PROJECTS ) {
+		if ( $c_project_id != ALL_PROJECTS ) {
+			# looking for specific project
 			if ( VS_PRIVATE == project_get_field( $p_project_id, 'view_state' ) ) {
-				# @@@ we need to get this logic out somewhere else.
-				#   I was getting access_min from the project but apparently we got
-				#   rid of that in 0.17.2.  The user docs claim developers and higher
-				#   get into private projects but the code seems to only allow administrators in
-				$t_access_level = max( $t_access_level, config_get( 'private_project_threshold' ) );
+				# @@@ (thraxisp) this is probably more complex than it needs to be
+				# When a new project is created, those who meet 'private_project_threshold' are added
+				#  automatically, but don't have an entry in project_user_list_table.
+				#  if they did, you would not have to add global levels.
+				
+				$t_private_project_threshold = config_get( 'private_project_threshold' );
+				if ( is_array( $t_private_project_threshold ) ) {
+					if ( is_array( $p_access_level ) ) {
+						# both private threshold and request are arrays, use intersection
+						$t_global_access_level = array_intersect( $p_access_level, $t_private_project_threshold );
+					} else {
+						# private threshold is an array, but request is a number, use values in threshold higher than request
+						$t_global_access_level = array();
+						foreach ( $t_private_project_threshold as $t_threshold ) {
+							if ( $p_access_level <= $t_threshold ) {
+								$t_global_access_level[] = $t_threshold;
+							}
+						}
+					}
+				} else {
+					if ( is_array( $p_access_level ) ) {
+						# private threshold is a number, but request is an array, use values in request higher than threshold
+						$t_global_access_level = array();
+						foreach ( $p_access_level as $t_threshold ) {
+							if ( $t_threshold >= $t_private_project_threshold ) {
+								$t_global_access_level[] = $t_threshold;
+							}
+						}
+					} else {
+						# both private threshold and request are numbers, use maximum
+						$t_global_access_level = max( $p_access_level, $t_private_project_threshold );
+					}
+				}
 			}
 		}
+				
+		$t_project_clause = ( $c_project_id != ALL_PROJECTS ) ? ' AND p.id = ' . $c_project_id : '';
+		if ( is_array( $t_global_access_level ) ) {
+			if ( 0 == count( $t_global_access_level ) ) {
+				$t_global_access_clause = ">= " . NOBODY . " ";
+			} else if ( 1 == count( $t_global_access_level ) ) {
+				$t_global_access_clause = "= " . array_shift( $t_global_access_level ) . " ";
+			} else {
+				$t_global_access_clause = "IN (" . implode( ',', $t_global_access_level ) . ")";
+			}
+		} else {
+			$t_global_access_clause = ">= $t_global_access_level ";
+		}			
 
-		$t_access_clause = '';
-
-		if ( $t_access_level > 0 ) {
-			$t_access_clause = ' AND access_level >= ' . $t_access_level;
-		}
-
+		$t_on = ON;
+		$t_adm = ADMINISTRATOR;
 		$t_users = array();
 
 		$query = "SELECT id, username, realname, access_level
-					FROM $t_user_table
-					WHERE enabled = $t_on
-					$t_access_clause
-					ORDER BY realname, username";
+				FROM $t_user_table
+				WHERE enabled = $t_on
+					AND access_level $t_global_access_clause";
 
 		$result = db_query( $query );
 		$t_row_count = db_num_rows( $result );
@@ -488,18 +534,22 @@
 		if( $c_project_id != ALL_PROJECTS ) {
 			# Get the project overrides
 			$query = "SELECT u.id, u.username, u.realname, l.access_level
-						FROM $t_project_user_list_table l, $t_user_table u
-						WHERE l.user_id = u.id
-						  AND u.enabled = $t_on
-						  AND l.project_id = $c_project_id
-						ORDER BY u.realname, u.username";
+				FROM $t_project_user_list_table l, $t_user_table u
+				WHERE l.user_id = u.id
+				AND u.enabled = $t_on
+				AND l.project_id = $c_project_id";
 
 			$result = db_query( $query );
 			$t_row_count = db_num_rows( $result );
 			for ( $i=0 ; $i < $t_row_count ; $i++ ) {
 				$row = db_fetch_array( $result );
+				if ( is_array( $p_access_level ) ) {
+					$t_keep = in_array( $row['access_level'], $p_access_level );
+				} else {
+					$t_keep = $row['access_level'] >= $p_access_level;
+				}
 
-				if ( $row['access_level'] >= $p_access_level ) {
+				if ( $t_keep ) {
 					$t_users[$row['id']] = $row;
 				} else {
 					# If user's overridden level is lower than required, so remove
@@ -509,7 +559,7 @@
 			}
 		}
 
-		return array_values($t_users);
+		return array_values( $t_users );
 	}
 
 
@@ -530,7 +580,7 @@
 			# Default access level for this user
 			$c_access_level = db_prepare_int( user_get_access_level ( $p_user_id ) );
 		}
-		
+
 		$query = "INSERT
 				  INTO $t_project_user_list_table
 				    ( project_id, user_id, access_level )

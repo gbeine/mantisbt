@@ -6,10 +6,14 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: news_api.php,v 1.17 2004-08-14 18:25:56 thraxisp Exp $
+	# $Id: news_api.php,v 1.23 2005-07-22 15:34:03 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### News API ###
+
+	$t_core_path = config_get( 'core_path' );
+
+	require_once( $t_core_path.'current_user_api.php' );
 
 	# --------------------
 	# Add a news item
@@ -21,7 +25,13 @@
 		$c_headline		= db_prepare_string( $p_headline );
 		$c_body			= db_prepare_string( $p_body );
 
-		if ( is_blank( $c_headline ) || is_blank( $c_body ) ) {
+		if ( is_blank( $c_headline ) ) {
+			error_parameters( lang_get( 'headline' ) );
+			trigger_error( ERROR_EMPTY_FIELD, ERROR );
+		}
+
+		if ( is_blank( $c_body ) ) {
+			error_parameters( lang_get( 'body' ) );
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}
 
@@ -38,7 +48,7 @@
 		db_query( $query );
 
 		# db_query() errors on failure so:
-		return true;
+		return db_insert_id();
 	}
 	# --------------------
 	# Delete the news entry
@@ -80,7 +90,13 @@
 		$c_headline		= db_prepare_string( $p_headline );
 		$c_body			= db_prepare_string( $p_body );
 
-		if ( is_blank( $c_headline ) || is_blank( $c_body ) ) {
+		if ( is_blank( $c_headline ) ) {
+			error_parameters( lang_get( 'headline' ) );
+			trigger_error( ERROR_EMPTY_FIELD, ERROR );
+		}
+
+		if ( is_blank( $c_body ) ) {
+			error_parameters( lang_get( 'body' ) );
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}
 
@@ -108,7 +124,7 @@
 
 		$t_news_table = config_get( 'mantis_news_table' );
 
-		$query = "SELECT *, date_posted
+		$query = "SELECT *
 				  FROM $t_news_table
 				  WHERE id='$c_news_id'";
 		$result = db_query( $query );
@@ -127,10 +143,11 @@
 		$c_project_id = db_prepare_int( $p_project_id );
 
 		$t_news_table = config_get( 'mantis_news_table' );
+		$t_project_where = helper_project_specific_where( $p_project_id );
 
 		$query = "SELECT COUNT(*)
 				  FROM $t_news_table
-				  WHERE project_id='$c_project_id'";
+				  WHERE $t_project_where";
 
 		if ( $p_sitewide ) {
 			$query .= ' OR project_id=' . ALL_PROJECTS;
@@ -143,16 +160,25 @@
 	# --------------------
 	# get news items (selected project plus sitewide posts)
 	function news_get_rows( $p_project_id, $p_sitewide=true ) {
-		$c_project_id = db_prepare_int( $p_project_id );
-
 		$t_news_table = config_get( 'mantis_news_table' );
 
-		$query = "SELECT *, date_posted
-				  FROM $t_news_table
-				  WHERE project_id='$c_project_id'";
+		$t_projects = current_user_get_all_accessible_subprojects( $p_project_id );
+		$t_projects[] = $p_project_id;
 
-		if ( $p_sitewide ) {
-			$query .= ' OR project_id=' . ALL_PROJECTS;
+		if ( $p_sitewide && ALL_PROJECTS != $p_project_id ) {
+			$t_projects[] = ALL_PROJECTS;
+		}
+
+		$t_projects = array_map( 'db_prepare_int', $t_projects );
+
+		$query = "SELECT *
+				  FROM $t_news_table";
+
+		if ( 1 == count( $t_projects ) ) {
+			$c_project_id = $t_projects[0];
+			$query .= " WHERE project_id='$c_project_id'";
+		} else {
+			$query .= ' WHERE project_id IN (' . join( $t_projects, ',' ) . ')';
 		}
 
 		$query .= " ORDER BY date_posted DESC";
@@ -189,8 +215,15 @@
 			$p_project_id = helper_get_current_project();
 		}
 
-		$c_project_id	= db_prepare_int( $p_project_id );
 		$c_offset		= db_prepare_int( $p_offset );
+
+		$t_projects = current_user_get_all_accessible_subprojects( $p_project_id );
+		$t_projects[] = $p_project_id;
+		if ( ALL_PROJECTS != $p_project_id ) {
+			$t_projects[] = ALL_PROJECTS;
+		}
+
+		$t_projects = array_map( 'db_prepare_int', $t_projects );
 
 		$t_news_table			= config_get( 'mantis_news_table' );
 		$t_news_view_limit		= config_get( 'news_view_limit' );
@@ -199,19 +232,33 @@
 		switch ( config_get( 'news_limit_method' ) ) {
 			case 0 :
 				# BY_LIMIT - Select the news posts
-				$query = "SELECT *, date_posted
-						FROM $t_news_table
-						WHERE project_id='$c_project_id' OR project_id=" . ALL_PROJECTS . "
-						ORDER BY announcement DESC, id DESC";
+				$query = "SELECT *
+						FROM $t_news_table";
+
+				if ( 1 == count( $t_projects ) ) {
+					$c_project_id = $t_projects[0];
+					$query .= " WHERE project_id='$c_project_id'";
+				} else {
+					$query .= ' WHERE project_id IN (' . join( $t_projects, ',' ) . ')';
+				}
+
+				$query .= ' ORDER BY announcement DESC, id DESC';
 				$result = db_query( $query , $t_news_view_limit , $c_offset);
 				break;
 			case 1 :
 				# BY_DATE - Select the news posts
-				$query = "SELECT *, date_posted
-						FROM $t_news_table
-						WHERE ( project_id='$c_project_id' OR project_id=" . ALL_PROJECTS . " ) AND
-							" . db_helper_compare_days( db_now(), 'date_posted', "< $t_news_view_limit_days") . " OR
-							announcement = 1
+				$query = "SELECT *
+						FROM $t_news_table";
+
+				if ( 1 == count( $t_projects ) ) {
+					$c_project_id = $t_projects[0];
+					$query .= " WHERE project_id='$c_project_id'";
+				} else {
+					$query .= ' WHERE project_id IN (' . join( $t_projects, ',' ) . ')';
+				}
+
+				$query .= " AND " . db_helper_compare_days( db_now(), 'date_posted', "< $t_news_view_limit_days") .
+						  " OR  announcement = 1
 						ORDER BY announcement DESC, id DESC";
 				$result = db_query( $query, $t_news_view_limit, $c_offset );
 				break;

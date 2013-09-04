@@ -1,12 +1,12 @@
 <?php
 	# Mantis - a php based bugtracking system
 	# Copyright (C) 2000 - 2002  Kenzaburo Ito - kenito@300baud.org
-	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
+	# Copyright (C) 2002 - 2005  Mantis Team   - mantisbt-dev@lists.sourceforge.net
 	# This program is distributed under the terms and conditions of the GPL
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: html_api.php,v 1.139 2004-10-25 01:34:28 thraxisp Exp $
+	# $Id: html_api.php,v 1.180 2005-07-22 23:13:24 vboctor Exp $
 	# --------------------------------------------------------
 
 	###########################################################################
@@ -54,8 +54,13 @@
 	require_once( $t_core_dir . 'bug_api.php' );
 	require_once( $t_core_dir . 'project_api.php' );
 	require_once( $t_core_dir . 'helper_api.php' );
+	require_once( $t_core_dir . 'authentication_api.php' );
+	require_once( $t_core_dir . 'user_api.php' );
 
 	$g_rss_feed_url = null;
+
+	# flag for error handler to skip header menus
+	$g_error_send_page_header = true;
 
 	# --------------------
 	# Sets the url for the rss link associated with the current page.
@@ -118,8 +123,11 @@
 	#  directly during the login process and other times when the user may
 	#  not be authenticated
 	function html_page_top2a() {
+		global $g_error_send_page_header;
+
 		html_head_end();
 		html_body_begin();
+		$g_error_send_page_header = false;
 		html_header();
 		html_top_banner();
 	}
@@ -202,9 +210,9 @@
 		echo "\t", '<link rel="stylesheet" type="text/css" href="', $t_css_url, '" />', "\n";
 
 		# fix for NS 4.x css
-		echo "\t", '<script type="text/javascript" language="JavaScript">', "\n";
-		echo "\t\t", 'if(document.layers) {document.write("<style>td{padding:0px;}</style>")}', "\n";
-		echo "\t", '</script>', "\n";
+		echo "\t", '<script type="text/javascript" language="JavaScript"><!--', "\n";
+		echo "\t\t", 'if(document.layers) {document.write("<style>td{padding:0px;}<\/style>")}', "\n";
+		echo "\t", '// --></script>', "\n";
 	}
 
 	# --------------------
@@ -262,6 +270,16 @@
 
 		if ( !is_blank( $t_page ) && file_exists( $t_page ) && !is_dir( $t_page ) ) {
 			include( $t_page );
+		} else {
+			if ( is_page_name( 'login_page' ) ) {
+				$t_align = 'center';
+			} else {
+				$t_align = 'left';
+			}
+
+			echo '<div align="', $t_align, '">';
+			echo '<a href="http://www.mantisbt.org" title="Mantis Bugtracker"><img border="0" width="238" height="78" alt="Mantis Bugtracker" src="images/mantis_logo.gif" /></a>';
+			echo '</div>';
 		}
 	}
 
@@ -304,13 +322,14 @@
 			PRINT '<td class="login-info-right">';
 				PRINT '<form method="post" name="form_set_project" action="set_project.php">';
 
+				echo lang_get( 'email_project' ), ': ';
 				if ( ON == config_get( 'use_javascript' )) {
 					PRINT '<select name="project_id" class="small" onchange="document.forms.form_set_project.submit();">';
 				} else {
 					PRINT '<select name="project_id" class="small">';
 				}
-				print_project_option_list( helper_get_current_project() );
-				PRINT '</select>';
+				print_project_option_list( join( ';', helper_get_current_project_trace() ), true, null, true );
+				PRINT '</select> ';
 				PRINT '<input type="submit" class="button-small" value="' . lang_get( 'switch' ) . '" />';
 				PRINT '</form>';
 			PRINT '</td>';
@@ -337,18 +356,27 @@
 		# We do this at the end of the page so that:
 		#  1) we can display the user's last visit time on a page before updating it
 		#  2) we don't invalidate the user cache immediately after fetching it
-		if ( auth_is_user_authenticated() ) {
+		#  3) don't do this on the password verification or update page, as it causes the
+		#    verification comparison to fail
+		if ( auth_is_user_authenticated() && !( is_page_name( 'verify.php' ) || is_page_name( 'account_update.php' ) ) ) {
 			$t_user_id = auth_get_current_user_id();
 			user_update_last_visit( $t_user_id );
 		}
 
 		echo "\t", '<br />', "\n";
 		echo "\t", '<hr size="1" />', "\n";
+
+		echo '<table border="0" width="100%" cellspacing="0" cellpadding="0"><tr valign="top"><td>';
 		if ( ON == config_get( 'show_version' ) ) {
-			echo "\t", '<span class="timer"><a href="http://www.mantisbt.org/">Mantis ', config_get( 'mantis_version' ), '</a></span>', "\n";
+			echo "\t", '<span class="timer"><a href="http://www.mantisbt.org/">Mantis ', config_get( 'mantis_version' ), '</a>',
+					'[<a href="http://www.mantisbt.org/" target="_blank">^</a>]</span>', "\n";
 		}
-		echo "\t", '<address>Copyright &copy; 2000 - 2004 Mantis Group</address>', "\n";
-		echo "\t", '<address><a href="mailto:', config_get( 'webmaster_email' ), '">', config_get( 'webmaster_email' ), '</a></address>', "\n";
+		echo "\t", '<address>Copyright &copy; 2000 - 2005 Mantis Group</address>', "\n";
+
+		# only display webmaster email is current user is not the anonymous user
+		if ( ! is_page_name( 'login_page.php' ) && !current_user_is_anonymous() ) {
+			echo "\t", '<address><a href="mailto:', config_get( 'webmaster_email' ), '">', config_get( 'webmaster_email' ), '</a></address>', "\n";
+		}
 
 		# print timings
 		if ( ON == config_get( 'show_timer' ) ) {
@@ -387,6 +415,10 @@
 				echo "\t",  '</table>', "\n";
 			}
 		}
+
+		echo '</td><td><div align="right">';
+		echo '<a href="http://www.mantisbt.org" title="Powered by Mantis Bugtracker"><img src="images/mantis_logo_button.gif" width="88" height="35" alt="Powered by Mantis Bugtracker" border="0" /></a>';
+		echo '</div></td></tr></table>';
 	}
 
 	# --------------------
@@ -463,14 +495,16 @@
 
 				# Manage Users (admins) or Manage Project (managers) or Manage Custom Fields
 				$t_show_access = min( config_get( 'manage_project_threshold' ), config_get( 'manage_custom_fields_threshold' ), ADMINISTRATOR );
-				if ( access_has_project_level( $t_show_access ) ) {
-					if ( access_has_project_level( ADMINISTRATOR ) ) {
+				if ( access_has_global_level( $t_show_access) || access_has_any_project( $t_show_access ) )  {
+					$t_current_project = helper_get_current_project();
+					if ( access_has_project_level( ADMINISTRATOR, $t_current_project ) ) {
 						$t_link = 'manage_user_page.php';
 					} else {
-						if ( access_has_project_level( config_get( 'manage_project_threshold' ) ) ) {
-							$t_link = 'manage_proj_page.php';
+						if ( access_has_project_level( config_get( 'manage_project_threshold' ), $t_current_project )
+								&& ( $t_current_project <> ALL_PROJECTS ) ) {
+							$t_link = 'manage_proj_edit_page.php?project_id=' . $t_current_project;
 						} else {
-							$t_link = 'manage_custom_field_page.php';
+							$t_link = 'manage_proj_page.php';
 						}
 					}
 					$t_menu_options[] = "<a href=\"$t_link\">" . lang_get( 'manage_link' ) . '</a>';
@@ -522,15 +556,26 @@
 			PRINT '<td class="menu">';
 			PRINT '<a href="set_project.php?project_id=' . ALL_PROJECTS . '">' . lang_get( 'all_projects' ) . '</a>';
 
-			$t_project_count = count( $t_project_ids );
-			for ( $i=0 ; $i < $t_project_count ; $i++ ) {
-				$t_id = $t_project_ids[$i];
+			foreach ( $t_project_ids as $t_id ) {
 				PRINT " | <a href=\"set_project.php?project_id=$t_id\">" . string_display( project_get_field( $t_id, 'name' ) ) . '</a>';
+				print_subproject_menu_bar( $t_id, $t_id . ';' );
 			}
 
 			PRINT '</td>';
 		PRINT '</tr>';
 		PRINT '</table>';
+	}
+
+	# --------------------
+	# Print the menu bar with a list of projects to which the user has access
+	function print_subproject_menu_bar( $p_project_id, $p_parents = '' ) {
+		$t_subprojects = current_user_get_accessible_subprojects( $p_project_id );
+		$t_char = ':';
+		foreach ( $t_subprojects as $t_subproject ) {
+			PRINT "$t_char <a href=\"set_project.php?project_id=$p_parents$t_subproject\">" . string_display( project_get_field( $t_subproject, 'name' ) ) . '</a>';
+			print_subproject_menu_bar( $t_subproject, $p_parents . $t_subproject . ';' );
+			$t_char = ',';
+		}
 	}
 
 	# --------------------
@@ -556,7 +601,8 @@
 		$t_manage_user_page 		= 'manage_user_page.php';
 		$t_manage_project_menu_page = 'manage_proj_page.php';
 		$t_manage_custom_field_page = 'manage_custom_field_page.php';
-		$t_permissions_summary_report = 'adm_permissions_report.php';
+		$t_manage_config_page = 'adm_permissions_report.php';
+		$t_manage_prof_menu_page    = 'manage_prof_menu_page.php';
 		# $t_documentation_page 		= 'documentation_page.php';
 
 		switch ( $p_page ) {
@@ -569,8 +615,11 @@
 			case $t_manage_custom_field_page:
 				$t_manage_custom_field_page = '';
 				break;
-			case $t_permissions_summary_report:
-				$t_permissions_summary_report = '';
+			case $t_manage_config_page:
+				$t_manage_config_page = '';
+				break;
+			case $t_manage_prof_menu_page:
+				$t_manage_prof_menu_page = '';
 				break;
 #			case $t_documentation_page:
 #				$t_documentation_page = '';
@@ -587,10 +636,47 @@
 		if ( access_has_project_level( config_get( 'manage_custom_fields_threshold' ) ) ) {
 			print_bracket_link( $t_manage_custom_field_page, lang_get( 'manage_custom_field_link' ) );
 		}
-		if ( access_has_project_level( ADMINISTRATOR ) ) {
-			print_bracket_link( $t_permissions_summary_report, lang_get( 'permissions_summary_report' ) );
+		if ( access_has_global_level( config_get( 'manage_global_profile_threshold' ) ) ) {
+			print_bracket_link( $t_manage_prof_menu_page, lang_get( 'manage_global_profiles_link' ) );
+		}
+		if ( access_has_project_level( config_get( 'view_configuration_threshold' ) ) ) {
+			print_bracket_link( $t_manage_config_page, lang_get( 'manage_config_link' ) );
 		}
 			# print_bracket_link( $t_documentation_page, lang_get( 'documentation_link' ) );
+		PRINT '</div>';
+	}
+
+	# --------------------
+	# Print the menu for the manage configuration section
+	# $p_page specifies the current page name so it's link can be disabled
+	function print_manage_config_menu( $p_page = '' ) {
+		$t_permissions_summary_report = 'adm_permissions_report.php';
+		$t_manage_work_threshold     = 'manage_config_work_threshold_page.php';
+		$t_manage_email 		= 'manage_config_email_page.php';
+		$t_manage_workflow 		= 'manage_config_workflow_page.php';
+
+		switch ( $p_page ) {
+			case $t_permissions_summary_report:
+				$t_permissions_summary_report = '';
+				break;
+			case $t_manage_work_threshold:
+				$t_manage_work_threshold = '';
+				break;
+			case $t_manage_email:
+				$t_manage_email = '';
+				break;
+			case $t_manage_workflow:
+				$t_manage_workflow = '';
+				break;
+		}
+
+		PRINT '<br /><div align="center">';
+		if ( access_has_project_level( config_get( 'view_configuration_threshold' ) ) ) {
+			print_bracket_link( $t_permissions_summary_report, lang_get( 'permissions_summary_report' ) );
+			print_bracket_link( $t_manage_work_threshold, lang_get( 'manage_threshold_config' ) );
+			print_bracket_link( $t_manage_workflow, lang_get( 'manage_workflow_config' ) );
+			print_bracket_link( $t_manage_email, lang_get( 'manage_email_config' ) );
+		}
 		PRINT '</div>';
 	}
 
@@ -601,17 +687,24 @@
 		$t_account_page 				= 'account_page.php';
 		$t_account_prefs_page 			= 'account_prefs_page.php';
 		$t_account_profile_menu_page 	= 'account_prof_menu_page.php';
+		$t_account_sponsor_page			= 'account_sponsor_page.php';
 
 		switch ( $p_page ) {
 			case $t_account_page				: $t_account_page 				= ''; break;
 			case $t_account_prefs_page			: $t_account_prefs_page 		= ''; break;
 			case $t_account_profile_menu_page	: $t_account_profile_menu_page 	= ''; break;
+			case $t_account_sponsor_page		: $t_account_sponsor_page		= ''; break;
 		}
 
 		print_bracket_link( $t_account_page, lang_get( 'account_link' ) );
 		print_bracket_link( $t_account_prefs_page, lang_get( 'change_preferences_link' ) );
 		if ( access_has_project_level( config_get( 'add_profile_threshold' ) ) ) {
 			print_bracket_link( $t_account_profile_menu_page, lang_get( 'manage_profiles_link' ) );
+		}
+		if ( ( config_get( 'enable_sponsorship' ) == ON ) &&
+			 ( access_has_project_level( config_get( 'view_sponsorship_total_threshold' ) ) ) &&
+			 !current_user_is_anonymous() ) {
+			print_bracket_link( $t_account_sponsor_page, lang_get( 'my_sponsorship' ) );
 		}
 	}
 
@@ -685,6 +778,64 @@
 		PRINT '</table>';
 	}
 
+ 	# --------------------
+	# Print the legend for the status percentage
+	function html_status_percentage_legend() {
+
+		$t_mantis_bug_table = config_get( 'mantis_bug_table' );
+		$t_project_id = helper_get_current_project();
+		$t_user_id = auth_get_current_user_id();
+
+		#checking if it's a per project statistic or all projects
+		$t_specific_where = helper_project_specific_where( $t_project_id, $t_user_id );
+
+		$query = "SELECT status, COUNT(*) AS number
+				FROM $t_mantis_bug_table
+				WHERE $t_specific_where
+				GROUP BY status";
+		$result = db_query( $query );
+
+		$t_bug_count = 0;
+		$t_status_count_array = array();
+
+		while ( $row = db_fetch_array( $result ) ) {
+
+			$t_status_count_array[ $row['status'] ] = $row['number'];
+			$t_bug_count += $row['number'];
+		}
+
+		$t_arr		= explode_enum_string( config_get( 'status_enum_string' ) );
+		$enum_count	= count( $t_arr );
+
+		if ( $t_bug_count > 0 ) {
+			echo '<br />';
+			echo '<table class="width100" cellspacing="1">';
+			echo '<tr>';
+			echo '<td colspan="'.$enum_count.'"><strong>'.lang_get( 'issue_status_percentage' ).'</strong></td>';
+			echo '</tr>';
+			echo '<tr>';
+
+			for ( $i=0; $i < $enum_count; $i++) {
+				$t_s = explode_enum_arr( $t_arr[$i] );
+				$t_color = get_status_color( $t_s[0] );
+				$t_status = $t_s[0];
+
+				if ( !isset( $t_status_count_array[ $t_status ] ) ) {
+					$t_status_count_array[ $t_status ] = 0;
+				}
+
+				$width = round( ( $t_status_count_array[ $t_status ] / $t_bug_count ) * 100 );
+
+				if ($width > 0) {
+					echo "<td class=\"small-caption-center\" width=\"$width%\" bgcolor=\"$t_color\">$width%</td>";
+				}
+			}
+
+			echo '</tr>';
+			echo '</table>';
+		}
+	}
+
 	# --------------------
 	# Print an html button inside a form
 	function html_button ( $p_action, $p_button_text, $p_fields = null ) {
@@ -725,11 +876,17 @@
 		$t_bug_project_id = bug_get_field( $p_bug_id, 'project_id' );
 		$t_bug_current_state = bug_get_field( $p_bug_id, 'status' );
 		$t_current_access = access_get_project_level( $t_bug_project_id );
-		
-		$t_enum_list = get_status_option_list( $t_current_access, $t_bug_current_state, false, 
+
+		$t_enum_list = get_status_option_list( $t_current_access, $t_bug_current_state, false,
 				( bug_get_field( $p_bug_id, 'reporter_id' ) == auth_get_current_user_id() && ( ON == config_get( 'allow_reporter_close' ) ) ) );
 
 		if ( count( $t_enum_list ) > 0 ) {
+			# resort the list into ascending order after noting the key from the first element (the default)
+			$t_default_arr = each( $t_enum_list );
+			$t_default = $t_default_arr['key'];
+			ksort( $t_enum_list );
+			reset( $t_enum_list );
+
 			echo "<form method=\"post\" action=\"bug_change_status_page.php\">";
 
 			$t_button_text = lang_get( 'bug_status_to_button' );
@@ -737,7 +894,9 @@
 
 			echo " <select name=\"new_status\">"; # space at beginning of line is important
 			foreach ( $t_enum_list as $key => $val ) {
-				echo "<option value=\"$key\">$val</option>";
+				echo "<option value=\"$key\" ";
+				check_selected( $key, $t_default );
+				echo ">$val</option>";
 			}
 			echo '</select>';
 
@@ -833,21 +992,6 @@
 	}
 
 	# --------------------
-	# Print a button to resolve the given bug
-	function html_button_bug_resolve( $p_bug_id ) {
-		$t_status = bug_get_field( $p_bug_id, 'status' );
-		$t_resolved_status = config_get( 'bug_resolved_status_threshold' );
-
-		if ( ( $t_status < $t_resolved_status ) && 
-				access_has_bug_level( config_get( 'handle_bug_threshold' ), $p_bug_id ) &&
-				bug_check_workflow($t_status, $t_resolved_status ) ) {
-			html_button( 'bug_resolve_page.php',
-						 lang_get( 'resolve_bug_button' ),
-						 array( 'bug_id' => $p_bug_id ) );
-		}
-	}
-
-	# --------------------
 	# Print a button to move the given bug to a different project
 	function html_button_bug_move( $p_bug_id ) {
 		$t_status = bug_get_field( $p_bug_id, 'status' );
@@ -880,27 +1024,14 @@
 
 		if ( access_has_bug_level( config_get( 'reopen_bug_threshold' ), $p_bug_id ) ||
 				( ( bug_get_field( $p_bug_id, 'reporter_id' ) == auth_get_current_user_id() ) &&
-	 		  	( ON == config_get( 'allow_reporter_reopen' ) ) 
+	 		  	( ON == config_get( 'allow_reporter_reopen' ) )
 				)
 			 ) {
 			html_button( 'bug_change_status_page.php',
 						 lang_get( 'reopen_bug_button' ),
 						 array( 'bug_id' => $p_bug_id ,
-						 				'new_status' => $t_reopen_status ) );
-		}
-	}
-
-	# --------------------
-	# Print a button to close the given bug
-	function html_button_bug_close( $p_bug_id ) {
-		$t_status = bug_get_field( $p_bug_id, 'status' );
-
-		if ( access_can_close_bug ( $p_bug_id ) && 
-				( $t_status < CLOSED ) && 
-				bug_check_workflow($t_status, CLOSED) ) {
-			html_button( 'bug_close_page.php',
-						 lang_get( 'close_bug_button' ),
-						 array( 'bug_id' => $p_bug_id ) );
+						 				'new_status' => $t_reopen_status,
+						 				'reopen_flag' => ON ) );
 		}
 	}
 
@@ -927,9 +1058,9 @@
 	# Print a button to delete the given bug
 	function html_button_bug_delete( $p_bug_id ) {
 		if ( access_has_bug_level( config_get( 'delete_bug_threshold' ), $p_bug_id ) ) {
-			html_button( 'bug_delete.php',
+			html_button( 'bug_actiongroup_page.php',
 						 lang_get( 'delete_bug_button' ),
-						 array( 'bug_id' => $p_bug_id ) );
+						 array( 'bug_arr[]' => $p_bug_id, 'action' => 'DELETE' ) );
 		}
 	}
 
@@ -957,7 +1088,7 @@
 		echo '<td class="center">';
 		html_button_bug_change_status( $p_bug_id );
 		echo '</td>';
-		
+
 		# MONITOR/UNMONITOR button
 		echo '<td class="center">';
 		if ( !current_user_is_anonymous() ) {
@@ -974,7 +1105,7 @@
 			echo '<td class="center">';
 			html_button_bug_create_child( $p_bug_id );
 			echo '</td>';
-		} 
+		}
 
 		if ( $t_resolved <= $t_status ) { # resolved is not the same as readonly
 			PRINT '<td class="center">';
@@ -994,6 +1125,8 @@
 		echo '<td class="center">';
 		html_button_bug_delete( $p_bug_id );
 		echo '</td>';
+
+		helper_call_custom_function( 'print_bug_view_page_custom_buttons', array( $p_bug_id ) );
 
 		echo '</tr></table>';
 	}

@@ -6,12 +6,14 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: custom_field_api.php,v 1.42 2004-09-16 16:48:53 thraxisp Exp $
+	# $Id: custom_field_api.php,v 1.57 2005-07-19 18:28:50 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
 
 	require_once( $t_core_dir . 'bug_api.php' );
+	require_once( $t_core_dir . 'helper_api.php' );
+	require_once( $t_core_dir . 'date_api.php' );
 
 	### Custom Fields API ###
 
@@ -127,6 +129,17 @@
 	}
 
 	# --------------------
+	# Return the type of a custom field if it exists.
+	function custom_field_type( $p_field_id ) {
+		$t_field = custom_field_cache_row( $p_field_id, false ) ;
+		if ( $t_field == false ) {
+			return -1 ;
+		} else {
+			return $t_field[ 'type' ] ;
+		}
+	}
+
+	# --------------------
 	# Check to see whether the field id is defined
 	#  return true if the field is defined, error otherwise
 	function custom_field_ensure_exists( $p_field_id ) {
@@ -189,11 +202,7 @@
 
 		$t_project_id = bug_get_field( $p_bug_id, 'project_id' );
 
-		if ( user_get_access_level( $p_user_id, $t_project_id ) >= $t_access_level_r ) {
-			return true;
-		} else {
-			return false;
-		}
+        return access_has_project_level( $t_access_level_r, $t_project_id, $p_user_id );
 	}
 
 	# --------------------
@@ -208,11 +217,7 @@
 
 		$t_access_level_rw = custom_field_get_field( $p_field_id, 'access_level_rw' );
 
-		if ( user_get_access_level( $p_user_id, $p_project_id ) >= $t_access_level_rw ) {
-			return true;
-		} else {
-			return false;
-		}
+        return access_has_project_level( $t_access_level_rw, $p_project_id, $p_user_id );
 	}
 
 	# --------------------
@@ -234,7 +239,7 @@
 	function custom_field_create( $p_name ) {
 		$c_name = db_prepare_string( trim( $p_name ) );
 
-		if ( is_blank( $p_name ) ) {			
+		if ( is_blank( $p_name ) ) {
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}
 
@@ -285,7 +290,7 @@
 		if ( $c_advanced == true && ( $c_require_report == true || $c_require_update ) ) {
 			trigger_error( ERROR_CUSTOM_FIELD_INVALID_DEFINITION, ERROR );
 		}
-		
+
 
 		if ( !custom_field_is_name_unique( $c_name, $c_field_id ) ) {
 			trigger_error( ERROR_CUSTOM_FIELD_NAME_NOT_UNIQUE, ERROR );
@@ -571,21 +576,81 @@
 	#===================================
 
 	# --------------------
-	# Return an array all custom field ids
-	function custom_field_get_ids( $p_project_id = ALL_PROJECTS ) {
+	# Get the id of the custom field with the specified name.
+	# false is returned if no custom field found with the specified name.
+	function custom_field_get_id_from_name( $p_field_name ) {
+		$t_custom_field_table = config_get( 'mantis_custom_field_table' );
+
+		$c_field_name = db_prepare_string( $p_field_name );
+
+		$query = "SELECT id FROM $t_custom_field_table WHERE name = '$c_field_name'";
+		$t_result = db_query( $query, 1 );
+
+		if ( db_num_rows( $t_result ) == 0 ) {
+			return false;
+		}
+
+		$row = db_fetch_array( $t_result );
+
+		return $row['id'];
+	}
+
+	# --------------------
+	# Return an array of ids of custom fields bound to the specified project
+	#
+	# The ids will be sorted based on the sequence number associated with the binding
+	function custom_field_get_linked_ids( $p_project_id = ALL_PROJECTS ) {
 		$t_custom_field_table			= config_get( 'mantis_custom_field_table' );
 		$t_custom_field_project_table	= config_get( 'mantis_custom_field_project_table' );
 
 		if ( ALL_PROJECTS == $p_project_id ) {
-			$query = "SELECT id
-					  FROM $t_custom_field_table
-					  ORDER BY name ASC";
+            $t_project_user_list_table = config_get( 'mantis_project_user_list_table' );
+            $t_project_table = config_get( 'mantis_project_table' );
+            $t_user_table = config_get( 'mantis_user_table' );
+            $t_user_id = auth_get_current_user_id();
+            $t_pub = VS_PUBLIC;
+            $t_priv = VS_PRIVATE;
+            
+            $t_private_access = config_get( 'private_project_threshold' );
+            if ( is_array( $t_private_access ) ) {
+                if ( 1 == count( $t_private_access ) ) {
+				    $t_access_clause = "= " . array_shift( $t_private_access ) . " ";
+                } else {
+                    $t_access_clause = "IN (" . implode( ',', $t_private_access ) . ")";
+                }
+            } else {
+                $t_access_clause = ">= $t_private_access ";
+            }			
+
+            
+            # select only the ids that the user has some access to 
+            #  e.g., all fields in public projects, or private projects where the user is listed
+            #    or private projects where the user is implicitly listed
+            $query = "SELECT cft.id as id, cft.name as name
+                FROM $t_custom_field_table as cft, $t_user_table ut, $t_project_table pt, $t_custom_field_project_table cfpt
+                    LEFT JOIN $t_project_user_list_table pult 
+                        on cfpt.project_id = pult.project_id and pult.user_id = $t_user_id
+                WHERE cft.id = cfpt.field_id AND cfpt.project_id = pt.id AND ut.id = $t_user_id AND 
+                    ( pt.view_state = $t_pub OR 
+                    ( pt.view_state = $t_priv and pult.user_id = $t_user_id ) OR 
+                    ( pult.user_id is null and ut.access_level $t_access_clause ) )
+                GROUP BY cft.id, cft.name
+                ORDER BY cft.name ASC";
 		} else {
-			$query = "SELECT $t_custom_field_table.id
-					  FROM $t_custom_field_table, $t_custom_field_project_table
-					  WHERE $t_custom_field_project_table.project_id = '$p_project_id' AND
-							$t_custom_field_table.id = $t_custom_field_project_table.field_id
-					  ORDER BY name ASC";
+            if ( is_array( $p_project_id ) ) {
+                if ( 1 == count( $p_project_id ) ) {
+				    $t_project_clause = "= " . array_shift( $p_project_id ) . " ";
+                } else {
+                    $t_project_clause = "IN (" . implode( ',', $p_project_id ) . ")";
+                }
+            } else {
+                $t_project_clause = "= $p_project_id ";
+            }			
+			$query = "SELECT cft.id, cft.name, cfpt.sequence
+					  FROM $t_custom_field_table cft, $t_custom_field_project_table cfpt
+					  WHERE cfpt.project_id $t_project_clause AND
+							cft.id = cfpt.field_id
+					  ORDER BY sequence ASC, name ASC";
 		}
 		$result = db_query( $query );
 		$t_row_count = db_num_rows( $result );
@@ -601,19 +666,12 @@
 	}
 
 	# --------------------
-	# Return an array of ids of custom fields bound to the specified project
-	#
-	# The ids will be sorted based on the sequence number associated with the binding
-	function custom_field_get_linked_ids( $p_project_id ) {
-		$c_project_id = db_prepare_int( $p_project_id );
-
-		$t_custom_field_project_table	= config_get( 'mantis_custom_field_project_table' );
+	# Return an array all custom field ids sorted by name
+	function custom_field_get_ids( ) {
 		$t_custom_field_table			= config_get( 'mantis_custom_field_table' );
-		$query = "SELECT field_id
-				  FROM $t_custom_field_project_table p, $t_custom_field_table f
-				  WHERE p.project_id='$c_project_id' AND
-				  		p.field_id=f.id
-				  ORDER BY p.sequence ASC, f.name ASC";
+		$query = "SELECT id, name
+				  FROM $t_custom_field_table
+				  ORDER BY name ASC";
 		$result = db_query( $query );
 		$t_row_count = db_num_rows( $result );
 		$t_ids = array();
@@ -621,7 +679,7 @@
 		for ( $i=0 ; $i < $t_row_count ; $i++ ) {
 			$row = db_fetch_array( $result );
 
-			array_push( $t_ids, $row['field_id'] );
+			array_push( $t_ids, $row['id'] );
 		}
 
 		return $t_ids;
@@ -751,10 +809,11 @@
 			$t_custom_field_string_table  = config_get( 'mantis_custom_field_string_table' );
 
 			$query = "SELECT f.name, f.type, f.access_level_r, f.default_value, f.type, s.value
-					FROM $t_custom_field_project_table AS p, $t_custom_field_table AS f
-					LEFT JOIN $t_custom_field_string_table AS s
+					FROM $t_custom_field_project_table p INNER JOIN $t_custom_field_table f
+						ON p.field_id = f.id
+					LEFT JOIN $t_custom_field_string_table s
 						ON  p.field_id=s.field_id AND s.bug_id='$c_bug_id'
-					WHERE   p.project_id = '$c_project_id' AND p.field_id = f.id
+					WHERE   p.project_id = '$c_project_id'
 					ORDER BY p.sequence ASC, f.name ASC";
 
 			$result = db_query( $query );
@@ -851,6 +910,20 @@
 	}
 
 	# --------------------
+	# $p_possible_values: possible values to be pre-processed.  If it has enum values,
+	#                     it will be left as is.  If it has a method, it will be replaced
+	#                     by the list.
+	function custom_field_prepare_possible_values( $p_possible_values ) {
+		$t_possible_values = $p_possible_values;
+
+		if ( !is_blank( $t_possible_values ) && ( $t_possible_values[0] == '=' ) ) {
+			$t_possible_values = helper_call_custom_function( 'enum_' . substr( $t_possible_values, 1 ), array() );
+		}
+
+		return $t_possible_values;
+	}
+
+	# --------------------
 	# Get All Possible Values for a Field.
 	function custom_field_distinct_values( $p_field_id, $p_project_id = ALL_PROJECTS ) {
 		$c_field_id						= db_prepare_int( $p_field_id );
@@ -875,9 +948,11 @@
 		if ( CUSTOM_FIELD_TYPE_ENUM == $row['type'] ||
 			 CUSTOM_FIELD_TYPE_CHECKBOX == $row['type'] ||
 			 CUSTOM_FIELD_TYPE_LIST == $row['type'] ||
-			 CUSTOM_FIELD_TYPE_MULTILIST == $row['type'] 
+			 CUSTOM_FIELD_TYPE_MULTILIST == $row['type']
 			) {
-			$t_values_arr = explode( '|', $row['possible_values'] );
+			$t_possible_values = custom_field_prepare_possible_values( $row['possible_values'] );
+
+			$t_values_arr = explode( '|', $t_possible_values );
 
 			foreach( $t_values_arr as $t_option ) {
 				array_push( $t_return_arr, $t_option );
@@ -886,7 +961,7 @@
 			$t_where = '';
 			$t_from = $t_custom_field_string_table;
 			if ( ALL_PROJECTS != $p_project_id ) {
-				$t_where = " AND $t_mantis_bug_table.id = $t_custom_field_string_table.bug_id AND 
+				$t_where = " AND $t_mantis_bug_table.id = $t_custom_field_string_table.bug_id AND
 							$t_mantis_bug_table.project_id = '$p_project_id'";
 				$t_from = $t_from . ", $t_mantis_bug_table";
 			}
@@ -942,7 +1017,7 @@
 			$result = str_replace( '||', '', '|' . $p_value . '|' );
 			break;
 		default:
-			$result = string_display_links( $p_value );
+			$result = $p_value;
 		}
 		return $result;
 	}
@@ -1066,7 +1141,7 @@
 	function print_custom_field_input( $p_field_def, $p_bug_id = null ) {
 		$t_id = $p_field_def['id'];
 
-		if( null == $p_bug_id ) {
+		if( null === $p_bug_id ) {
 			$t_custom_field_value = $p_field_def['default_value'];
 		} else {
 			$t_custom_field_value = custom_field_get_value( $t_id, $p_bug_id );
@@ -1078,23 +1153,23 @@
 		case CUSTOM_FIELD_TYPE_ENUM:
 		case CUSTOM_FIELD_TYPE_LIST:
 		case CUSTOM_FIELD_TYPE_MULTILIST:
- 			$t_values = explode( '|', $p_field_def['possible_values'] );
+ 			$t_values = explode( '|', custom_field_prepare_possible_values( $p_field_def['possible_values'] ) );
 			$t_list_size = $t_possible_values_count = count( $t_values );
-				
+
 			if ( $t_possible_values_count > 5 ) {
 				$t_list_size = 5;
 			}
-			
+
 			if ( $p_field_def['type'] == CUSTOM_FIELD_TYPE_ENUM ) {
 				$t_list_size = 0;	# for enums the size is 0
 			}
-			
-			if ( $p_field_def['type'] == CUSTOM_FIELD_TYPE_MULTILIST ) {	 
+
+			if ( $p_field_def['type'] == CUSTOM_FIELD_TYPE_MULTILIST ) {
 				echo '<select name="custom_field_' . $t_id . '[]" size="' . $t_list_size . '" multiple>';
 			} else {
 				echo '<select name="custom_field_' . $t_id . '" size="' . $t_list_size . '">';
 			}
-			
+
 			$t_selected_values = explode( '|', $t_custom_field_value );
  			foreach( $t_values as $t_option ) {
 				if( in_array( $t_option, $t_selected_values ) ) {
@@ -1106,7 +1181,7 @@
  			echo '</select>';
 			break;
 		case CUSTOM_FIELD_TYPE_CHECKBOX:
-			$t_values = explode( '|', $p_field_def['possible_values'] );
+			$t_values = explode( '|', custom_field_prepare_possible_values( $p_field_def['possible_values'] ) );
 			$t_checked_values = explode( '|', $t_custom_field_value );
 			foreach( $t_values as $t_option ) {
 				echo '<input type="checkbox" name="custom_field_' . $t_id . '[]"';
@@ -1128,12 +1203,17 @@
 				echo ' maxlength="255"';
 			}
 			echo ' value="' . $t_custom_field_value .'"></input>';
+			break ;
+
+		case CUSTOM_FIELD_TYPE_DATE:
+			print_date_selection_set("custom_field_" . $t_id, config_get('short_date_format'), $t_custom_field_value, false, true) ;
+			break ;
 		}
 	}
 
 	# --------------------
 	# Prepare a string containing a custom field value for display
-	# $p_def 		contains the definition of the custom field 
+	# $p_def 		contains the definition of the custom field
 	# $p_field_id 	contains the id of the field
 	# $p_bug_id		contains the bug id to display the custom field value for
 	# NOTE: This probably belongs in the string_api.php
@@ -1149,14 +1229,19 @@
 			case CUSTOM_FIELD_TYPE_CHECKBOX:
 				return str_replace( '|', ', ', $t_custom_field_value );
 				break;
+			case CUSTOM_FIELD_TYPE_DATE:
+				if ($t_custom_field_value != null) {
+					return date( config_get( 'short_date_format'), $t_custom_field_value) ;
+				}
+				break ;
 			default:
-				return $t_custom_field_value;
-		}	
+				return string_display_links( $t_custom_field_value );
+		}
 	}
 
 	# --------------------
 	# Print a custom field value for display
-	# $p_def 		contains the definition of the custom field 
+	# $p_def 		contains the definition of the custom field
 	# $p_field_id 	contains the id of the field
 	# $p_bug_id		contains the bug id to display the custom field value for
 	# NOTE: This probably belongs in the print_api.php
@@ -1180,10 +1265,15 @@
 			case CUSTOM_FIELD_TYPE_CHECKBOX:
 				return str_replace( '|', ', ', $p_value );
 				break;
+			case CUSTOM_FIELD_TYPE_DATE:
+				if ($p_value != null) {
+					return date( config_get( 'short_date_format' ), $p_value) ;
+				}
+				break ;
 			default:
 				return $p_value;
-		}	
+		}
 		return $p_value;
 	}
-	
+
 ?>

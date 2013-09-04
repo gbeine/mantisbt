@@ -6,14 +6,14 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: print_bug_page.php,v 1.51 2004-08-27 00:29:54 thraxisp Exp $
+	# $Id: print_bug_page.php,v 1.55 2005-03-26 18:27:17 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'bug_api.php' );
 	require_once( $t_core_path.'custom_field_api.php' );
 	require_once( $t_core_path.'date_api.php' );
@@ -30,15 +30,17 @@
 
 	$c_bug_id = (integer)$f_bug_id;
 
-	$query = "SELECT *, date_submitted, last_updated
-			FROM $g_mantis_bug_table
+	$t_bug_table = config_get( 'mantis_bug_table' );
+	$query = "SELECT *
+			FROM $t_bug_table
 			WHERE id='$c_bug_id'";
 	$result = db_query( $query );
 	$row = db_fetch_array( $result );
 	extract( $row, EXTR_PREFIX_ALL, 'v' );
 
+	$t_bug_text_table = config_get( 'mantis_bug_text_table' );
 	$query = "SELECT *
-			FROM $g_mantis_bug_text_table
+			FROM $t_bug_text_table
 			WHERE id='$v_bug_text_id'";
 	$result = db_query( $query );
 	$row = db_fetch_array( $result );
@@ -292,8 +294,9 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 <?php
 	# account profile description
 	if ( $v_profile_id > 0 ) {
+	    $t_user_prof_table = config_get( 'mantis_user_profile_table' );
 		$query = "SELECT description
-				FROM $g_mantis_user_profile_table
+				FROM $t_user_prof_table
 				WHERE id='$v_profile_id'";
 		$result = db_query( $query );
 		$t_profile_description = '';
@@ -327,30 +330,7 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 		<?php echo lang_get( 'attached_files' ) ?>:
 	</td>
 	<td class="print" colspan="5">
-		<?php
-			$query = "SELECT filename, filesize, date_added
-					FROM $g_mantis_bug_file_table
-					WHERE bug_id='$c_bug_id'";
-			$result = db_query( $query );
-			$num_files = db_num_rows( $result );
-			for ($i=0;$i<$num_files;$i++) {
-				$row = db_fetch_array( $result );
-				extract( $row, EXTR_PREFIX_ALL, 'v2' );
-				$v2_filesize = round( $v2_filesize / 1024 );
-				$v2_date_added = date( config_get( 'normal_date_format' ), ( db_unixtimestamp( $v2_date_added ) ) );
-
-				switch ( $g_file_upload_method ) {
-					case DISK:	PRINT "$v2_filename ($v2_filesize KB) <span class=\"italic\">$v2_date_added</span>";
-							break;
-					case DATABASE:	PRINT "$v2_filename ($v2_filesize KB) <span class=\"italic\">$v2_date_added</span>";
-							break;
-				}
-
-				if ( $i != ($num_files - 1) ) {
-					PRINT '<br />';
-				}
-			}
-		?>
+		<?php file_list_attachments ( $f_bug_id ); ?>
 	</td>
 </tr>
 </table>

@@ -6,14 +6,14 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: manage_proj_cat_copy.php,v 1.19 2004-01-11 07:16:07 vboctor Exp $
+	# $Id: manage_proj_cat_copy.php,v 1.21 2005-02-27 15:33:01 jlatour Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'category_api.php' );
 ?>
 <?php
@@ -23,6 +23,7 @@
 	$f_copy_to			= gpc_get_bool( 'copy_to' );
 
 	access_ensure_project_level( config_get( 'manage_project_threshold' ), $f_project_id );
+	access_ensure_project_level( config_get( 'manage_project_threshold' ), $f_other_project_id );
 
 	if ( $f_copy_from ) {
 	  $t_src_project_id = $f_other_project_id;

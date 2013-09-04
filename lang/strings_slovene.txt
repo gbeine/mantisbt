@@ -26,6 +26,9 @@ $s_actiongroup_menu_resolve = 'Razreši';
 $s_actiongroup_menu_update_priority = 'Posodobi prioritete';
 $s_actiongroup_menu_update_status = 'Posodobi status';
 $s_actiongroup_menu_update_view_status = 'Posodobi zasebnost';
+$s_actiongroup_menu_update_category = 'Update Category';
+$s_actiongroup_menu_set_sticky = 'Set/Unset Sticky';
+$s_actiongroup_menu_update_field = 'Update %s';
 $s_actiongroup_bugs = 'Izbrane zadeve';
 
 # new strings:
@@ -49,6 +52,8 @@ $s_jump = 'Skoči';
 $s_copy_users = 'Kopiraj uporabnike';
 $s_copy_categories_from = 'Kopiraj kategorije iz';
 $s_copy_categories_to = 'Kopiraj kategorije v';
+$s_copy_users_from = 'Copy Users From';
+$s_copy_users_to = 'Copy Users To';
 $s_bug_history = 'Zgodovina zadeve';
 $s_field = 'Področje';
 $s_old_value = 'Prejšnja vrednost';
@@ -96,6 +101,7 @@ $s_login_link = 'Prijava';
 $s_bug_actiongroup_failed = 'Nimate ustreznih pravic za izvršitev tega dejanja pri sledečih zadevah:';
 $s_bug_actiongroup_access = 'You did not have appropriate permissions to perform that action.';
 $s_bug_actiongroup_status = 'This issue cannot be changed to the requested status';
+$s_bug_actiongroup_category = 'This issue cannot be changed to the requested category';
 $s_close_bugs_conf_msg = 'Ali ste prepričani, da želite zapreti naslednje zadeve?';
 $s_delete_bugs_conf_msg = 'Ali ste prepričani, da želite izbrisati naslednje zadeve?';
 $s_move_bugs_conf_msg = 'Premakni zadeve v';
@@ -105,6 +111,8 @@ $s_resolve_bugs_conf_msg = 'Izberi rešljivost zadev';
 $s_priority_bugs_conf_msg = 'Izberi prioriteto zadev';
 $s_status_bugs_conf_msg = 'Izberi status zadev';
 $s_view_status_bugs_conf_msg = 'Izberi zasebnost zadev';
+$s_category_bugs_conf_msg = 'Choose issues category';
+$s_set_sticky_bugs_conf_msg = 'Are you sure you wish to set/unset these issues sticky?';
 $s_close_group_bugs_button = 'Zapri zadeve' ;
 $s_delete_group_bugs_button = 'Izbriši zadeve' ;
 $s_move_group_bugs_button = 'Premakni zadeve' ;
@@ -113,7 +121,9 @@ $s_assign_group_bugs_button = 'Dodeli zadeve' ;
 $s_resolve_group_bugs_button = 'Razreši zadeve' ;
 $s_priority_group_bugs_button = 'Posodobi prioritete' ;
 $s_status_group_bugs_button = 'Posodobi status' ;
+$s_category_group_bugs_button = 'Update Category';
 $s_view_status_group_bugs_button = 'Posodobi zasebnost';
+$s_set_sticky_group_bugs_button = 'Set/Unset Sticky';
 
 # improved JPgraphs strings
 $s_graph_imp_status_title = 'Synthesis graphs by status' ;
@@ -191,12 +201,16 @@ $MANTIS_ERROR[ERROR_NEWS_NOT_FOUND]	 = 'Predmet novice ni bil najden.';
 $MANTIS_ERROR[ERROR_USER_CREATE_PASSWORD_MISMATCH] = 'Gesli se ne ujemata.';
 $MANTIS_ERROR[ERROR_GPC_ARRAY_EXPECTED]	 = 'An array was expected but a string was received.';
 $MANTIS_ERROR[ERROR_GPC_ARRAY_UNEXPECTED] = 'A string was expected but an array was received.';
+$MANTIS_ERROR[ERROR_GPC_NOT_NUMBER] = 'A number was expected for %s.';
 $MANTIS_ERROR[ERROR_BUG_NOT_FOUND]	 = 'Zadeva %d ni bila najdena.';
+$MANTIS_ERROR[ERROR_FILTER_NOT_FOUND]	 = 'Filter %d not found.';
 $MANTIS_ERROR[ERROR_EMAIL_INVALID]	 = 'Neveljavni elektronski naslov.';
 $MANTIS_ERROR[ERROR_USER_PROFILE_NOT_FOUND] = 'Profil ni bil najden.';
 $MANTIS_ERROR[ERROR_FILE_NOT_ALLOWED]	 = 'Vrsta datoteke ni dovoljena za naložitev.';
 $MANTIS_ERROR[ERROR_FILE_DUPLICATE]	 = 'Datoteka je dvojnik. Najprej izbrišite datoteko.';
 $MANTIS_ERROR[ERROR_FILE_INVALID_UPLOAD_PATH] = 'Invalid upload path.  Directory either does not exist or not writable to webserver';'Invalid upload path.  Directory either does not exist or not writable to webserver';
+$MANTIS_ERROR[ERROR_FILE_NO_UPLOAD_FAILURE] = 'No file was uploaded. Please go back and Choose a file before pressing Upload';
+$MANTIS_ERROR[ERROR_FILE_MOVE_FAILED] = 'Uploaded file could not be moved to the file storage directory. Directory either does not exist or not writable to webserver';
 $MANTIS_ERROR[ERROR_BUG_DUPLICATE_SELF]	 = 'Ne morete določiti zadeve kot dvojnik same sebe.';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_NOT_FOUND] = 'Custom field not found';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_NAME_NOT_UNIQUE] = 'To je ime dvojnika.';
@@ -236,6 +250,8 @@ $MANTIS_ERROR[ERROR_LOST_PASSWORD_NO_EMAIL_SPECIFIED] = 'You must provide an e-m
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_MATCHING_DATA] = 'The provided information doesn\'t match any registered account!';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_CONFIRM_HASH_INVALID] = 'The confirmation URL is invalid or has already been used. Please signup again.';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_MAX_IN_PROGRESS_ATTEMPTS_REACHED] = 'Max. number of in-progress requests reached. Please contact the system administrator';
+$MANTIS_ERROR[ERROR_PROJECT_RECURSIVE_HIERARCHY] = 'That operation would create a loop in the subproject hierarchy.';
+$MANTIS_ERROR[ERROR_USER_CHANGE_LAST_ADMIN] = 'You cannot change the access level of the only ADMINISTRATOR in the system.';
 
 #$s_login_error = 'Your account may be disabled or blocked (due to too many failed login attempts) or the username/password you entered is incorrect.';
 $s_login_error = 'NAPAKA: vaš račun ja onemogočen ali pa ste vnesli napačnega uporabnika in/ali geslo.';
@@ -254,6 +270,8 @@ $s_administrator = 'Administrator';
 $s_myself = 'Jaz';
 $s_default_access_level = 'Default access level';
 
+$s_issue_status_percentage = 'Issue Status Percentage';
+
 # Enum Strings
 $s_access_levels_enum_string = '10:pregledovalec,25:poročevalec,40:posodobljevalec,55:razvijalec,70:menedžer,90:administrator';
 $s_project_status_enum_string = '10:v razvoju,30:izdan,50:stabilen,70:zastarel';
@@ -267,6 +285,7 @@ $s_status_enum_string = '10:novo,20:povratna informacija,30:sprejeto,40:potrjeno
 $s_resolution_enum_string = '10:odprto,20:popravljeno,30:ponovno odprto,40:ne gre reproducirati,50:nepopravljivo,60:kopija,70:ni napake,80:odloženo,90:ne bom popravil';
 $s_projection_enum_string = '10:nobeno,30:prilagoditev,50:manjši popravek,70:večji popravek,90:zahteva redizajn';
 $s_eta_enum_string = '10:nobeno,20:< 1 dan,30:2-3 dni,40:< 1 teden,50:< 1 mesec,60:> 1 mesec';
+$s_sponsorship_enum_string = '0:Unpaid,1:Requested,2:Paid';
 
 # Email Strings
 $s_new_account_subject = 'Vaš novi uporabniški račun';
@@ -350,6 +369,8 @@ $s_no_password_change = 'The password is controlled by another system, hence can
 $s_confirm_password = 'Potrditev gesla';
 $s_access_level = 'Nivo dostopa';
 $s_update_user_button = 'Posodobi uporabnika';
+$s_verify_warning = 'Your account information has been verified. The account confirmation message you have received is now invalid.';
+$s_verify_change_password = 'You must set a password here to allow you to log in again.';
 
 # account_prefs_page.php
 $s_default_account_preferences_title = 'Nastavitve računa';
@@ -412,12 +433,34 @@ $s_submit_button = 'Pošlji';
 # account_profile_update.php
 $s_profile_updated_msg = 'Profil posodobljen...';
 
+# account_sponsor_page.php
+$s_my_sponsorship = 'My Sponsorships';
+$s_update_sponsorship_button = 'Change Payment Status';
+$s_no_sponsored = 'No sponsored issues Assigned To yourself were found.';
+$s_own_sponsored = 'Issues You have Sponsored:';
+$s_issues_handled = 'Sponsored Issues You Have Been Assigned To:';
+$s_no_own_sponsored = 'You have not sponsored any issues.';
+$s_sponsor = 'Sponsor';
+$s_amount = 'Amount';
+$s_total_owing = 'Total Owing';
+$s_total_paid = 'Total Paid';
+$s_sponsor_hide = 'Hide Resolved and Paid';
+$s_sponsor_show = 'Show All';
+
+# account_sponsor_update.php
+$s_payment_updated = 'Payment information updated.';
+
 # account_update.php
 $s_account_updated_msg = 'Vaš račun je bil uspešno posodobljen...';
 $s_email_updated = 'Elektronski naslov je bil uspešno posodobljen...';
 $s_realname_duplicated = 'Real name is used by another user';
 $s_realname_updated = 'Pravo ime je bilo uspešno posodobljeno';
 $s_password_updated = 'Geslo je bilo uspešno posodobljeno';
+
+# adm_permission_report.php
+
+# bug_action_group_page
+$s_multiple_projects = 'The issues you have selected are from different projects. The parameters below reflect the settings for all projects. If this is incorrect, please retry your change with a smaller number of issues selected.';
 
 # bug_assign.php
 $s_bug_assign_msg = 'Zadeva je bila uspešno dodeljena...';
@@ -519,6 +562,8 @@ $s_summary = 'Povzetek';
 $s_description = 'Opis';
 $s_steps_to_reproduce = 'Koraki za ponovitev';
 $s_update_information_button = 'Posodobi informacije';
+$s_sticky_issue = 'Sticky Issue';
+$s_profile = 'Profile';
 
 # bug_update_page.php
 $s_update_advanced_link = 'Napredno posodabljanje';
@@ -604,7 +649,12 @@ $s_filter_button = 'Vklopi filter';
 $s_manage_users_link = 'Uporabniki';
 $s_manage_projects_link = 'Projekti';
 $s_manage_custom_field_link = 'Uporabniško določena polja';
+$s_manage_global_profiles_link = 'Manage Global Profiles';
 $s_permissions_summary_report = 'Permissions Report';
+$s_manage_config_link = 'Manage Configuration';
+$s_manage_threshold_config = 'Workflow Thresholds';
+$s_manage_email_config = 'Email Notifications';
+$s_manage_workflow_config = 'Workflow';
 $s_create_new_account_link = 'Ustvari nov račun';
 $s_projects_link = 'Projekti';
 $s_documentation_link = 'Dokumentacija';
@@ -618,6 +668,69 @@ $s_p = 'p';
 $s_date_created = 'Datum ustvarjanja';
 $s_last_visit = 'Zadnji obisk';
 $s_edit_user_link = 'Uredi uporabnika';
+
+# manage_config_email_page
+$s_config_all_projects = 'Note: These configurations affect ALL PROJECTS.';
+$s_config_project = 'Note: These configurations affect only the %s project.';
+$s_colour_coding = 'In the table below, the following color code applies:';
+$s_colour_project = 'Project setting overrides others.';
+$s_colour_global = 'All Project settings override default configuration.';
+$s_issue_reporter = 'User who reported issue';
+$s_issue_handler = 'User who is handling the issue';
+$s_users_added_bugnote = 'Users added Bugnote';
+$s_change_configuration = 'Update Configuration';
+$s_message = 'Message';
+$s_default_notify = 'Setting default notification flags to';
+$s_action_notify = 'Setting action notification flags to';
+$s_notify_defaults_change_access = 'Change users who can change notification defaults to';
+$s_notify_actions_change_access = 'Change users who can change notifications to';
+$s_revert_to_system = "Delete All Projects Settings";
+$s_revert_to_all_project = "Delete Project Specific Settings";
+
+# manage_config_workflow_page
+$s_non_existent = 'non-existent';
+$s_current_status = 'Current Status';
+$s_next_status = 'Next Status';
+$s_workflow = 'Workflow';
+$s_workflow_thresholds = 'Thresholds that Affect Workflow';
+$s_threshold = 'Threshold';
+$s_status_level = 'Status';
+$s_alter_level = 'Who can alter this value';
+$s_validation = 'Workflow Validation';
+$s_comment = 'Validation Comment';
+$s_superfluous = 'Arc from status to itself is implied, and need not be given explicitly';
+$s_unreachable = 'You cannot move an issue into this status';
+$s_no_exit = 'You cannot move an issue out of this status';
+$s_access_levels = 'Access Levels';
+$s_access_change = 'Minimum Access Level to Change to this Status';
+$s_desc_bug_submit_status = 'Status to which a new issue is set';
+$s_desc_bug_reopen_status = 'Status to which reopened issues are set';
+$s_desc_bug_resolved_status_threshold = 'Status where an issue is considered resolved';
+$s_workflow_change_access = 'Change users who can change workflow to';
+$s_access_change_access = 'Change users who can change status change access level to';
+
+# manage_config_workflow_set
+$s_default_not_in_flow = 'The default status of %s is not selected in the next statuses for %s. It will be ignored';
+
+# manage_config_work_threshold_page
+$s_assign_issue = 'Assign an issue';
+$s_allow_close_immediate = 'Allow issue to be closed on Resolve';
+$s_allow_reporter_close = 'Allow Reporter to close Issue';
+$s_allow_reporter_reopen = 'Allow Reporter to re-open Issue';
+$s_set_status_assigned = 'Set status on assignment of Handler';
+$s_allow_user_edit = 'Allow user to edit their own bugnotes';
+$s_limit_access = 'Limit reporter\'s access to their own issues';
+$s_submit_status = 'Status to which a new issue is set';
+$s_assigned_status = 'Status to set auto-assigned issues to';
+$s_resolved_status = 'Status where an issue is considered resolved';
+$s_readonly_status = 'Status where an issue becomes read only';
+$s_reopen_status = 'Status to which a reopened issue is set';
+$s_reopen_resolution = 'Resolution to which a reopened issue is set';
+
+# manage_config_revert_page
+$s_config_delete_sure = 'Are you sure you want to delete the settings for';
+$s_in_project = 'in project';
+$s_delete_config_button = 'Delete Settings';
 
 # manage_proj_add.php
 $s_project_added_msg = 'Projekt je bila uspešno dodan...';
@@ -638,6 +751,9 @@ $s_update_category_button = 'Posodobi kategorijo';
 
 # manage_proj_category_update.php
 $s_category_updated_msg = 'Kategorija je bila uspešno dodana...';
+
+# manage_proj_create_page.php
+$s_add_subproject_title = 'Add Subproject';
 
 # manage_proj_delete.php
 $s_project_deleted_msg = 'Projekt je bil uspešno izbrisan...';
@@ -665,6 +781,10 @@ $s_actions = 'Dejanja';
 $s_version = 'Verzije';
 $s_timestamp = 'Časovni žig';
 $s_update = 'Posodobi';
+$s_subprojects = 'Subprojects';
+$s_add_subproject = 'Add as Subproject';
+$s_create_new_subproject_link = 'Create New Subproject';
+$s_unlink_link = 'Unlink';
 
 # manage_proj_menu_page.php
 $s_add_project_title = 'Dodajanje projekta';
@@ -813,6 +933,9 @@ $s_project_removed_user_msg = 'Uporabnik je bil uspešno odstranjen iz projekta'
 
 # proj_user_delete_page.php
 $s_remove_user_sure_msg = 'Ste prepričani, da želite odstraniti uporabnika?';
+$s_remove_user_button = 'Remove User';
+$s_remove_all_users_sure_msg = 'Are you sure you wish to remove all the users of this project?';
+$s_remove_all_users_button = 'Remove All Users';
 
 # proj_user_menu_page.php
 $s_add_user_title = 'Dodajanje uporabnika k projektu';
@@ -912,6 +1035,8 @@ $s_show = 'Prikaži';
 $s_changed = 'Spremenjen (ure)';
 $s_viewing_bugs_title = 'Pregled zadev';
 $s_updated = 'Posodobljena';
+$s_sticky = 'Show Sticky Issues';
+$s_sort = 'Sort by';
 
 # view_all_inc.php
 $s_none = 'noben';
@@ -976,7 +1101,6 @@ $s_no_users_sponsoring_bug = 'Noben uporabnik ne sponzorira te zadeve.';
 $s_users_sponsoring_bug = 'To zadevo sponzorirajo uporabniki';
 $s_sponsors_list = 'Seznam sponzorjev';
 $s_total_sponsorship_amount = 'Skupaj sponzorskih sredstev = %s';
-$s_sponsor_issue = 'Sponzoriraj zadevo';
 
 # custom field strings
 $s_add_custom_field_button = 'New Custom Field';
@@ -1008,11 +1132,14 @@ $s_custom_field_require_resolved = 'Required On Resolve';
 $s_custom_field_require_closed = 'Required On Close';
 
 $s_custom_field_sequence = 'Sequence';
-$s_custom_field_type_enum_string = '0:String,1:Numeric,2:Float,3:Enumeration,4:Email';
+$s_custom_field_type_enum_string = '0:String,1:Numeric,2:Float,3:Enumeration,4:Email,5:Checkbox,6:List,7:Multiselection list,8:Date';
 
 $s_confirm_used_custom_field_deletion = 'This field is currently linked to at least one project.  If you continue all values for this field will be permanently deleted.  This action cannot be undone.  If you do not want to izbrisati to field, hit the Back button in your browser.  To proceed, click the button below';
 $s_confirm_custom_field_deletion = 'Ste prepričani, da želite izbrisati to custom field and all associated values?';
 $s_field_delete_button = 'Delete Field';
+
+$s_confirm_custom_field_unlinking = 'Are you sure you want to remove (unlink) this custom field from the project and delete all associated values?';
+$s_field_remove_button = 'Remove Field';
 
 $s_hide_status = 'Skrij status';
 $s_filter_closed = "Zaprte";
@@ -1035,6 +1162,7 @@ $s_sponsors = '%d sponzorjev';
 $s_sponsorship_added = 'Dodal sponzorstvo';
 $s_sponsorship_updated = 'Sponzorstvo posodobljeno';
 $s_sponsorship_deleted = 'Sponzorstvo izbrisano';
+$s_sponsorship_paid = 'Sponsorship Paid';
 $s_sponsorship_more_info = 'Več informacij o sponzorstvu';
 
 # URL explaining the process of sponsoring an issue.  This is defined here rather than
@@ -1066,6 +1194,7 @@ $s_relationship_warning_blocking_bugs_not_resolved_2 = '<b>POZOR</b>. Niso vsi p
 $s_create_child_bug_button = "Create Clone";
 $s_bug_cloned_to = "Zadeva klonirana";
 $s_bug_created_from = "Zadeva ustvarjena iz";
+
 # Relationship Graphs
 $s_viewing_bug_relationship_graph_title = "Relationship Graph";
 $s_relation_graph = "Relation Graph";
@@ -1076,6 +1205,7 @@ $s_view_issue = "View Issue";
 
 # Source Control Integration
 $s_checkin = 'Checkin';
+
 # Pemissions report
 $s_perm_rpt_capability = 'Capability';
 $s_view = 'View';
@@ -1104,6 +1234,8 @@ $s_manage_news = 'Manage news';
 $s_view_list_of_attachments = 'View list of attachments';
 $s_download_attachments = 'Download attachments';
 $s_delete_attachments = 'Delete attachments';
+$s_delete_attachment_button = "Delete";
+$s_delete_attachment_sure_msg = "Are you sure you wish to delete this attachment?";
 $s_upload_issue_attachments = 'Upload issue attachments';
 $s_filters = 'filters';
 $s_save_filters = 'Save filters';
@@ -1134,4 +1266,16 @@ $s_status_changed_to = 'Status changes to';
 $s_email_on_deleted = 'Email on Deleted';
 $s_email_on_sponsorship_changed = 'Email on Sponsorship changed';
 $s_email_on_relationship_changed = 'Email on Relationship changed';
+
+# DHTML filters
+$s_loading = 'Loading...';
+
+# filter_api.php
+$s_between = 'Between' ;
+$s_on_or_before = 'On Or Before' ;
+$s_before = 'Before' ;
+# $s_on = 'On' ; # @@@ (thraxisp) this already exists (~ line 499)
+$s_after = 'After' ;
+$s_on_or_after = 'On Or After' ;
+
 ?>

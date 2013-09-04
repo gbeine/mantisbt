@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: email_api.php,v 1.102 2004-10-05 21:10:14 prichards Exp $
+	# $Id: email_api.php,v 1.120 2005-07-05 18:50:49 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -155,11 +155,12 @@
 	# on action "new", i.e. notify administrators on new bugs which can be
 	# ON or OFF.
 	function email_notify_flag( $action, $flag ) {
-		global	$g_notify_flags, $g_default_notify_flags;
-		if ( isset ( $g_notify_flags[$action][$flag] ) ) {
-			return $g_notify_flags[$action][$flag];
-		} elseif ( isset ( $g_default_notify_flags[$flag] ) ) {
-			return $g_default_notify_flags[$flag];
+		$t_notify_flags = config_get( 'notify_flags' );
+		$t_default_notify_flags = config_get( 'default_notify_flags' );
+		if ( isset ( $t_notify_flags[$action][$flag] ) ) {
+			return $t_notify_flags[$action][$flag];
+		} elseif ( isset ( $t_default_notify_flags[$flag] ) ) {
+			return $t_default_notify_flags[$flag];
 		}
 
 		return OFF;
@@ -173,21 +174,23 @@
 
 		$t_recipients = array();
 
-		# Reporter
+		# add Reporter
 		if ( ON == email_notify_flag( $p_notify_type, 'reporter' ) ) {
 			$t_reporter_id = bug_get_field( $p_bug_id, 'reporter_id' );
 			$t_recipients[$t_reporter_id] = true;
+			log_event( LOG_EMAIL_RECIPIENT, "bug= $p_bug_id, add reporter=$t_reporter_id" );
 		}
 
-		# Handler
+		# add Handler
 		if ( ON == email_notify_flag( $p_notify_type, 'handler' )) {
 			$t_handler_id = bug_get_field( $p_bug_id, 'handler_id' );
 			$t_recipients[$t_handler_id] = true;
+			log_event( LOG_EMAIL_RECIPIENT, "bug= $p_bug_id, add handler=$t_handler_id" );
 		}
 
 		$t_project_id = bug_get_field( $p_bug_id, 'project_id' );
 
-		# monitor
+		# add users monitoring the bug
 		$t_bug_monitor_table = config_get( 'mantis_bug_monitor_table' );
 		if ( ON == email_notify_flag( $p_notify_type, 'monitor' ) ) {
 			$query = "SELECT DISTINCT user_id
@@ -199,10 +202,16 @@
 			for ( $i=0 ; $i < $count ; $i++ ) {
 				$t_user_id = db_result( $result, $i );
 				$t_recipients[$t_user_id] = true;
+			log_event( LOG_EMAIL_RECIPIENT, "bug= $p_bug_id, add monitor=$t_user_id" );
 			}
 		}
 
-		# bugnotes
+		# add users who contributed bugnotes
+		$t_bugnote_id = bugnote_get_latest_id( $p_bug_id );
+		$t_bugnote_view = bugnote_get_field( $t_bugnote_id, 'view_state' );
+		$t_bugnote_date = db_unixtimestamp( bugnote_get_field( $t_bugnote_id, 'last_modified' ) );
+		$t_bug_date = bug_get_field( $p_bug_id, 'last_updated' );
+
 		$t_bugnote_table = config_get( 'mantis_bugnote_table' );
 		if ( ON == email_notify_flag( $p_notify_type, 'bugnotes' ) ) {
 			$query = "SELECT DISTINCT reporter_id
@@ -213,25 +222,42 @@
 			$count = db_num_rows( $result );
 			for( $i=0 ; $i < $count ; $i++ ) {
 				$t_user_id = db_result( $result, $i );
-				# @@@ (thraxisp) check that user can see bugnotes here
 				$t_recipients[$t_user_id] = true;
+				log_event( LOG_EMAIL_RECIPIENT, "bug= $p_bug_id, add note=$t_user_id" );
 			}
 		}
 
-		# threshold
+		# add project users who meet the thresholds
 		$t_bug_is_private = bug_get_field( $p_bug_id, 'view_state' ) == VS_PRIVATE;
 		$t_threshold_min = email_notify_flag( $p_notify_type, 'threshold_min' );
 		$t_threshold_max = email_notify_flag( $p_notify_type, 'threshold_max' );
 		$t_threshold_users = project_get_all_user_rows( $t_project_id, $t_threshold_min );
 		foreach( $t_threshold_users as $t_user ) {
 			if ( $t_user['access_level'] <= $t_threshold_max ) {
-				if ( !$t_bug_is_private || $t_user['access_level'] >= config_get( 'private_bug_threshold' ) ) {
+				if ( !$t_bug_is_private || access_compare_level( $t_user['access_level'], config_get( 'private_bug_threshold' ) ) ) {
 					$t_recipients[$t_user['id']] = true;
+					log_event( LOG_EMAIL_RECIPIENT, "bug= $p_bug_id, add project=" . $t_user['id'] );
 				}
 			}
 		}
 
-		$t_pref_field = 'email_on_' . $p_notify_type;
+		# set up to eliminate unwanted users
+		#  get list of status values that are not covered specifically in the prefs
+		#  These are handled by email_on_status generically
+		#  @@@ thraxisp note that email_on_assigned was co-opted to handle change in handler
+		$t_status_change = get_enum_to_array( config_get( 'status_enum_string' ) );
+		unset( $t_status_change[NEW_] );
+		unset( $t_status_change[FEEDBACK] );
+		unset( $t_status_change[RESOLVED] );
+		unset( $t_status_change[CLOSED] );
+
+		if ( 'owner' == $p_notify_type ) {
+			$t_pref_field = 'email_on_assigned';
+		} else if ( in_array( $p_notify_type, $t_status_change ) ) {
+			$t_pref_field = 'email_on_status';
+		} else {
+			$t_pref_field = 'email_on_' . $p_notify_type;
+		}
 		$t_user_pref_table = config_get( 'mantis_user_pref_table' );
 		if ( !db_field_exists( $t_pref_field, $t_user_pref_table ) ) {
 			$t_pref_field = false;
@@ -239,21 +265,22 @@
 
 		# @@@ we could optimize by modifiying user_cache() to take an array
 		#  of user ids so we could pull them all in.  We'll see if it's necessary
-
+		$t_final_recipients = array();
 		# Check whether users should receive the emails
 		# and put email address to $t_recipients[user_id]
 		foreach ( $t_recipients as $t_id => $t_ignore ) {
+
 			# Possibly eliminate the current user
 			if ( ( auth_get_current_user_id() == $t_id ) &&
 				 ( OFF == config_get( 'email_receive_own' ) ) ) {
-				unset( $t_recipients[$t_id] );
+				log_event( LOG_EMAIL_RECIPIENT, "bug= $p_bug_id, drop $t_id (own)" );
 				continue;
 			}
 
 			# Eliminate users who don't exist anymore or who are disabled
 			if ( !user_exists( $t_id ) ||
 				 !user_is_enabled( $t_id ) ) {
-				unset( $t_recipients[$t_id] );
+				log_event( LOG_EMAIL_RECIPIENT, "bug= $p_bug_id, drop $t_id (disabled)" );
 				continue;
 			}
 
@@ -261,42 +288,49 @@
 			if ( $t_pref_field ) {
 				$t_notify = user_pref_get_pref( $t_id, $t_pref_field );
 				if ( OFF == $t_notify ) {
-					unset( $t_recipients[$t_id] );
+					log_event( LOG_EMAIL_RECIPIENT, "bug= $p_bug_id, drop $t_id (pref $t_pref_field off)" );
 					continue;
 				} else {
 					# Users can define the severity of an issue before they are emailed for
 					# each type of notification
-					$t_min_sev_pref_field = $t_pref_field . '_minimum_severity';
+					$t_min_sev_pref_field = $t_pref_field . '_min_severity';
 					$t_min_sev_notify     = user_pref_get_pref( $t_id, $t_min_sev_pref_field );
 					$t_bug_severity       = bug_get_field( $p_bug_id, 'severity' );
 
 					if ( $t_bug_severity < $t_min_sev_notify ) {
-						unset( $t_recipients[$t_id] );
+						log_event( LOG_EMAIL_RECIPIENT, "bug= $p_bug_id, drop $t_id (pref threshold)" );
 						continue;
 					}
+				}
+			}
+
+			# check that user can see bugnotes if the last update included a bugnote
+			if ( $t_bug_date == $t_bugnote_date ) {
+				if ( !access_has_bugnote_level( VIEWER, $t_bugnote_id, $t_id ) ) {
+						log_event( LOG_EMAIL_RECIPIENT, "bug= $p_bug_id, drop $t_id (access level)" );
+					continue;
 				}
 			}
 
 			# Finally, let's get their emails, if they've set one
 			$t_email = user_get_email( $t_id );
 			if ( is_blank( $t_email ) ) {
-				unset( $t_recipients[$t_id] );
+				log_event( LOG_EMAIL_RECIPIENT, "bug= $p_bug_id, drop $t_id (no email)" );
 			} else {
 				# @@@ we could check the emails for validity again but I think
 				#   it would be too slow
-				$t_recipients[$t_id] = $t_email;
+				$t_final_recipients[$t_id] = $t_email;
 			}
 		}
-
-		return $t_recipients;
+		return $t_final_recipients;
 	}
 
 	# --------------------
 	# Send password to user
 	function email_signup( $p_user_id, $p_password, $p_confirm_hash ) {
 
-		if ( OFF == config_get( 'send_reset_password' ) ) {
-			return;
+		if ( ( OFF == config_get( 'send_reset_password' ) ) || ( OFF == config_get( 'enable_email_notification' ) ) ) {
+					return;
 		}
 
 		lang_push( user_pref_get_language( $p_user_id ) );
@@ -309,8 +343,8 @@
 		$t_subject = '[' . config_get( 'window_title' ) . '] ' . lang_get( 'new_account_subject' );
 
 		$t_message = lang_get( 'new_account_greeting' ) . $t_username .
-						lang_get( 'new_account_greeting2' ) . "\n\n" .
-						string_get_confirm_hash_url( $p_user_id, $p_confirm_hash ) . "\n\n" .
+						lang_get( 'new_account_greeting2' ) . " \n\n" .
+						string_get_confirm_hash_url( $p_user_id, $p_confirm_hash ) . " \n\n" .
 						lang_get( 'new_account_message' ) .
 						lang_get( 'new_account_do_not_reply' );
 
@@ -318,6 +352,7 @@
 		# or else users won't be able to sign up
 		if( !is_blank( $t_email ) ) {
 			email_send( $t_email, $t_subject, $t_message );
+			log_event( LOG_EMAIL, "signup=$t_email, hash=$p_confirm_hash, id=$p_user_id" );
 		}
 
 		lang_pop();
@@ -327,7 +362,7 @@
 	# Send confirm_hash url to user forgets the password
 	function email_send_confirm_hash_url( $p_user_id, $p_confirm_hash ) {
 
-		if ( OFF == config_get( 'send_reset_password' ) ) {
+		if ( ( OFF == config_get( 'send_reset_password' ) ) || ( OFF == config_get( 'enable_email_notification' ) ) ) {
 			return;
 		}
 
@@ -339,16 +374,17 @@
 
 		$t_subject = '[' . config_get( 'window_title' ) . '] ' . lang_get( 'lost_password_subject' );
 
-		$t_message = lang_get( 'reset_request_msg' ) . "\n\n" .
-						string_get_confirm_hash_url( $p_user_id, $p_confirm_hash ) . "\n\n" .
-						lang_get( 'new_account_username' ) . $t_username . "\n" .
-						lang_get( 'new_account_IP' ) . $_SERVER["REMOTE_ADDR"] . "\n\n" .
+		$t_message = lang_get( 'reset_request_msg' ) . " \n\n" .
+						string_get_confirm_hash_url( $p_user_id, $p_confirm_hash ) . " \n\n" .
+						lang_get( 'new_account_username' ) . $t_username . " \n" .
+						lang_get( 'new_account_IP' ) . $_SERVER["REMOTE_ADDR"] . " \n\n" .
 						lang_get( 'new_account_do_not_reply' );
 
 		# Send password reset regardless of mail notification prefs
 		# or else users won't be able to receive their reset pws
 		if( !is_blank( $t_email ) ) {
 			email_send( $t_email, $t_subject, $t_message );
+			log_event( LOG_EMAIL, "password_reset=$t_email" );
 		}
 
 		lang_pop();
@@ -368,15 +404,16 @@
 			$t_recipient_email = user_get_email( $t_user['id'] );
 			$t_subject = '[' . config_get( 'window_title' ) . '] ' . lang_get( 'new_account_subject' );
 
-			$t_message = lang_get( 'new_account_signup_msg' ) . "\n\n" .
-						lang_get( 'new_account_username' ) . $p_username . "\n" .
-						lang_get( 'new_account_email' ) . $p_email . "\n" .
-						lang_get( 'new_account_IP' ) . $_SERVER["REMOTE_ADDR"] . "\n" .
+			$t_message = lang_get( 'new_account_signup_msg' ) . " \n\n" .
+						lang_get( 'new_account_username' ) . $p_username . " \n" .
+						lang_get( 'new_account_email' ) . $p_email . " \n" .
+						lang_get( 'new_account_IP' ) . $_SERVER["REMOTE_ADDR"] . " \n" .
 						$g_path . "\n\n" .
 						lang_get( 'new_account_do_not_reply' );
 
 			if( !is_blank( $t_recipient_email ) ) {
 				email_send( $t_recipient_email, $t_subject, $t_message );
+				log_event( LOG_EMAIL, "new_account_notify=$t_recipient_email" );
 			}
 
 			lang_pop();
@@ -399,12 +436,18 @@
 			$t_recipients = email_collect_recipients( $p_bug_id, $p_notify_type );
 
 			$t_project_id = bug_get_field( $p_bug_id, 'project_id' );
-
 			if ( is_array( $t_recipients ) ) {
+				log_event( LOG_EMAIL, sprintf("bug=%d, type=%s, msg=%s, recipients=(%s)", $p_bug_id, $p_notify_type, $p_message_id, implode( '. ', $t_recipients ) ) );
+
 				# send email to every recipient
 				foreach ( $t_recipients as $t_user_id => $t_user_email ) {
+					# load (push) user language here as build_visible_bug_data assumes current language
+					lang_push( user_pref_get_language( $t_user_id, $t_project_id ) );
+
 					$t_visible_bug_data = email_build_visible_bug_data( $t_user_id, $p_bug_id, $p_message_id );
 					$t_ok = email_bug_info_to_one_user( $t_visible_bug_data, $p_message_id, $t_project_id, $t_user_id, $p_header_optional_params ) && $t_ok;
+					
+					lang_pop();
 				}
 			}
 		}
@@ -576,7 +619,7 @@
 
 		# short-circuit if no recipient is defined, or email disabled
 		# note that this may cause signup messages not to be sent
-		
+
 		if ( is_blank( $p_recipient ) || ( OFF == config_get( 'enable_email_notification' ) ) ) {
 			return;
 		}
@@ -598,7 +641,7 @@
 		$mail = new PHPMailer;
 
 		$mail->PluginDir = PHPMAILER_PATH;
-		# @@@ should this be the current language (for the recipient) or the default one (for the user running the command) (thraxisp) 
+		# @@@ should this be the current language (for the recipient) or the default one (for the user running the command) (thraxisp)
 		$mail->SetLanguage( lang_get( 'phpmailer_language', lang_get_current() ), PHPMAILER_PATH . 'language' . DIRECTORY_SEPARATOR );
 
 		# Select the method to send mail
@@ -691,7 +734,7 @@
 		}
 
 		if ( !$mail->Send() ) {
-			PRINT "PROBLEMS SENDING MAIL TO: $t_recipient<br />";
+			PRINT "PROBLEMS SENDING MAIL TO: $p_recipient<br />";
 			PRINT 'Mailer Error: '.$mail->ErrorInfo.'<br />';
 			if ( $p_exit_on_error )  {
 				exit;
@@ -768,23 +811,30 @@
 			$p_recipients = array( $p_recipients );
 		}
 
+		$t_project_id = bug_get_field( $p_bug_id, 'project_id' );
+		$t_sender_id = auth_get_current_user_id();
+		$t_sender = user_get_name( $t_sender_id );
+
+		$t_subject = email_build_subject( $p_bug_id );
+		$t_date = date( config_get( 'normal_date_format' ) );
+		
 		$result = array();
 		foreach ( $p_recipients as $t_recipient ) {
-
-			lang_push( user_pref_get_language( $t_recipient, bug_get_field( $p_bug_id, 'project_id' ) ) );
-
-			$t_subject = email_build_subject( $p_bug_id );
-			$t_sender = current_user_get_field( 'username' ) . ' <' .
-						current_user_get_field( 'email' ) . '>' ;
-			$t_date = date( config_get( 'normal_date_format' ) );
-			$t_header = "\n" . lang_get( 'on' ) . " $t_date, $t_sender " .
-						lang_get( 'sent_you_this_reminder_about' ) . ":\n\n";
+			lang_push( user_pref_get_language( $t_recipient, $t_project_id ) );
 
 			$t_email = user_get_email( $t_recipient );
 			$result[] = user_get_name( $t_recipient );
+
+			if ( access_has_project_level( config_get( 'show_user_email_threshold' ), $t_project_id, $t_recipient ) ) {
+				$t_sender_email = ' <' . current_user_get_field( 'email' ) . '>' ;
+			} else {
+				$t_sender_email = '';
+			}
+			$t_header = "\n" . lang_get( 'on' ) . " $t_date, $t_sender $t_sender_email " .
+						lang_get( 'sent_you_this_reminder_about' ) . ": \n\n";
 			$t_contents = $t_header .
 							string_get_bug_view_url_with_fqdn( $p_bug_id, $t_recipient ) .
-							"\n\n$p_message";
+							" \n\n$p_message";
 
 			if( ON == config_get( 'enable_email_notification' ) ) {
 				email_send( $t_email, $t_subject, $t_contents );
@@ -808,9 +858,6 @@
 			return true;
 		}
 
-		# load (push) user language
-		lang_push( user_pref_get_language( $p_user_id, $p_project_id ) );
-
 		# build subject
 		$t_subject = '['.$p_visible_bug_data['email_project'].' '
 						.bug_format_id( $p_visible_bug_data['email_bug'] )
@@ -825,7 +872,7 @@
 		}
 
 		if ( ( $t_message !== null ) && ( !is_blank( $t_message ) ) ) {
-			$t_message .= "\n";
+			$t_message .= " \n";
 		}
 
 		$t_message .= email_format_bug_message(  $p_visible_bug_data );
@@ -833,8 +880,6 @@
 		# send mail
 		# PRINT '<br />email_bug_info::Sending email to :'.$t_user_email;
 		$t_ok = email_send( $t_user_email, $t_subject, $t_message, '', $p_visible_bug_data['set_category'], false );
-
-		lang_pop();
 
 		return $t_ok;
 	}
@@ -860,16 +905,16 @@
 		$p_visible_bug_data['email_priority'] = get_enum_element( 'priority', $p_visible_bug_data['email_priority'] );
 		$p_visible_bug_data['email_reproducibility'] = get_enum_element( 'reproducibility', $p_visible_bug_data['email_reproducibility'] );
 
-		$t_message = $t_email_separator1."\n";
+		$t_message = $t_email_separator1 . " \n";
 
 		if ( isset( $p_visible_bug_data['email_bug_view_url'] ) ) {
-			$t_message .= '<' . $p_visible_bug_data['email_bug_view_url'] . "> \n";
-			$t_message .= $t_email_separator1."\n";
+			$t_message .= $p_visible_bug_data['email_bug_view_url'] . " \n";
+			$t_message .= $t_email_separator1 . " \n";
 		}
 
 		$t_message .= email_format_attribute( $p_visible_bug_data, 'email_reporter' );
 		$t_message .= email_format_attribute( $p_visible_bug_data, 'email_handler' );
-		$t_message .= $t_email_separator1."\n";
+		$t_message .= $t_email_separator1 . " \n";
 		$t_message .= email_format_attribute( $p_visible_bug_data, 'email_project' );
 		$t_message .= email_format_attribute( $p_visible_bug_data, 'email_bug' );
 		$t_message .= email_format_attribute( $p_visible_bug_data, 'email_category' );
@@ -882,7 +927,7 @@
 		foreach( $p_visible_bug_data['custom_fields'] as $t_custom_field_name => $t_custom_field_data ) {
 			$t_message .= str_pad( lang_get_defaulted( $t_custom_field_name, null ) . ': ', $t_email_padding_length, ' ', STR_PAD_RIGHT );
 			$t_message .= string_custom_field_value_for_email ( $t_custom_field_data['value'], $t_custom_field_data['type'] );
-			$t_message .= "\n";
+			$t_message .= " \n";
 		} # end foreach custom field
 
 		if ( config_get( 'bug_resolved_status_threshold' ) <= $t_status ) {
@@ -891,11 +936,11 @@
 			$t_message .= email_format_attribute( $p_visible_bug_data, 'email_duplicate' );
 			$t_message .= email_format_attribute( $p_visible_bug_data, 'email_fixed_in_version' );
 		}
-		$t_message .= $t_email_separator1."\n";
+		$t_message .= $t_email_separator1 . " \n";
 
 		$t_message .= email_format_attribute( $p_visible_bug_data, 'email_date_submitted' );
 		$t_message .= email_format_attribute( $p_visible_bug_data, 'email_last_modified' );
-		$t_message .= $t_email_separator1."\n";
+		$t_message .= $t_email_separator1 . " \n";
 
 		$t_message .= email_format_attribute( $p_visible_bug_data, 'email_summary' );
 
@@ -911,42 +956,42 @@
 
 		# Sponsorship
 		if ( isset( $p_visible_bug_data['sponsorship_total'] ) && ( $p_visible_bug_data['sponsorship_total'] > 0 ) ) {
-			$t_message .= $t_email_separator1."\n";
+			$t_message .= $t_email_separator1 . " \n";
 			$t_message .= sprintf( lang_get( 'total_sponsorship_amount' ), sponsorship_format_amount( $p_visible_bug_data['sponsorship_total'] ) ) . "\n" . "\n";
 
 			if ( isset( $p_visible_bug_data['sponsorships'] ) ) {
 				foreach ( $p_visible_bug_data['sponsorships'] as $t_sponsorship ) {
-					$t_date_added = date( config_get( 'normal_date_format' ), db_unixtimestamp( $t_sponsorship->date_submitted ) );
+					$t_date_added = date( config_get( 'normal_date_format' ), $t_sponsorship->date_submitted );
 
 					$t_message .= $t_date_added . ': ';
 					$t_message .= user_get_name( $t_sponsorship->user_id );
-					$t_message .= ' (' . sponsorship_format_amount( $t_sponsorship->amount ) . ')' . "\n";
+					$t_message .= ' (' . sponsorship_format_amount( $t_sponsorship->amount ) . ')' . " \n";
 				}
 			}
 		}
 
-		$t_message .= $t_email_separator1."\n\n";
+		$t_message .= $t_email_separator1 . " \n\n";
 
 		# format bugnotes
 		foreach ( $p_visible_bug_data['bugnotes'] as $t_bugnote ) {
 			$t_last_modified = date( $t_normal_date_format, $t_bugnote->last_modified );
-			$t_string = ' '.$t_bugnote->reporter_name.' - '.$t_last_modified.' ';
+			$t_string = ' '. user_get_name( $t_bugnote->reporter_id ) . ' - ' . $t_last_modified . ' ';
 
-			$t_message .= $t_email_separator2."\n";
-			$t_message .= $t_string."\n";
-			$t_message .= $t_email_separator2."\n";
-			$t_message .= wordwrap( $t_bugnote->note )."\n\n";
+			$t_message .= $t_email_separator2 . " \n";
+			$t_message .= $t_string . " \n";
+			$t_message .= $t_email_separator2 . " \n";
+			$t_message .= wordwrap( $t_bugnote->note ) . " \n\n";
 		}
 
 		# format history
 		if ( array_key_exists( 'history', $p_visible_bug_data ) ) {
-			$t_message .=	lang_get( 'bug_history' ) . "\n";
-			$t_message .=	str_pad( lang_get( 'date_modified' ), 15 ) .
+			$t_message .=	lang_get( 'bug_history' ) . " \n";
+			$t_message .=	str_pad( lang_get( 'date_modified' ), 16 ) .
 							str_pad( lang_get( 'username' ), 15 ) .
 							str_pad( lang_get( 'field' ), 25 ) .
-							str_pad( lang_get( 'change' ), 20 ). "\n";
+							str_pad( lang_get( 'change' ), 20 ). " \n";
 
-			$t_message .= $t_email_separator1."\n";
+			$t_message .= $t_email_separator1 . " \n";
 
 			foreach ( $p_visible_bug_data['history'] as $t_raw_history_item ) {
 				$t_localized_item = history_localize_item(	$t_raw_history_item['field'],
@@ -954,12 +999,12 @@
 															$t_raw_history_item['old_value'],
 															$t_raw_history_item['new_value'] );
 
-				$t_message .=	str_pad( date( $t_normal_date_format, $t_raw_history_item['date'] ), 15 ) .
+				$t_message .=	str_pad( date( $t_normal_date_format, $t_raw_history_item['date'] ), 16 ) .
 								str_pad( $t_raw_history_item['username'], 15 ) .
 								str_pad( $t_localized_item['note'], 25 ) .
-								str_pad( $t_localized_item['change'], 20 ). "\n";
+								str_pad( $t_localized_item['change'], 20 ) . "\n";
 			}
-			$t_message .= $t_email_separator1."\n\n";
+			$t_message .= $t_email_separator1 . " \n\n";
 		}
 
 		return $t_message;
@@ -996,7 +1041,7 @@
 			$t_bug_data['email_bug_view_url'] = string_get_bug_view_url_with_fqdn( $p_bug_id );
 		}
 
-		if ( $t_user_access_level >= config_get( 'view_handler_threshold' ) ) {
+		if ( access_compare_level( $t_user_access_level, config_get( 'view_handler_threshold' ) ) ) {
 			if ( 0 != $row['handler_id'] ) {
 				$t_bug_data['email_handler'] = user_get_name( $row['handler_id'] );
 			} else {
@@ -1033,7 +1078,7 @@
 		$t_bug_data['bugnotes'] = bugnote_get_all_visible_bugnotes( $p_bug_id, $t_user_access_level, $t_user_bugnote_order, $t_user_bugnote_limit );
 
 		# put history data
-		if ( ON == config_get( 'history_default_visible' )  &&  $t_user_access_level >= config_get( 'view_history_threshold' ) ) {
+		if ( ( ON == config_get( 'history_default_visible' ) ) &&  access_compare_level( $t_user_access_level, config_get( 'view_history_threshold' ) ) ) {
 			$t_bug_data['history']  = history_get_raw_events_array( $p_bug_id );
 		}
 

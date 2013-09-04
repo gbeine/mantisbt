@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: gpc_api.php,v 1.28 2004-08-16 21:15:58 prichards Exp $
+	# $Id: gpc_api.php,v 1.39 2005-07-13 20:45:02 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### GET, POST, and Cookie API ###
@@ -32,6 +32,7 @@
 		} else if ( func_num_args() > 1 ) { #check for a default passed in (allowing null)
 			$t_result = $p_default;
 		} else {
+			error_parameters( $p_var_name );
 			trigger_error( ERROR_GPC_VAR_NOT_FOUND, ERROR );
 			$t_result = null;
 		}
@@ -49,6 +50,7 @@
 		$t_result = call_user_func_array( 'gpc_get', $args );
 
 		if ( is_array( $t_result ) ) {
+			error_parameters( $p_var_name );
 			trigger_error( ERROR_GPC_ARRAY_UNEXPECTED, ERROR );
 		}
 
@@ -65,10 +67,16 @@
 		$t_result = call_user_func_array( 'gpc_get', $args );
 
 		if ( is_array( $t_result ) ) {
+			error_parameters( $p_var_name );
 			trigger_error( ERROR_GPC_ARRAY_UNEXPECTED, ERROR );
 		}
+		$t_val = str_replace( " ", "", trim( $t_result ) );
+		if ( ! preg_match( "/^-?([0-9])*$/", $t_val ) ) {
+			error_parameters( $p_var_name );
+			trigger_error( ERROR_GPC_NOT_NUMBER, ERROR );
+		}
 
-		return (int)$t_result;
+		return (int)$t_val;
 	}
 	# ------------------
 	# Retrieve a boolean GPC variable. Uses gpc_get().
@@ -80,6 +88,7 @@
 			return $p_default;
 		} else {
 			if ( is_array( $t_result ) ) {
+				error_parameters( $p_var_name );
 				trigger_error( ERROR_GPC_ARRAY_UNEXPECTED, ERROR );
 			}
 
@@ -90,21 +99,36 @@
 	#===================================
 	# Custom Field Functions
 	#===================================
-	
+
 	# ------------------
 	# Retrieve a custom field variable.  Uses gpc_get().
 	#  If you pass in *no* default, an error will be triggered if
 	#  the variable does not exist
 	function gpc_get_custom_field( $p_var_name, $p_custom_field_type, $p_default = null ) {
-		switch ($p_custom_field_type ) { 
+		switch ($p_custom_field_type ) {
 			case CUSTOM_FIELD_TYPE_MULTILIST:
 			case CUSTOM_FIELD_TYPE_CHECKBOX:
 				$t_values = gpc_get_string_array( $p_var_name, $p_default );
-				if( null != $t_values && '' != $t_values ) {
+				if( null !== $t_values && '' != $t_values ) {
 					return implode( '|', $t_values );
 				} else {
 					return '';
 				}
+				break ;
+			case CUSTOM_FIELD_TYPE_DATE:
+				$t_day = gpc_get_int( $p_var_name . "_day", 0) ;
+				$t_month = gpc_get_int( $p_var_name . "_month", 0) ;
+				$t_year = gpc_get_int( $p_var_name . "_year", 0) ;
+				if (($t_year == 0) || ($t_month == 0) || ($t_day == 0)) {
+					if ($p_default == null) {
+						return '' ;
+					} else {
+						return $p_default ;
+					}
+				} else {
+					return strtotime($t_year . "-" . $t_month . "-" . $t_day) ;
+				}
+				break ;
 			default:
 				return gpc_get_string( $p_var_name, $p_default);
 		}
@@ -127,6 +151,7 @@
 		# If we the result isn't the default we were given or an array, error
 		if ( !( ( ( 1 < func_num_args() ) && ( $t_result === $p_default ) ) ||
 			is_array( $t_result ) ) ) {
+			error_parameters( $p_var_name );
 			trigger_error( ERROR_GPC_ARRAY_EXPECTED, ERROR);
 		}
 
@@ -145,6 +170,7 @@
 		# If we the result isn't the default we were given or an array, error
 		if ( !( ( ( 1 < func_num_args() ) && ( $t_result === $p_default ) ) ||
 			     is_array( $t_result ) ) ) {
+			error_parameters( $p_var_name );
 			trigger_error( ERROR_GPC_ARRAY_EXPECTED, ERROR);
 		}
 
@@ -167,6 +193,7 @@
 		# If we the result isn't the default we were given or an array, error
 		if ( !( ( ( 1 < func_num_args() ) && ( $t_result === $p_default ) ) ||
 			     is_array( $t_result ) ) ) {
+			error_parameters( $p_var_name );
 			trigger_error( ERROR_GPC_ARRAY_EXPECTED, ERROR);
 		}
 
@@ -197,6 +224,7 @@
 		} else if ( func_num_args() > 1 ) { #check for a default passed in (allowing null)
 			$t_result = $p_default;
 		} else {
+			error_parameters( $p_var_name );
 			trigger_error(ERROR_GPC_VAR_NOT_FOUND, ERROR);
 		}
 
@@ -236,19 +264,24 @@
 		if ( !php_version_at_least( '4.1.0' ) ) {
 			global $_COOKIE;
 		}
-		
+
 		if ( null === $p_path ) {
 			$p_path = config_get( 'cookie_path' );
 		}
 		if ( null === $p_domain ) {
 			$p_domain = config_get( 'cookie_domain' );
 		}
-	
+
 		if ( isset( $_COOKIE[$p_name] ) ) {
 			unset( $_COOKIE[$p_name] ) ;
 		}
-		
-		return setcookie( $p_name, '', -1, $p_path, $p_domain );
+
+		# dont try to send cookie if headers are send (guideweb)
+		if ( !headers_sent() ) {
+			return setcookie( $p_name, '', -1, $p_path, $p_domain );
+		} else {
+			return false;
+		}
 	}
 
 	#===================================
@@ -272,6 +305,7 @@
 		} else if ( func_num_args() > 1 ) { #check for a default passed in (allowing null)
 			$t_result = $p_default;
 		} else {
+			error_parameters( $p_var_name );
 			trigger_error(ERROR_GPC_VAR_NOT_FOUND, ERROR);
 		}
 

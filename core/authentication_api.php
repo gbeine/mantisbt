@@ -6,12 +6,13 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: authentication_api.php,v 1.45 2004-08-14 15:26:20 thraxisp Exp $
+	# $Id: authentication_api.php,v 1.51 2005-07-11 23:49:13 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### Authentication API ###
 
 	$g_script_login_cookie = null;
+	$g_cache_anonymous_user_cookie_string = null;
 
 	#===================================
 	# Boolean queries and ensures
@@ -51,7 +52,7 @@
 	# Return true if there is a currently logged in and authenticated user,
 	#  false otherwise
 	function auth_is_user_authenticated() {
-		return ( !is_blank( auth_get_current_user_cookie() ) );
+		return ( auth_is_cookie_valid( auth_get_current_user_cookie() ) );
 	}
 
 
@@ -146,7 +147,7 @@
 			return false;
 		}
 
-		# validate password if supplied	
+		# validate password if supplied
 		if ( null !== $p_password ) {
 			if ( !auth_does_password_match( $t_user_id, $p_password ) ) {
 				return false;
@@ -168,8 +169,15 @@
 	# Logout the current user and remove any remaining cookies from their browser
 	# Returns true on success, false otherwise
 	function auth_logout() {
-		auth_clear_cookies();
-		helper_clear_pref_cookies();
+        global $g_cache_current_user_id;
+        
+        # clear cached userid
+        $g_cache_current_user_id = null;
+        
+        # clear cookies, if they were set  
+        if (auth_clear_cookies()) {
+            helper_clear_pref_cookies();
+        }
 		return true;
 	}
 
@@ -285,16 +293,23 @@
 	}
 
 	# --------------------
-	# Clear login cookies
+	# Clear login cookies, return true if they were cleared
 	function auth_clear_cookies() {
 		global $g_script_login_cookie;
 
-		$g_script_login_cookie = null;
+        $t_cookies_cleared = false;
+        
+        # clear cookie, if not logged in from script
+        if ($g_script_login_cookie == null) {
+		    $t_cookie_name =  config_get( 'string_cookie' );
+		    $t_cookie_path = config_get( 'cookie_path' );
 
-		$t_cookie_name =  config_get( 'string_cookie' );
-		$t_cookie_path = config_get( 'cookie_path' );
-
-		gpc_clear_cookie( $t_cookie_name, $t_cookie_path );
+		    gpc_clear_cookie( $t_cookie_name, $t_cookie_path );
+            $t_cookies_cleared = true;
+        } else {
+            $g_script_login_cookie = null;
+        }
+        return $t_cookies_cleared;
 	}
 
 	# --------------------
@@ -344,7 +359,7 @@
 	# if no user is logged in and anonymous login is enabled, returns cookie for anonymous user
 	# otherwise returns '' (an empty string)
 	function auth_get_current_user_cookie() {
-		global $g_script_login_cookie;
+		global $g_script_login_cookie, $g_cache_anonymous_user_cookie_string;
 
 		$t_cookie_name = config_get( 'string_cookie' );
 		$t_cookie = gpc_get_cookie( $t_cookie_name, '' );
@@ -355,13 +370,23 @@
 				return $g_script_login_cookie;
 			} else {
 				if ( ON == config_get( 'allow_anonymous_login' ) ) {
-					$query = sprintf('SELECT id, cookie_string FROM %s WHERE username = "%s"',
-							config_get( 'mantis_user_table' ), config_get( 'anonymous_account' ) );
-					$result = db_query( $query );
+					if ( $g_cache_anonymous_user_cookie_string == null ) {
+                        if ( function_exists( 'db_is_connected' ) && db_is_connected() ) { 
+                            # get anonymous information if database is available
+						    $query = sprintf('SELECT id, cookie_string FROM %s WHERE username = "%s"',
+								config_get( 'mantis_user_table' ), config_get( 'anonymous_account' ) );
+                            $result = db_query( $query );
 
-					if ( 1 == db_num_rows( $result ) ) {
-						$row		= db_fetch_array( $result );
-						$t_cookie	= $row['cookie_string'];
+                            if ( 1 == db_num_rows( $result ) ) {
+                                $row		= db_fetch_array( $result );
+                               $t_cookie	= $row['cookie_string'];
+
+                                $g_cache_anonymous_user_cookie_string = $t_cookie;
+                                $g_cache_current_user_id = $row['id'];
+                            }
+                        }
+					} else {
+						$t_cookie = $g_cache_anonymous_user_cookie_string;
 					}
 				}
 			}
@@ -375,6 +400,41 @@
 	# Data Access
 	#===================================
 
+	#########################################
+	# is cookie valid?
+
+	function auth_is_cookie_valid( $p_cookie_string ) {
+		global $g_cache_current_user_id;
+	
+	    # fail if DB isn't accessible
+	    if ( !db_is_connected() ) {
+			return false;
+		}
+
+	    # fail if cookie is blank
+	    if ( '' === $p_cookie_string ) {
+			return false;
+		}
+
+        # succeeed if user has already been authenticated
+		if ( null !== $g_cache_current_user_id ) {
+			return true;
+		}
+		
+		# look up cookie in the database to see if it is valid
+		$t_user_table = config_get( 'mantis_user_table' );
+
+		$c_cookie_string = db_prepare_string( $p_cookie_string );
+
+		$query = "SELECT id
+				  FROM $t_user_table
+				  WHERE cookie_string='$c_cookie_string'";
+		$result = db_query( $query );
+
+		# return true if a matching cookie was found
+		return ( 1 == db_num_rows( $result ) );
+	}
+	
 	#########################################
 	# SECURITY NOTE: cache globals are initialized here to prevent them
 	#   being spoofed if register_globals is turned on
@@ -406,7 +466,7 @@
 		# and give them an Access Denied message.
 		if ( db_num_rows( $result ) < 1 ) {
 			auth_clear_cookies();
-			access_denied();
+		    access_denied(); # never returns
 			return false;
 		}
 

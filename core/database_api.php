@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: database_api.php,v 1.34 2004-09-27 19:33:09 prichards Exp $
+	# $Id: database_api.php,v 1.45 2005-07-17 12:24:00 prichards Exp $
 	# --------------------------------------------------------
 
 	### Database ###
@@ -18,21 +18,31 @@
 
 	require_once( $t_core_dir . 'adodb/adodb.inc.php' );
 
-	$g_db = $db = ADONewConnection($g_db_type);
-
 	# An array in which all executed queries are stored.  This is used for profiling
 	$g_queries_array = array();
 
 	# Stores whether a database connection was succesfully opened.
 	$g_db_connected = false;
 
+	# set adodb fetch mode
+	# most drivers don't implement this, but for mysql there is a small internal php performance gain for using it
+	if( $g_db_type == 'mysql' ) {	
+		$ADODB_FETCH_MODE = ADODB_FETCH_BOTH; 
+	}
+	
 	# --------------------
 	# Make a connection to the database
-	function db_connect( $p_hostname, $p_username, $p_password, $g_database_name ) {
+	function db_connect( $p_dsn, $p_hostname = null, $p_username = null, $p_password = null, $p_database_name = null ) {
 		global $g_db_connected, $g_db;
 
-		$t_result = $g_db->Connect($p_hostname, $p_username, $p_password, $g_database_name );
-
+		if(  $p_dsn === false ) {
+			$g_db = ADONewConnection( config_get_global( 'db_type' ) );
+			$t_result = $g_db->Connect($p_hostname, $p_username, $p_password, $p_database_name );
+		} else {
+			$g_db = ADONewConnection( $p_dsn );
+			$t_result = $g_db->IsConnected();
+		}
+		
 		if ( !$t_result ) {
 			db_error();
 			trigger_error( ERROR_DB_CONNECT_FAILED, ERROR );
@@ -46,10 +56,17 @@
 
 	# --------------------
 	# Make a persistent connection to the database
-	function db_pconnect( $p_hostname, $p_username, $p_password, $p_port, $g_database_name ) {
+	function db_pconnect( $p_dsn, $p_hostname = null, $p_username = null, $p_password = null, $p_database_name = null ) {
 		global $g_db_connected, $g_db;
 
-		$t_result = $g_db->PConnect($p_hostname, $p_username, $p_password, $g_database_name );
+		if(  $p_dsn === false ) {
+			$g_db = ADONewConnection( config_get_global( 'db_type' ) );
+			$t_result = $g_db->PConnect($p_hostname, $p_username, $p_password, $p_database_name );
+		} else {
+			$g_db = ADONewConnection( $p_dsn );
+			$t_result = $g_db->IsConnected();
+		}
+
 		if ( !$t_result ) {
 			db_error();
 			trigger_error( ERROR_DB_CONNECT_FAILED, ERROR );
@@ -84,12 +101,12 @@
 	}
 
 	# --------------------
-	# timer analysis 
+	# timer analysis
 	function microtime_float() {
 		list( $usec, $sec ) = explode( " ", microtime() );
 		return ( (float)$usec + (float)$sec );
 	}
-	
+
 	# --------------------
 	# execute query, requires connection to be opened
 	# If $p_error_on_failure is true (default) an error will be triggered
@@ -131,14 +148,22 @@
 
 	# --------------------
 	function db_fetch_array( & $p_result ) {
-		global $g_db;
+		global $g_db, $g_db_type;
 
 		if ( $p_result->EOF ) {
 			return false;
+		}		
+
+		# mysql obeys FETCH_MODE_BOTH, hence ->fields works, other drivers do not support this
+		if( $g_db_type == 'mysql' ) {	
+			$t_array = $p_result->fields;
+ 			$p_result->MoveNext();
+			return $t_array;
+		} else { 
+			$test = $p_result->GetRowAssoc(false);
+			$p_result->MoveNext();
+			return $test;
 		}
-		$test = $p_result->GetRowAssoc(false);
-		$p_result->MoveNext();
-		return $test;
 	}
 
 	# --------------------
@@ -168,10 +193,16 @@
 	}
 
 	# --------------------
-	function db_field_exists( $p_field_name, $p_table_name ) {
+	function db_table_exists( $p_table_name ) {
 		global $g_db;
 
-		return in_array ( $p_field_name , $g_db->MetaColumnNames( $p_table_name) ) ;
+		return in_array ( $p_table_name , $g_db->MetaTables( "TABLE" ) ) ;
+	}
+
+	# --------------------
+	function db_field_exists( $p_field_name, $p_table_name ) {
+		global $g_db;
+		return in_array ( $p_field_name , $g_db->MetaColumnNames( $p_table_name ) ) ;
 	}
 
 	# --------------------
@@ -237,15 +268,30 @@
 	# prepare a string before DB insertion
 	# @@@ should default be return addslashes( $p_string ); or generate an error
 	function db_prepare_string( $p_string ) {
+		global $g_db;
 		$t_db_type = config_get( 'db_type' );
 
 		switch( $t_db_type ) {
 			case 'mssql':
 			case 'odbc_mssql':
-				return addslashes( $p_string );
+				if( ini_get( 'magic_quotes_sybase' ) ) {
+					return addslashes( $p_string );
+				} else {
+					ini_set( 'magic_quotes_sybase', true );
+					$t_string = addslashes( $p_string );
+					ini_set( 'magic_quotes_sybase', false );
+					return $t_string;
+				}
 
 			case 'mysql':
 				return mysql_escape_string( $p_string );
+
+			# For some reason mysqli_escape_string( $p_string ) always returns an empty
+			# string.  This is happening with PHP v5.0.2.
+			# @@@ Consider using ADODB escaping for all databases.
+			case 'mysqli':
+				$t_escaped = $g_db->qstr( $p_string, false );
+				return substr( $t_escaped, 1, strlen( $t_escaped ) - 2 );
 
 			case 'postgres':
 			case 'postgres64':
@@ -320,6 +366,7 @@
 				return "(DATEDIFF(day, $p_date2, $p_date1) ". $p_limitstring . ")";
 
 			case 'mysql':
+			case 'mysqli':
 				return "(TO_DAYS($p_date1) - TO_DAYS($p_date2) ". $p_limitstring . ")";
 
 			case 'postgres':
@@ -357,13 +404,27 @@
 		}
 		return $t_unique_queries;
 		}
-		
+
 	# --------------------
+	# get total time for queries
+	function db_time_queries () {
+		global $g_queries_array;
+		$t_count = count( $g_queries_array );
+		$t_total = 0;
+		for ( $i = 0; $i < $t_count; $i++ ) {
+			$t_total += $g_queries_array[$i][1];
+		}
+		return $t_total;
+	}
+
+
+	# --------------------
+
 	if ( !isset( $g_skip_open_db ) ) {
 		if ( OFF == $g_use_persistent_connections ) {
-			db_connect( $g_hostname, $g_db_username, $g_db_password, $g_database_name );
+			db_connect( config_get_global( 'dsn', false ), $g_hostname, $g_db_username, $g_db_password, $g_database_name );
 		} else {
-			db_pconnect( $g_hostname, $g_db_username, $g_db_password, $g_database_name );
+			db_pconnect( config_get_global( 'dsn', false ), $g_hostname, $g_db_username, $g_db_password, $g_database_name );
 		}
 	}
 ?>

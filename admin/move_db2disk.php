@@ -8,7 +8,7 @@
 	# This upgrade moves attachments from the database to the disk
 
 	# --------------------------------------------------------
-	# $Id: move_db2disk.php,v 1.3 2004-08-03 22:34:35 thraxisp Exp $
+	# $Id: move_db2disk.php,v 1.7 2005-05-01 16:20:23 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -25,7 +25,7 @@
 			# Windows absolute
 			return '';
 		}
-		if ( substr($file_path, 1, 2) == '\\:' ) {
+		if ( substr($file_path, 1, 2) == ':\\' ) {
 			# Windows absolute
 			return '';
 		}
@@ -42,15 +42,15 @@
 	#
 	# Re-running this is safe because the data
 	# is not removed from the database until it is successfully copied.
-	#	
+	#
 	function upgrade_move_att2disk($p_source) {
 		# $p_source is the string "attachment" or "project"
 		if ( $p_source == 'attachment' ) {
-				$t_file_table = config_get( 'mantis_bug_file_table' );
+				$t_file_table = config_get_global( 'mantis_bug_file_table' );
 				$t_bug_label = "Bug";
 		}
 		if ( $p_source == 'project' ) {
-				$t_file_table = config_get( 'mantis_project_file_table' );
+				$t_file_table = config_get_global( 'mantis_project_file_table' );
 				$t_bug_label = "Project";
 		}
 		# check that the source was valid
@@ -58,14 +58,14 @@
 			echo 'Failure: Internal Error: File source not set';
 			return;
 		}
-		
+
 		# check that the destination is set up properly
-		$t_upload_method = config_get( 'file_upload_method' );
+		$t_upload_method = config_get_global( 'file_upload_method' );
 		if ( $t_upload_method <> DISK ) {
 			echo 'Failure: Upload Method is not DISK';
 			return;
 		}
-		
+
 		$query = 'SELECT * FROM ' . $t_file_table . ' WHERE content <> \'\'';
 
 		$result = @db_query( $query );
@@ -93,23 +93,23 @@
 			if ( $p_source == 'attachment' ) {
 				$t_project_id = bug_get_field( $v_bug_id, 'project_id' );
 				$t_bug_id = $v_bug_id;
-			}else{
+			} else { 
 				$t_project_id = (int) $v_project_id;
 				$t_bug_id = $t_project_id;
 			}
 			$t_file_path = project_get_field( $t_project_id, 'file_path' );
 			$prefix = get_prefix( $t_file_path );
 			$t_real_file_path = $prefix . $t_file_path;
-			$c_filename = file_clean_name($v_filename); 
-			
+			$c_filename = file_clean_name($v_filename);
+
 			printf("\n<tr %s><td>%8d</td><td>%s</td><td>", helper_alternate_class(), $t_bug_id, $v_filename);
 
 			if ( is_blank( $t_real_file_path ) || !file_exists( $t_real_file_path ) || !is_dir( $t_real_file_path ) || !is_writable( $t_real_file_path ) ) {
 				echo 'Destination '. $t_real_file_path . ' not writable';
 				$t_failures++;
-			}else{
-				$t_file_name = $t_real_file_path . $c_filename;
-			
+			} else {
+			 	$t_file_name = $t_real_file_path . $c_filename;
+
 				// write file to disk store after adjusting the path
 				if ( file_put_contents( $t_file_name, $v_content ) ){
 
@@ -123,10 +123,10 @@
 					if ( ! $update ) {
 						echo 'database update failed';
 						$t_failures++;
-					}else{
+					} else {
 						echo 'moved to ' . $t_file_name;
 					}
-				}else{
+				} else {
 					echo 'copy to ' . $t_file_name . ' failed';
 					$t_failures++;
 				}

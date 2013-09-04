@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_api.php,v 1.87 2004-10-17 01:58:56 thraxisp Exp $
+	# $Id: bug_api.php,v 1.95 2005-05-02 14:06:58 vboctor Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -51,6 +51,7 @@
 		var $view_state = VS_PUBLIC;
 		var $summary = '';
 		var $sponsorship_total = 0;
+		var $sticky = 0;
 
 		# omitted:
 		# var $bug_text_id
@@ -260,6 +261,7 @@
 
 		return true;
 	}
+
 	# --------------------
 	# Validate workflow state to see if bug can be moved to requested state
 	function bug_check_workflow( $p_bug_status, $p_wanted_status ) {
@@ -267,6 +269,9 @@
 
 		if ( count( $t_status_enum_workflow ) < 1) {
 			# workflow not defined, use default enum
+			return true;
+		} else if ( $p_bug_status == $p_wanted_status ) {
+			# no change in state, allow the transition
 			return true;
 		} else {
 			# workflow defined - find allowed states
@@ -314,7 +319,8 @@
 		$c_view_state			= db_prepare_int( $p_bug_data->view_state );
 		$c_steps_to_reproduce	= db_prepare_string( $p_bug_data->steps_to_reproduce );
 		$c_additional_info		= db_prepare_string( $p_bug_data->additional_information );
-		$c_sponsorship_total = 0;
+		$c_sponsorship_total 	= 0;
+		$c_sticky 				= 0;
 
 		# Summary cannot be blank
 		if ( is_blank( $c_summary ) ) {
@@ -348,7 +354,7 @@
 
 		# check to see if we want to assign this right off
 		$t_status = config_get( 'bug_submit_status' );
-		
+
 		# if not assigned, check if it should auto-assigned.
 		if ( 0 == $c_handler_id ) {
 			# if a default user is associated with the category and we know at this point
@@ -383,7 +389,7 @@
 				      os, os_build,
 				      platform, version,
 				      build,
-				      profile_id, summary, view_state, sponsorship_total )
+				      profile_id, summary, view_state, sponsorship_total, sticky )
 				  VALUES
 				    ( '$c_project_id',
 				      '$c_reporter_id', '$c_handler_id',
@@ -396,13 +402,17 @@
 				      '$c_os', '$c_os_build',
 				      '$c_platform', '$c_version',
 				      '$c_build',
-				      '$c_profile_id', '$c_summary', '$c_view_state', '$c_sponsorship_total' )";
+				      '$c_profile_id', '$c_summary', '$c_view_state', '$c_sponsorship_total', '$c_sticky' )";
 		db_query( $query );
 
 		$t_bug_id = db_insert_id($t_bug_table);
 
 		# log new bug
 		history_log_event_special( $t_bug_id, NEW_BUG );
+
+		# log changes, if any (compare happens in history_log_event_direct)
+		history_log_event_direct( $t_bug_id, 'status', config_get( 'bug_submit_status' ), $t_status );
+		history_log_event_direct( $t_bug_id, 'handler_id', 0, $c_handler_id );
 
 		return $t_bug_id;
 	}
@@ -437,7 +447,7 @@
 		}
 
 		$t_bug_data->project_id = $t_target_project_id;
-		
+
 		$t_new_bug_id = bug_create( $t_bug_data );
 
 		# MASC ATTENTION: IF THE SOURCE BUG HAS TO HANDLER THE bug_create FUNCTION CAN TRY TO AUTO-ASSIGN THE BUG
@@ -454,6 +464,7 @@
 		bug_set_field( $t_new_bug_id, 'eta', $t_bug_data->eta );
 		bug_set_field( $t_new_bug_id, 'fixed_in_version', $t_bug_data->fixed_in_version );
 		bug_set_field( $t_new_bug_id, 'sponsorship_total', 0 );
+		bug_set_field( $t_new_bug_id, 'sticky', 0 );
 
 		# COPY CUSTOM FIELDS
 		if ( $p_copy_custom_fields ) {
@@ -711,6 +722,10 @@
 			}
 		}
 
+		if( !is_blank( $p_bug_data->duplicate_id ) && ( $p_bug_data->duplicate_id != 0 ) && ( $p_bug_id == $p_bug_data->duplicate_id ) ) {
+			trigger_error( ERROR_BUG_DUPLICATE_SELF, ERROR );  # never returns
+	    }
+
 		$t_old_data = bug_get( $p_bug_id, true );
 
 		$t_bug_table = config_get( 'mantis_bug_table' );
@@ -741,7 +756,8 @@
 					fixed_in_version='$c_bug_data->fixed_in_version',
 					view_state='$c_bug_data->view_state',
 					summary='$c_bug_data->summary',
-					sponsorship_total='$c_bug_data->sponsorship_total'
+					sponsorship_total='$c_bug_data->sponsorship_total',
+					sticky='$c_bug_data->sticky'
 				WHERE id='$c_bug_id'";
 		db_query( $query );
 
@@ -769,6 +785,7 @@
 		history_log_event_direct( $p_bug_id, 'view_state', $t_old_data->view_state, $p_bug_data->view_state );
 		history_log_event_direct( $p_bug_id, 'summary', $t_old_data->summary, $p_bug_data->summary );
 		history_log_event_direct( $p_bug_id, 'sponsorship_total', $t_old_data->sponsorship_total, $p_bug_data->sponsorship_total );
+		history_log_event_direct( $p_bug_id, 'sticky', $t_old_data->sticky, $p_bug_data->sticky );
 
 		# Update extended info if requested
 		if ( $p_update_extended ) {
@@ -803,17 +820,17 @@
 			$t_action_prefix = 'email_notification_title_for_action_bug_';
 			$t_status_prefix = 'email_notification_title_for_status_bug_';
 
-			# bug assigned
-			if ( $t_old_data->handler_id != $p_bug_data->handler_id ) {
-				email_generic( $p_bug_id, 'owner', $t_action_prefix . 'assigned' );
-				return true;
-			}
-
 			# status changed
 			if ( $t_old_data->status != $p_bug_data->status ) {
 				$t_status = get_enum_to_string( config_get( 'status_enum_string' ), $p_bug_data->status );
 				$t_status = str_replace( ' ', '_', $t_status );
 				email_generic( $p_bug_id, $t_status, $t_status_prefix . $t_status );
+				return true;
+			}
+
+			# bug assigned
+			if ( $t_old_data->handler_id != $p_bug_data->handler_id ) {
+				email_generic( $p_bug_id, 'owner', $t_action_prefix . 'assigned' );
 				return true;
 			}
 
@@ -911,7 +928,7 @@
 	function bug_format_summary( $p_bug_id, $p_context ) {
 		return 	helper_call_custom_function( 'format_issue_summary', array( $p_bug_id , $p_context ) );
 	}
-		
+
 
 	# --------------------
 	# Returns the number of bugnotes for the given bug_id
@@ -980,6 +997,35 @@
 		return $t_stats;
 	}
 
+	# --------------------
+	# Get array of attachments associated with the specified bug id.  The array will be
+	# sorted in terms of date added (ASC).  The array will include the following fields:
+	# id, title, diskfile, filename, filesize, file_type, date_added.
+	function bug_get_attachments( $p_bug_id ) {
+		if ( !file_can_view_bug_attachments( $p_bug_id ) ) {
+	        return;
+		}
+
+		$c_bug_id = db_prepare_int( $p_bug_id );
+
+		$t_bug_file_table = config_get( 'mantis_bug_file_table' );
+
+		$query = "SELECT id, title, diskfile, filename, filesize, file_type, date_added
+		                FROM $t_bug_file_table
+		                WHERE bug_id='$c_bug_id'
+		                ORDER BY date_added";
+		$db_result = db_query( $query );
+		$num_notes = db_num_rows( $db_result );
+
+		$t_result = array();
+
+		for ( $i = 0; $i < $num_notes; $i++ ) {
+			$t_result[] = db_fetch_array( $db_result );
+		}
+
+		return $t_result;
+	}
+
 	#===================================
 	# Data Modification
 	#===================================
@@ -990,10 +1036,10 @@
 		$c_bug_id			= db_prepare_int( $p_bug_id );
 		$c_field_name		= db_prepare_string( $p_field_name );
 		if( $p_prepare ) {
-			$c_status		= '\'' . db_prepare_string( $p_status ) . '\''; #generic, unknown type	
+			$c_status		= '\'' . db_prepare_string( $p_status ) . '\''; #generic, unknown type
 		} else {
 			$c_status		=  $p_status; #generic, unknown type
-		}			
+		}
 
 		$h_status = bug_get_field( $p_bug_id, $p_field_name );
 
@@ -1103,6 +1149,9 @@
 
 		if( !is_blank( $p_duplicate_id ) && ( $p_duplicate_id != 0 ) ) {
 			# MASC RELATIONSHIP
+			if ( $p_bug_id == $p_duplicate_id ) {
+			    trigger_error( ERROR_BUG_DUPLICATE_SELF, ERROR );  # never returns
+			}
 
 			# the related bug exists...
 			bug_ensure_exists( $p_duplicate_id );
@@ -1271,35 +1320,37 @@
 	# --------------------
 	# Return a copy of the bug structure with all the instvars prepared for db insertion
 	function bug_prepare_db( $p_bug_data ) {
-		$p_bug_data->project_id			= db_prepare_int( $p_bug_data->project_id );
-		$p_bug_data->reporter_id		= db_prepare_int( $p_bug_data->reporter_id );
-		$p_bug_data->handler_id			= db_prepare_int( $p_bug_data->handler_id );
-		$p_bug_data->duplicate_id		= db_prepare_int( $p_bug_data->duplicate_id );
-		$p_bug_data->priority			= db_prepare_int( $p_bug_data->priority );
-		$p_bug_data->severity			= db_prepare_int( $p_bug_data->severity );
-		$p_bug_data->reproducibility	= db_prepare_int( $p_bug_data->reproducibility );
-		$p_bug_data->status				= db_prepare_int( $p_bug_data->status );
-		$p_bug_data->resolution			= db_prepare_int( $p_bug_data->resolution );
-		$p_bug_data->projection			= db_prepare_int( $p_bug_data->projection );
-		$p_bug_data->category			= db_prepare_string( $p_bug_data->category );
-		$p_bug_data->date_submitted		= db_prepare_string( $p_bug_data->date_submitted );
-		$p_bug_data->last_updated		= db_prepare_string( $p_bug_data->last_updated );
-		$p_bug_data->eta				= db_prepare_int( $p_bug_data->eta );
-		$p_bug_data->os					= db_prepare_string( $p_bug_data->os );
-		$p_bug_data->os_build			= db_prepare_string( $p_bug_data->os_build );
-		$p_bug_data->platform			= db_prepare_string( $p_bug_data->platform );
-		$p_bug_data->version			= db_prepare_string( $p_bug_data->version );
-		$p_bug_data->build				= db_prepare_string( $p_bug_data->build );
-		$p_bug_data->fixed_in_version		= db_prepare_string( $p_bug_data->fixed_in_version );
-		$p_bug_data->view_state			= db_prepare_int( $p_bug_data->view_state );
-		$p_bug_data->summary			= db_prepare_string( $p_bug_data->summary );
-		$p_bug_data->sponsorship_total		= db_prepare_int( $p_bug_data->sponsorship_total );
+		$t_bug_data = new BugData;
+		$t_bug_data->project_id			= db_prepare_int( $p_bug_data->project_id );
+		$t_bug_data->reporter_id		= db_prepare_int( $p_bug_data->reporter_id );
+		$t_bug_data->handler_id			= db_prepare_int( $p_bug_data->handler_id );
+		$t_bug_data->duplicate_id		= db_prepare_int( $p_bug_data->duplicate_id );
+		$t_bug_data->priority			= db_prepare_int( $p_bug_data->priority );
+		$t_bug_data->severity			= db_prepare_int( $p_bug_data->severity );
+		$t_bug_data->reproducibility	= db_prepare_int( $p_bug_data->reproducibility );
+		$t_bug_data->status				= db_prepare_int( $p_bug_data->status );
+		$t_bug_data->resolution			= db_prepare_int( $p_bug_data->resolution );
+		$t_bug_data->projection			= db_prepare_int( $p_bug_data->projection );
+		$t_bug_data->category			= db_prepare_string( $p_bug_data->category );
+		$t_bug_data->date_submitted		= db_prepare_string( $p_bug_data->date_submitted );
+		$t_bug_data->last_updated		= db_prepare_string( $p_bug_data->last_updated );
+		$t_bug_data->eta				= db_prepare_int( $p_bug_data->eta );
+		$t_bug_data->os					= db_prepare_string( $p_bug_data->os );
+		$t_bug_data->os_build			= db_prepare_string( $p_bug_data->os_build );
+		$t_bug_data->platform			= db_prepare_string( $p_bug_data->platform );
+		$t_bug_data->version			= db_prepare_string( $p_bug_data->version );
+		$t_bug_data->build				= db_prepare_string( $p_bug_data->build );
+		$t_bug_data->fixed_in_version	= db_prepare_string( $p_bug_data->fixed_in_version );
+		$t_bug_data->view_state			= db_prepare_int( $p_bug_data->view_state );
+		$t_bug_data->summary			= db_prepare_string( $p_bug_data->summary );
+		$t_bug_data->sponsorship_total	= db_prepare_int( $p_bug_data->sponsorship_total );
+		$t_bug_data->sticky				= db_prepare_int( $p_bug_data->sticky );
 
-		$p_bug_data->description		= db_prepare_string( $p_bug_data->description );
-		$p_bug_data->steps_to_reproduce	= db_prepare_string( $p_bug_data->steps_to_reproduce );
-		$p_bug_data->additional_information	= db_prepare_string( $p_bug_data->additional_information );
+		$t_bug_data->description		= db_prepare_string( $p_bug_data->description );
+		$t_bug_data->steps_to_reproduce	= db_prepare_string( $p_bug_data->steps_to_reproduce );
+		$t_bug_data->additional_information	= db_prepare_string( $p_bug_data->additional_information );
 
-		return $p_bug_data;
+		return $t_bug_data;
 	}
 
 	# --------------------
@@ -1314,9 +1365,10 @@
 		$p_bug_data->platform			= string_attribute( $p_bug_data->platform );
 		$p_bug_data->version			= string_attribute( $p_bug_data->version );
 		$p_bug_data->build				= string_attribute( $p_bug_data->build );
-		$p_bug_data->fixed_in_version		= string_attribute( $p_bug_data->fixed_in_version );
+		$p_bug_data->fixed_in_version	= string_attribute( $p_bug_data->fixed_in_version );
 		$p_bug_data->summary			= string_attribute( $p_bug_data->summary );
-		$p_bug_data->sponsorship_total		= string_attribute( $p_bug_data->sponsorship_total );
+		$p_bug_data->sponsorship_total	= string_attribute( $p_bug_data->sponsorship_total );
+		$p_bug_data->sticky				= string_attribute( $p_bug_data->sticky );
 
 		$p_bug_data->description		= string_textarea( $p_bug_data->description );
 		$p_bug_data->steps_to_reproduce	= string_textarea( $p_bug_data->steps_to_reproduce );
@@ -1337,9 +1389,10 @@
 		$p_bug_data->platform			= string_display( $p_bug_data->platform );
 		$p_bug_data->version			= string_display( $p_bug_data->version );
 		$p_bug_data->build				= string_display( $p_bug_data->build );
-		$p_bug_data->fixed_in_version		= string_display( $p_bug_data->fixed_in_version );
+		$p_bug_data->fixed_in_version	= string_display( $p_bug_data->fixed_in_version );
 		$p_bug_data->summary			= string_display_links( $p_bug_data->summary );
-		$p_bug_data->sponsorship_total		= string_display( $p_bug_data->sponsorship_total );
+		$p_bug_data->sponsorship_total	= string_display( $p_bug_data->sponsorship_total );
+		$p_bug_data->sticky				= string_display( $p_bug_data->sticky );
 
 		$p_bug_data->description		= string_display_links( $p_bug_data->description );
 		$p_bug_data->steps_to_reproduce	= string_display_links( $p_bug_data->steps_to_reproduce );

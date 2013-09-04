@@ -1,12 +1,12 @@
 <?php
 	# Mantis - a php based bugtracking system
 	# Copyright (C) 2000 - 2002  Kenzaburo Ito - kenito@300baud.org
-	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
+	# Copyright (C) 2002 - 2005  Mantis Team   - mantisbt-dev@lists.sourceforge.net
 	# This program is distributed under the terms and conditions of the GPL
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: constant_inc.php,v 1.33 2004-10-05 21:10:14 prichards Exp $
+	# $Id: constant_inc.php,v 1.51 2005-07-03 15:09:11 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### CONSTANTS  ###
@@ -35,8 +35,8 @@
 	define( 'NOBODY',			100 );
 
 	define( 'DEFAULT_ACCESS_LEVEL', -1); # This is used in add user to project
-	
-	
+
+
 	# status
 	define( 'NEW_',				10 );   # NEW seems to be a reserved keyword
 	define( 'FEEDBACK',			20 );
@@ -115,6 +115,9 @@
 	# all projects
 	define( 'ALL_PROJECTS',	0 );
 
+	# all users
+	define( 'ALL_USERS',    0 );
+
 	# no user
 	define( 'NO_USER',		0 );
 
@@ -142,6 +145,7 @@
 	define( 'BUG_CREATED_FROM', 			21 );
 	define( 'CHECKIN',				22 );
 	define( 'BUG_REPLACE_RELATIONSHIP', 		23 );
+	define( 'BUG_PAID_SPONSORSHIP', 		24 );
 
 	# bug relationship constants
 	define( 'BUG_DUPLICATE',	0 );
@@ -174,6 +178,7 @@
 	define( 'ERROR_GPC_VAR_NOT_FOUND',				200 );
 	define( 'ERROR_GPC_ARRAY_EXPECTED',				201 );
 	define( 'ERROR_GPC_ARRAY_UNEXPECTED',			202 );
+	define( 'ERROR_GPC_NOT_NUMBER',			203 );
 
 	# ERROR_LANG_*
 	define( 'ERROR_LANG_STRING_NOT_FOUND',			300 );
@@ -189,6 +194,8 @@
 	define( 'ERROR_FILE_NOT_ALLOWED',				501 );
 	define( 'ERROR_FILE_DUPLICATE',					502 );
 	define( 'ERROR_FILE_INVALID_UPLOAD_PATH',		503 );
+	define( 'ERROR_FILE_NO_UPLOAD_FAILURE',		    504 );
+	define( 'ERROR_FILE_MOVE_FAILED',		    505 );
 
 	# ERROR_BUGNOTE_*
 	define( 'ERROR_BUGNOTE_NOT_FOUND',				600 );
@@ -197,6 +204,7 @@
 	define( 'ERROR_PROJECT_NOT_FOUND',				700 );
 	define( 'ERROR_PROJECT_NAME_NOT_UNIQUE',		701 );
 	define( 'ERROR_PROJECT_NAME_INVALID',			702 );
+	define( 'ERROR_PROJECT_RECURSIVE_HIERARCHY',	703 );
 
 	# ERROR_USER_*
 	define( 'ERROR_USER_NAME_NOT_UNIQUE',			800 );
@@ -207,6 +215,7 @@
 	define( 'ERROR_USER_NAME_INVALID',				805 );
 	define( 'ERROR_USER_DOES_NOT_HAVE_REQ_ACCESS',		806 );
 	define( 'ERROR_USER_REAL_MATCH_USER',		807 );
+	define( 'ERROR_USER_CHANGE_LAST_ADMIN',		808 );
 
 	# ERROR_AUTH_*
 	define( 'ERROR_AUTH_INVALID_COOKIE',			900 );
@@ -253,13 +262,11 @@
 	define( 'ERROR_SPONSORSHIP_ASSIGNER_ACCESS_LEVEL_TOO_LOW',	1704 );
 	define( 'ERROR_SPONSORSHIP_SPONSOR_NO_EMAIL',	1705 );
 
-	# MASC RELATIONSHIP
 	# ERROR RELATIONSHIP
 	define( 'ERROR_RELATIONSHIP_ALREADY_EXISTS', 1800 );
 	define( 'ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_BUG_TOO_LOW', 1801 );
 	define( 'ERROR_RELATIONSHIP_NOT_FOUND', 1802 );
 	define( 'ERROR_RELATIONSHIP_SAME_BUG', 1803 );
-	# MASC RELATIONSHIP
 
 	# ERROR_LOST_PASSWORD_*
 	define( 'ERROR_LOST_PASSWORD_NOT_ENABLED', 1900 );
@@ -269,9 +276,18 @@
 	define( 'ERROR_SIGNUP_NOT_MATCHING_CAPTCHA', 1904 );
 	define( 'ERROR_LOST_PASSWORD_MAX_IN_PROGRESS_ATTEMPTS_REACHED', 1905 );
 
+	# ERROR_FILTER_NOT_FOUND
+	define( 'ERROR_FILTER_NOT_FOUND', 2000 );
+
 	# Status Legend Position
 	define( 'STATUS_LEGEND_POSITION_TOP',		1);
 	define( 'STATUS_LEGEND_POSITION_BOTTOM',	2);
+
+	# Filter Position
+	define( 'FILTER_POSITION_NONE',				0 );
+	define( 'FILTER_POSITION_TOP',				1 );
+	define( 'FILTER_POSITION_BOTTOM',			2 );
+	define( 'FILTER_POSITION_BOTH',				3 );  // FILTER_POSITION_TOP | FILTER_POSITION_BOTTOM (bitwise OR)
 
 	# Flags for settings E-mail categories
 	define( 'EMAIL_CATEGORY_PROJECT_CATEGORY',	1);
@@ -285,9 +301,12 @@
 	define( 'CUSTOM_FIELD_TYPE_CHECKBOX',	5 );
 	define( 'CUSTOM_FIELD_TYPE_LIST',		6 );
 	define( 'CUSTOM_FIELD_TYPE_MULTILIST',	7 );
+	define( 'CUSTOM_FIELD_TYPE_DATE',		8 );
 
 	# Meta filter values
 	define( 'META_FILTER_MYSELF',	-1 );
+	define( 'META_FILTER_NONE',     '[none]'  );
+	define( 'META_FILTER_ANY',      '[any]'   );
 
 	# Versions
 	define( 'VERSION_ALL',		null );
@@ -302,5 +321,40 @@
 	# bugnote types
 	define( 'BUGNOTE', 0 );
 	define( 'REMINDER', 1 );
+
+	# token types
+	define( 'TOKEN_UNKNOWN',	0 );
+	define( 'TOKEN_FILTER',		1 );
+	define( 'TOKEN_GRAPH',		2 );
+
+	# config types
+	define( 'CONFIG_TYPE_INT', 1 );
+	define( 'CONFIG_TYPE_STRING', 2 );
+	define( 'CONFIG_TYPE_COMPLEX', 3 );
+
+	# Control types for date custom fields.
+	define( 'CUSTOM_FIELD_DATE_ANY',		0 ) ;
+	define( 'CUSTOM_FIELD_DATE_NONE',		1 ) ;
+	define( 'CUSTOM_FIELD_DATE_BETWEEN',	2 ) ;
+	define( 'CUSTOM_FIELD_DATE_ONORBEFORE', 3 ) ;
+	define( 'CUSTOM_FIELD_DATE_BEFORE',		4 ) ;
+	define( 'CUSTOM_FIELD_DATE_ON',			5 ) ;
+	define( 'CUSTOM_FIELD_DATE_AFTER',		6 ) ;
+	define( 'CUSTOM_FIELD_DATE_ONORAFTER',	7 ) ;
+
+	# system logging
+	#  logging levels, can be OR'd together
+	define( 'LOG_EMAIL',                    1 );  # all emails sent
+	define( 'LOG_EMAIL_RECIPIENT',          2 );  # details of email recipient determination
+
+	# COLUMNS_TARGET_*
+	define( 'COLUMNS_TARGET_VIEW_PAGE',   1 );
+	define( 'COLUMNS_TARGET_PRINT_PAGE',  2 );
+	define( 'COLUMNS_TARGET_CSV_PAGE',    3 );
+	
+	# sponsorship "paid" values
+	define( 'SPONSORSHIP_UNPAID',         0 );
+	define( 'SPONSORSHIP_REQUESTED',      1 );
+	define( 'SPONSORSHIP_PAID',           2 );
 	
 ?>

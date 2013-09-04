@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: history_inc.php,v 1.25 2004-10-16 00:22:39 vboctor Exp $
+	# $Id: history_inc.php,v 1.29 2005-04-26 18:22:58 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -16,7 +16,7 @@
 ?>
 <?php
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'history_api.php' );
 ?>
 
@@ -34,7 +34,7 @@
 <table class="width100" cellspacing="0">
 <tr>
 	<td class="form-title" colspan="4">
-		<a href="" onClick="ToggleDiv( 'history', g_div_history ); return false;"
+		<a href="" onclick="ToggleDiv( 'history', g_div_history ); return false;"
 		><img border="0" src="images/plus.png" alt="+" /></a>
 		<?php echo lang_get( 'bug_history' ) ?>
 	</td>
@@ -51,7 +51,7 @@
 <tr>
 	<td class="form-title" colspan="4">
 <?php if ( ON == config_get( 'use_javascript' ) ) { ?>
-		<a href="" onClick="ToggleDiv( 'history', g_div_history ); return false;"
+		<a href="" onclick="ToggleDiv( 'history', g_div_history ); return false;"
 		><img border="0" src="images/minus.png" alt="-" /></a>
 <?php } ?>
 		<?php echo lang_get( 'bug_history' ) ?>
@@ -96,6 +96,8 @@
 
 <?php if ( ON == config_get( 'use_javascript' ) ) { ?>
 <script type="text/JavaScript">
+<!--
 	SetDiv( "history", g_div_history );
+// -->
 </script>
 <?php } ?>

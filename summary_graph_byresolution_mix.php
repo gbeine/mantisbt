@@ -6,20 +6,26 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: summary_graph_byresolution_mix.php,v 1.13 2004-01-11 07:16:08 vboctor Exp $
+	# $Id: summary_graph_byresolution_mix.php,v 1.15 2005-02-12 20:01:08 jlatour Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'graph_api.php' );
 
 	access_ensure_project_level( config_get( 'view_summary_threshold' ) );
 
-	$height = 150;
+	$f_width = gpc_get_int( 'width', 300 );
+	$t_ar = config_get( 'graph_bar_aspect' );
 
-	enum_bug_group( lang_get( 'resolution_enum_string' ), 'resolution');
-	graph_group( lang_get( 'by_resolution_mix' ) );
+	$f_token = gpc_get_int( 'token', 0 );
+	if ( 0 == $f_token ) {
+		$t_metrics = create_bug_group( lang_get( 'resolution_enum_string' ), 'resolution' );
+	} else {
+		$t_metrics = unserialize( token_get_value( $f_token ) );
+	}
+	graph_group( $t_metrics, lang_get( 'by_resolution_mix' ), $f_width, $f_width * $t_ar );
 ?>

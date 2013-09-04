@@ -6,14 +6,14 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: graph_by_release_delta.php,v 1.7 2004-01-11 07:16:11 vboctor Exp $
+	# $Id: graph_by_release_delta.php,v 1.9 2005-04-11 02:21:55 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	require_once( '../core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'graph_api.php' );
 ?>
 <?php
@@ -23,7 +23,7 @@
 	$t_project_id = helper_get_current_project();
 
 	# Grab the Projections/Releases
-	$query = "SELECT DISTINCT( projection )
+	$query = "SELECT DISTINCT projection
 			FROM mantis_bug_table
 			WHERE project_id='$t_project_id'
 			ORDER BY projection";

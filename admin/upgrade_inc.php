@@ -6,59 +6,10 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: upgrade_inc.php,v 1.12 2004-07-13 12:53:06 vboctor Exp $
+	# $Id: upgrade_inc.php,v 1.18 2005-07-22 23:28:24 thraxisp Exp $
 	# --------------------------------------------------------
-?>
-<?php
-	require_once( '../core.php' );
 
 	require_once( 'db_table_names_inc.php' );
-
-	# Create the upgrade table if it does not exist
-	$query = "CREATE TABLE IF NOT EXISTS $t_upgrade_table
-				  (upgrade_id char(20) NOT NULL,
-				  description char(255) NOT NULL,
-				  PRIMARY KEY (upgrade_id))";
-
-	$result = db_query( $query );
-
-	if ( false === $result ) {
-		# 0.14.0 upgrades (applied to 0.13 db)
-		if ( admin_check_applied( $t_project_table ) ) {
-			$t_upgrades = include( 'upgrades/0_13_inc.php' );
-			
-			foreach ( $t_upgrades as $t_item ) {
-				$t_item->set_applied();
-			}
-		}
-
-		# 0.15.0 upgrades (applied to 0.14 db)
-		if ( admin_check_applied( $t_bug_file_table ) ) {
-			$t_upgrades = include( 'upgrades/0_14_inc.php' );
-			
-			foreach ( $t_upgrades as $t_item ) {
-				$t_item->set_applied();
-			}
-		}
-
-		# 0.16.0 upgrades (applied to 0.15 db)
-		if ( admin_check_applied( $t_bug_history_table ) ) {
-			$t_upgrades = include( 'upgrades/0_15_inc.php' );
-			
-			foreach ( $t_upgrades as $t_item ) {
-				$t_item->set_applied();
-			}
-		}
-
-		# 0.17.0 upgrades (applied to 0.16 db)
-		if ( admin_check_applied( $t_bug_monitor_table ) ) {
-			$t_upgrades = include( 'upgrades/0_16_inc.php' );
-			
-			foreach ( $t_upgrades as $t_item ) {
-				$t_item->set_applied();
-			}
-		}
-	}
 
 	# Compatibility function
 	#
@@ -70,13 +21,14 @@
 		$c_field_name = db_prepare_string( $p_field_name );
 
 		$result = db_query( "DESCRIBE $c_table_name $c_field_name" );
-		
-		if ( $result && db_num_rows($result) ) {
+
+		if ( $result && ( 0 < db_num_rows( $result ) ) ) {
 			return true;
 		} else {
 			return false;
 		}
 	}
+	
 ?>
 <?php
 	class Upgrade {
@@ -95,7 +47,7 @@
 		}
 
 		function is_applied() {
-			$t_upgrade_table = config_get( 'mantis_upgrade_table' );
+			$t_upgrade_table = config_get_global( 'mantis_upgrade_table' );
 
 			$query = "SELECT COUNT(*)
 					  FROM $t_upgrade_table
@@ -111,7 +63,7 @@
 		}
 
 		function set_applied() {
-			$t_upgrade_table = config_get( 'mantis_upgrade_table' );
+			$t_upgrade_table = config_get_global( 'mantis_upgrade_table' );
 
 			$query = "INSERT INTO $t_upgrade_table
 						(upgrade_id, description)
@@ -187,6 +139,27 @@
 		}
 	}
 
+	class ReleaseUpgrade extends Upgrade {
+		var $release_name;
+
+		function ReleaseUpgrade ( $p_release ) {
+			Upgrade::Upgrade( 'release_' . $p_release, 'Mark release for database version ' . $p_release );
+
+			$this->release_name = $p_release;
+		}
+
+		function execute() {
+			config_set( 'database_version', $this->release_name );
+			$this->set_applied();
+
+			return true;
+		}
+
+		function display() {
+			return "# Upgrade $this->id: $this->description<br /><br />";
+		}
+	}
+
 	class UpgradeSet {
 		var $item_array;
 		var $upgrade_name;
@@ -207,6 +180,46 @@
 				$this->add_item( $t_item );
 			}
 		}
+		
+		# add items, and check if they can be marked as completed
+		function add_items_with_check( $p_upgrade_file, $p_table_check='' ) {
+		
+			$t_start_count = $this->count_items();
+			$this->add_items( include( $p_upgrade_file ) );
+			$t_end_count = $this->count_items();
+			# check for table presence and db version and mark as applied if either the table
+			#  is present, or our version stamp is lower than the actual db
+			if ( ( ( $p_table_check != '' ) && admin_check_applied( $p_table_check ) ) ) {
+				for ( $i = $t_start_count; $i < $t_end_count; $i++ ) {
+					if ( ! $this->is_applied( $i ) ) {
+						$this->set_applied( $i );
+					}
+				}
+			}
+		}
+
+
+		# return count of items in upgrade set. Used to flag applied items in old databases
+		function count_items() {
+			if ( isset( $this->item_array ) ) {
+            	return count( $this->item_array );
+            } else {
+            	return 0;
+            }
+        }
+        
+        # set a specific item in the set to applied
+        function set_applied( $p_offset ) {
+            $t_item = $this->item_array[$p_offset];
+            $t_item->set_applied();
+        }
+
+        # check to see if a specific item in the set is applied
+        function is_applied( $p_offset ) {
+            $t_item = $this->item_array[$p_offset];
+            return $t_item->is_applied();
+        }
+
 
 		function process_post_data( $p_advanced=false ) {
 			$f_execute_all		= gpc_get_bool( $this->upgrade_file . '_execute_all' );
@@ -291,7 +304,7 @@
 						$t_message	= 'Skipped due to previous error';
 						continue;  # next one
 					}
-					
+
 					if ( $item->execute() ) {
 						$t_state	= 'disabled="disabled"';
 						$t_color	= '#00ff88';
@@ -335,7 +348,7 @@
 				echo "<input type=\"submit\" name=\"{$this->upgrade_file}_print_selected\" value=\"Print Selected\" />";
 			}
 		}
-		
+
 		function output( $p_limit=null ) {
 			# @@@ The generated file is in UNIX format, should it be in Windows format?
 			$t_filename = $this->upgrade_file . '.sql';
@@ -343,7 +356,7 @@
 			#header( 'Content-Transfer-Encoding: BASE64;' );
 			#header( "Content-Disposition: attachment; filename=$t_filename" );
 
-			$t_upgrade_table = config_get( 'mantis_upgrade_table' );
+			$t_upgrade_table = config_get_global( 'mantis_upgrade_table' );
 
 			foreach ( $this->item_array as $item ) {
 				if ( $item->is_applied()  #already applied or...
@@ -356,4 +369,19 @@
 			}
 		}
 	}
+	
+	$upgrade_set = new UpgradeSet();
+
+	$upgrade_set->add_items_with_check( 'upgrades/0_13_inc.php', $t_project_table );
+	$upgrade_set->add_items_with_check( 'upgrades/0_14_inc.php', $t_bug_file_table );
+	$upgrade_set->add_items_with_check( 'upgrades/0_15_inc.php', $t_bug_history_table );
+	$upgrade_set->add_items_with_check( 'upgrades/0_16_inc.php', $t_bug_monitor_table );
+
+    # this upgrade process was introduced in 0.17.x, so beyond here, the 
+    #  process of checking the upgrade_table to see if updates are applied should work
+	$upgrade_set->add_items_with_check( 'upgrades/0_17_inc.php', '', '0.17.0' );
+	$upgrade_set->add_items_with_check( 'upgrades/0_18_inc.php', '', '0.18.0' );
+	$upgrade_set->add_items_with_check( 'upgrades/0_19_inc.php', '', '0.19.0' );
+	$upgrade_set->add_items_with_check( 'upgrades/1_00_inc.php', '', '1.0.0' );	
+
 ?>

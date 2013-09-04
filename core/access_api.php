@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: access_api.php,v 1.32 2004-10-25 19:47:51 marcelloscata Exp $
+	# $Id: access_api.php,v 1.43 2005-05-12 16:04:09 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -30,11 +30,14 @@
 		}
 
 		if ( !auth_is_user_authenticated() ) {
-			if ( !isset( $_SERVER['REQUEST_URI'] ) ) {
-			         $_SERVER['REQUEST_URI'] = $_SERVER['SCRIPT_NAME'].'?'.$_SERVER['QUERY_STRING'];
+			if( basename( $_SERVER['SCRIPT_NAME'] ) != 'login_page.php' ) {
+				if( !isset( $_SERVER['REQUEST_URI'] ) ) {
+					if( !isset( $_SERVER['QUERY_STRING'] ) ) $_SERVER['QUERY_STRING'] = '';
+					$_SERVER['REQUEST_URI'] = $_SERVER['SCRIPT_NAME'] . '?' . $_SERVER['QUERY_STRING'];
+				}
+				$t_return_page = string_url( $_SERVER['REQUEST_URI'] );
+				print_header_redirect( 'login_page.php?return=' . $t_return_page );
 			}
-			$p_return_page = string_url( $_SERVER['REQUEST_URI'] );
-			print_header_redirect( 'login_page.php?return=' . $p_return_page );
 		} else {
 			echo '<center>';
 			echo '<p>'.error_string(ERROR_ACCESS_DENIED).'</p>';
@@ -128,6 +131,20 @@
 	#===================================
 
 	# --------------------
+	# Check the a user's access against the given "threshold" and return true
+	#  if the user can access, false otherwise.
+    # $p_access_level may be a single value, or an array. If it is a single
+	# value, treat it as a threshold so return true if user is >= threshold.
+	# If it is an array, look for exact matches to one of the values
+	function access_compare_level( $p_user_access_level, $p_threshold=NOBODY ) {
+		if ( is_array( $p_threshold ) ) {
+		    return ( in_array( $p_user_access_level, $p_threshold ) );
+		} else {
+		    return ( $p_user_access_level >= $p_threshold );
+		}
+	}
+
+	# --------------------
 	# Get the current user's access
 	#
 	# This function only checks the user's global access level, ignoring any
@@ -163,7 +180,7 @@
 
 		$t_access_level = access_get_global_level( $p_user_id );
 
-		return ( $t_access_level >= $p_access_level );
+		return access_compare_level( $t_access_level, $p_access_level ) ;
 	}
 
 	# --------------------
@@ -197,28 +214,35 @@
 			$p_project_id = helper_get_current_project();
 		}
 
-		if ( ALL_PROJECTS == $p_project_id ) {
-			$t_access_level = access_get_global_level( $p_user_id );
+		$t_global_access_level = access_get_global_level( $p_user_id );
+		if ( ( ALL_PROJECTS == $p_project_id ) || ( ADMINISTRATOR == $t_global_access_level ) ) {
+            return $t_global_access_level;
 		} else {
-			$t_access_level = access_get_local_level( $p_user_id, $p_project_id );
-		}
+			$t_project_access_level = access_get_local_level( $p_user_id, $p_project_id );
+            $t_project_view_state = project_get_field( $p_project_id, 'view_state' );
 
-		# Try to use the project access level.
-		# If the user is not listed in the project, then try to fall back
-		#  to the global access level
-		if ( false === $t_access_level ) {
-			$t_project_view_state = project_get_field( $p_project_id, 'view_state' );
+            # Try to use the project access level.
+            # If the user is not listed in the project, then try to fall back
+            #  to the global access level
+            if ( false === $t_project_access_level ) {
 
-			# If the project is private and the user isn't listed, then they
-			# must have the private_project_threshold access level to get in.
-			if ( VS_PRIVATE == $t_project_view_state ) {
-				return ( access_has_global_level( config_get( 'private_project_threshold' ), $p_user_id ) );
-			} else {
-				$t_access_level = user_get_field( $p_user_id, 'access_level' );
+                # If the project is private and the user isn't listed, then they
+                # must have the private_project_threshold access level to get in.
+                if ( VS_PRIVATE == $t_project_view_state ) {
+				    if ( access_compare_level( $t_global_access_level, config_get( 'private_project_threshold', null, null, ALL_PROJECTS ) ) ) {
+				        return $t_global_access_level;
+				    } else {
+				        return ANYBODY;
+				    }
+				} else {
+				    # project access not set, but the project is public
+				    return $t_global_access_level;
+				}
+            } else {
+                # project specific access was set
+				return $t_project_access_level;
 			}
 		}
-
-		return $t_access_level;
 	}
 
 	# --------------------
@@ -240,7 +264,7 @@
 
 		$t_access_level = access_get_project_level( $p_project_id, $p_user_id );
 
-		return ( $t_access_level >= $p_access_level );
+		return access_compare_level( $t_access_level, $p_access_level ) ;
 	}
 
 	# --------------------
@@ -250,6 +274,28 @@
 		if ( !access_has_project_level(  $p_access_level, $p_project_id, $p_user_id ) ) {
 			access_denied();
 		}
+	}
+
+ 	# --------------------
+	# Check whether the user has the specified access level for any project project
+	function access_has_any_project( $p_access_level, $p_user_id = null ) {
+		# Short circuit the check in this case
+
+		if ( NOBODY == $p_access_level ) {
+			return false;
+		}
+
+		if ( null === $p_user_id ) {
+			$p_user_id = auth_get_current_user_id();
+		}
+
+		$t_access = false;
+		$t_projects = project_get_all_rows();
+		foreach ( $t_projects as $t_project ) {
+			$t_access = $t_access || access_has_project_level( $p_access_level, $t_project['id'], $p_user_id );
+		}
+
+		return ( $t_access );
 	}
 
 	# --------------------
@@ -270,13 +316,13 @@
 		    $p_user_id = auth_get_current_user_id();
 		}
 
+		$t_project_id = bug_get_field( $p_bug_id, 'project_id' );
 		# check limit_Reporter (Issue #4769)
 		# reporters can view just issues they reported
 		$t_limit_reporters = config_get( 'limit_reporters' );
-		$t_report_bug_threshold = config_get( 'report_bug_threshold' );
-		if ( (ON === $t_limit_reporters) &&
-		     (!bug_is_user_reporter( $p_bug_id, $p_user_id )) &&
-		     ( current_user_get_access_level() <= $t_report_bug_threshold ) ) {
+		if ( ( ON === $t_limit_reporters ) &&
+		     ( !bug_is_user_reporter( $p_bug_id, $p_user_id ) ) &&
+		     ( !access_has_project_level( REPORTER + 1, $t_project_id, $p_user_id ) ) ) {
 		  return false;
 		}
 
@@ -286,8 +332,6 @@
 			 !bug_is_user_reporter( $p_bug_id, $p_user_id ) ) {
 			$p_access_level = max( $p_access_level, config_get( 'private_bug_threshold' ) );
 		}
-
-		$t_project_id = bug_get_field( $p_bug_id, 'project_id' );
 
 		return access_has_project_level( $p_access_level, $t_project_id, $p_user_id );
 	}
@@ -389,7 +433,7 @@
 	# Data Access
 	#===================================
 
-	# get the user's access level specific to this project. 
+	# get the user's access level specific to this project.
 	# return false (0) if the user has no access override here
 	function access_get_local_level( $p_user_id, $p_project_id ) {
 		$p_project_id = (int)$p_project_id; # 000001 is different from 1.
@@ -405,7 +449,7 @@
 
 	# --------------------
 	# get the access level required to change the issue to the new status
-	#  If there is no specific differentiated access level, use the 
+	#  If there is no specific differentiated access level, use the
 	#  generic update_bug_status_threshold
 	function access_get_status_threshold( $p_status, $p_project_id = ALL_PROJECTS ) {
 		$t_thresh_array = config_get( 'set_status_threshold' );

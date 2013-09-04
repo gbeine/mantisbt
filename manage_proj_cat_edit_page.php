@@ -6,14 +6,14 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: manage_proj_cat_edit_page.php,v 1.30 2004-04-12 21:04:35 jlatour Exp $
+	# $Id: manage_proj_cat_edit_page.php,v 1.31 2005-02-12 20:01:06 jlatour Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'category_api.php' );
 	require_once( $t_core_path.'mail_api.php' );
 ?>
@@ -127,8 +127,8 @@
 				</td>
 			</tr>
 			<tr>
-				<td colspan="2">
-					<input type="submit" value="<?php echo 'Set Mail Account Data' ?>" />
+			<td colspan="2">
+				<input type="submit" value="<?php echo 'Set Mail Account Data' ?>" />
 				</td>
 			</tr>
 		</table>
@@ -143,5 +143,5 @@
 	</form>
 </div>
 <?php } ?>
-
+ 
 <?php html_page_bottom1( __FILE__ ) ?>

@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: core.php,v 1.34 2004-09-30 18:26:37 thraxisp Exp $
+	# $Id: core.php,v 1.47 2005-07-21 12:15:26 thraxisp Exp $
 	# --------------------------------------------------------
 
 	###########################################################################
@@ -41,7 +41,26 @@
 		require_once( dirname( __FILE__ ).DIRECTORY_SEPARATOR.'custom_constant_inc.php' );
 	}
 	require_once( dirname( __FILE__ ).DIRECTORY_SEPARATOR.'config_defaults_inc.php' );
-	require_once( dirname( __FILE__ ).DIRECTORY_SEPARATOR.'config_inc.php' );
+	# config_inc may not be present if this is a new install
+	if ( file_exists( dirname( __FILE__ ).DIRECTORY_SEPARATOR.'config_inc.php' ) ) {
+		require_once( dirname( __FILE__ ).DIRECTORY_SEPARATOR.'config_inc.php' );
+	} else {
+		# if not found, redirect to the admin page to install the system
+		# this needs to be long form and not replaced by is_page_name as that function isn't loaded yet
+		if ( ! ( isset( $_SERVER['PHP_SELF'] ) && ( 0 < strpos( $_SERVER['PHP_SELF'], 'admin' ) ) ) ) {
+			if ( OFF == $g_use_iis ) {
+				header( 'Status: 302' );
+			}
+			header( 'Content-Type: text/html' );
+
+			if ( ON == $g_use_iis ) {
+				header( "Refresh: 0;url=admin/install.php" );
+			} else {
+				header( "Location: admin/install.php" );
+			}
+		exit; # additional output can cause problems so let's just stop output here
+		}
+	}
 
 	# Allow an environment variable (defined in an Apache vhost for example)
 	#  to specify a config file to load to override other local settings
@@ -51,7 +70,7 @@
 	}
 
 
-	# Attempt to find the location of the core files.	
+	# Attempt to find the location of the core files.
 	$t_core_path = dirname(__FILE__).DIRECTORY_SEPARATOR.'core'.DIRECTORY_SEPARATOR;
 	if (isset($GLOBALS['g_core_path']) && !isset( $HTTP_GET_VARS['g_core_path'] ) && !isset( $HTTP_POST_VARS['g_core_path'] ) && !isset( $HTTP_COOKIE_VARS['g_core_path'] ) ) {
 		$t_core_path = $g_core_path;
@@ -61,11 +80,13 @@
 
 	require_once( $t_core_path.'config_api.php' );
 	require_once( $t_core_path.'timer_api.php' );
+	require_once( $t_core_path.'logging_api.php' );
 
 	# load utility functions used by everything else
 	require_once( $t_core_path.'utility_api.php' );
 	require_once( $t_core_path.'compress_api.php' );
-	
+	require_once( $t_core_path.'tokens_api.php' );
+
 	# Load internationalization functions (needed before database_api, in case database connection fails)
 	require_once( $t_core_path.'lang_api.php' );
 
@@ -96,22 +117,33 @@
 
 	# Headers to prevent caching
 	#  with option to bypass if running from script
-	global $g_bypass_headers;
-	if ( !isset( $g_bypass_headers ) ) {
-		header( 'Pragma: no-cache' );
-		header( 'Expires: Fri, 01 Jan 1999 00:00:00 GMT' );
-		header( 'Cache-Control: no-store, no-cache, must-revalidate' );
-		header( 'Cache-Control: post-check=0, pre-check=0', false );
-	}
+	global $g_bypass_headers, $g_allow_browser_cache;
+	if ( !isset( $g_bypass_headers ) && !headers_sent() ) {
+		if ( ! isset( $g_allow_browser_cache ) ) {
+			header( 'Pragma: no-cache' );
+			header( 'Cache-Control: no-store, no-cache, must-revalidate' );
+			header( 'Cache-Control: post-check=0, pre-check=0', false );
+		}
+		header( 'Expires: ' . gmdate( 'D, d M Y H:i:s \G\M\T', time() ) );
 
-	# SEND USER-DEFINED HEADERS
-	foreach( config_get( 'custom_headers' ) as $t_header ) {
-		header( $t_header );
+		# SEND USER-DEFINED HEADERS
+		foreach( config_get( 'custom_headers' ) as $t_header ) {
+			header( $t_header );
+		}
 	}
 
 	require_once( $t_core_path.'project_api.php' );
+	require_once( $t_core_path.'project_hierarchy_api.php' );
 	require_once( $t_core_path.'access_api.php' );
 	require_once( $t_core_path.'print_api.php' );
 	require_once( $t_core_path.'helper_api.php' );
 	require_once( $t_core_path.'user_api.php' );
+	
+	# push push default language to speed calls to lang_get
+	lang_push( lang_get_default() );
+	
+	if ( !isset( $g_bypass_headers ) && !headers_sent() ) {
+		header( 'Content-type: text/html;charset=' . lang_get( 'charset' ) );
+	}
+
 ?>

@@ -6,7 +6,7 @@
 	# See the files README and LICENSE for details
 
 	# --------------------------------------------------------
-	# $Id: bugnote_view_inc.php,v 1.22 2004-10-05 17:20:26 thraxisp Exp $
+	# $Id: bugnote_view_inc.php,v 1.30 2005-05-16 12:56:05 vboctor Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -15,7 +15,7 @@
 ?>
 <?php
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'current_user_api.php' );
 ?>
 <?php
@@ -33,7 +33,7 @@
 	$t_bugnote_order		= current_user_get_pref( 'bugnote_order' );
 
 	# get the bugnote data
-	$query = "SELECT *,date_submitted
+	$query = "SELECT *
 			FROM $t_bugnote_table
 			WHERE bug_id='$f_bug_id' $t_restriction
 			ORDER BY date_submitted $t_bugnote_order";
@@ -47,11 +47,13 @@
 <?php if ( ON == config_get( 'use_javascript' ) ) { ?>
 <div id="bugnotes_closed" style="display: none;">
 <table class="width100" cellspacing="1">
+<tr>
 	<td class="form-title" colspan="2">
-		<a href="" onClick="ToggleDiv( 'bugnotes', g_div_bugnotes ); return false;"
+		<a href="" onclick="ToggleDiv( 'bugnotes', g_div_bugnotes ); return false;"
 		><img border="0" src="images/plus.png" alt="+" /></a>
 		<?php echo lang_get( 'bug_notes_title' ) ?>
 	</td>
+</tr>
 </table>
 </div>
 <?php } ?>
@@ -71,7 +73,7 @@
 <tr>
 	<td class="form-title" colspan="2">
 <?php if ( ON == config_get( 'use_javascript' ) ) { ?>
-		<a href="" onClick="ToggleDiv( 'bugnotes', g_div_bugnotes ); return false;"
+		<a href="" onclick="ToggleDiv( 'bugnotes', g_div_bugnotes ); return false;"
 		><img border="0" src="images/minus.png" alt="-" /></a>
 <?php } ?>
 		<?php echo lang_get( 'bug_notes_title' ) ?>
@@ -86,10 +88,10 @@
 			$t_bugnote_modified = true;
 		else
 			$t_bugnote_modified = false;
-		
+
 		$v3_date_submitted = date( config_get( 'normal_date_format' ), ( db_unixtimestamp( $v3_date_submitted ) ) );
 		$v3_last_modified = date( config_get( 'normal_date_format' ), ( db_unixtimestamp( $v3_last_modified ) ) );
-		
+
 		# grab the bugnote text and id and prefix with v3_
 		$query = "SELECT note
 				FROM $t_bugnote_text_table
@@ -100,7 +102,7 @@
 		$v3_note = $row['note'];
 		$v3_note = string_display_links( $v3_note );
 		$t_bugnote_id_formatted = bugnote_format_id( $v3_id );
-		
+
 		if ( VS_PRIVATE == $v3_view_state ) {
 			$t_bugnote_css		= 'bugnote-private';
 			$t_bugnote_note_css	= 'bugnote-note-private';
@@ -112,13 +114,8 @@
 <tr class="bugnote" name="<?php echo $v3_id ?>" id="<?php echo $v3_id ?>">
         <td class="<?php echo $t_bugnote_css ?>">
 		<span class="small">(<?php echo $t_bugnote_id_formatted ?>)</span><br />
-		<?php if ( FALSE == user_get_field( $v3_reporter_id, 'enabled' ) ) {
-				echo '<font STYLE="text-decoration: line-through">';
-			} else {
-				echo '<font STYLE="text-decoration: none">';
-			}
+		<?php
 			echo print_user( $v3_reporter_id );
-			echo '</font>'; 
 		?>
 		<?php if ( VS_PRIVATE == $v3_view_state ) { ?>
 		<span class="small">[ <?php echo lang_get( 'private' ) ?> ]</span>
@@ -137,14 +134,14 @@
 			if ( !bug_is_readonly( $f_bug_id ) ) {
 				if ( ( access_has_bug_level( config_get( 'manage_project_threshold' ), $f_bug_id ) ) ||
 					( ( $v3_reporter_id == $t_user_id ) && ( ON == config_get( 'bugnote_allow_user_edit_delete' ) ) ) ) {
-					print_bracket_link( 'bugnote_edit_page.php?bugnote_id='.$v3_id, lang_get( 'bugnote_edit_link' ) );
-					print_bracket_link( 'bugnote_delete.php?bugnote_id='.$v3_id, lang_get( 'delete_link' ) );
-					if ( access_has_bug_level( config_get( 'private_bugnote_threshold' ), $f_bug_id ) && 
+					print_button( 'bugnote_edit_page.php?bugnote_id='.$v3_id, lang_get( 'bugnote_edit_link' ) );
+					print_button( 'bugnote_delete.php?bugnote_id='.$v3_id, lang_get( 'delete_link' ) );
+					if ( access_has_bug_level( config_get( 'private_bugnote_threshold' ), $f_bug_id ) &&
 						access_has_bug_level( config_get( 'change_view_status_threshold' ), $f_bug_id ) ) {
 						if ( VS_PRIVATE == $v3_view_state ) {
-							print_bracket_link('bugnote_set_view_state.php?private=0&amp;bugnote_id='.$v3_id, lang_get( 'make_public' ));
+							print_button('bugnote_set_view_state.php?private=0&amp;bugnote_id='.$v3_id, lang_get( 'make_public' ));
 						} else {
-							print_bracket_link('bugnote_set_view_state.php?private=1&amp;bugnote_id='.$v3_id, lang_get( 'make_private' ));
+							print_button('bugnote_set_view_state.php?private=1&amp;bugnote_id='.$v3_id, lang_get( 'make_private' ));
 						}
 					}
 				}
@@ -153,14 +150,14 @@
 		</span>
 	</td>
 	<td class="<?php echo $t_bugnote_note_css ?>">
-		<?php 
+		<?php
 			switch ( $v3_note_type ) {
 				case REMINDER:
 					echo '<div class="italic">' . lang_get( 'reminder_sent_to' ) . ': ';
 					$v3_note_attr = substr( $v3_note_attr, 1, strlen( $v3_note_attr ) - 2 );
 					$t_to = array();
 					foreach ( explode( '|', $v3_note_attr ) as $t_recipient ) {
-						$t_to[] = user_get_name( $t_recipient );
+						$t_to[] = prepare_user_name( $t_recipient );
 					}
 					echo implode( ', ', $t_to ) . '</div><br />';
 				default:
@@ -181,7 +178,9 @@
 
 <?php if ( ON == config_get( 'use_javascript' ) ) { ?>
 <script type="text/JavaScript">
+<!--
 	SetDiv( "bugnotes", g_div_bugnotes );
+// -->
 </script>
 <?php } ?>
 

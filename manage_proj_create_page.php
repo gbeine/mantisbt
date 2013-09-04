@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: manage_proj_create_page.php,v 1.7 2004-04-12 21:04:35 jlatour Exp $
+	# $Id: manage_proj_create_page.php,v 1.10 2005-07-13 20:45:01 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php require_once( 'core.php' ) ?>
@@ -18,18 +18,31 @@
 
 <?php print_manage_menu( 'manage_proj_create_page.php' ) ?>
 
+<?php
+	$f_parent_id = gpc_get_int( 'parent_id', null );
+?>
+
 <br />
 <div align="center">
 <form method="post" action="manage_proj_create.php">
+<?php if ( null !== $f_parent_id ) { ?>
+<input type="hidden" name="parent_id" value="<?php echo $f_parent_id ?>">
+<?php } ?>
 <table class="width75" cellspacing="1">
 <tr>
-	<td class="form-title" colspan="2">
-		<?php echo lang_get( 'add_project_title' ) ?>
+<td class="form-title" colspan="2">
+		<?php
+			if ( null !== $f_parent_id ) {
+				echo lang_get( 'add_subproject_title' );
+			} else {
+				echo lang_get( 'add_project_title' );
+			}
+		?>
 	</td>
 </tr>
 <tr class="row-1">
 	<td class="category" width="25%">
-		<?php echo lang_get( 'project_name' )?>
+		<span class="required">*</span><?php echo lang_get( 'project_name' )?>
 	</td>
 	<td width="75%">
 		<input type="text" name="name" size="64" maxlength="128" />

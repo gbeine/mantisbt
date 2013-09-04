@@ -6,10 +6,40 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: user_pref_api.php,v 1.20 2004-08-13 02:03:53 thraxisp Exp $
+	# $Id: user_pref_api.php,v 1.30 2005-07-16 13:23:35 vboctor Exp $
 	# --------------------------------------------------------
 
 	### User Preferences API ###
+	$g_default_mapping = array(
+		'default_profile' => 'default_profile',
+		'default_project' => 'default_project',
+		'advanced_report' => 'default_advanced_report',
+		'advanced_view' => 'default_advanced_view',
+		'advanced_update' => 'default_advanced_update',
+		'refresh_delay' => 'default_refresh_delay',
+		'redirect_delay' => 'default_redirect_delay',
+		'bugnote_order' => 'default_bugnote_order',
+		'email_on_new' => 'default_email_on_new',
+		'email_on_assigned' => 'default_email_on_assigned',
+		'email_on_feedback' => 'default_email_on_feedback',
+		'email_on_resolved' => 'default_email_on_resolved',
+		'email_on_closed' => 'default_email_on_closed',
+		'email_on_reopened' => 'default_email_on_reopened',
+		'email_on_bugnote' => 'default_email_on_bugnote',
+		'email_on_status' => 'default_email_on_status',
+		'email_on_priority' => 'default_email_on_priority',
+		'email_on_new_min_severity' => 'default_email_on_new_minimum_severity',
+		'email_on_assigned_min_severity' => 'default_email_on_assigned_minimum_severity',
+		'email_on_feedback_min_severity' => 'default_email_on_feedback_minimum_severity',
+		'email_on_resolved_min_severity' => 'default_email_on_resolved_minimum_severity',
+		'email_on_closed_min_severity' => 'default_email_on_closed_minimum_severity',
+		'email_on_reopened_min_severity' => 'default_email_on_reopened_minimum_severity',
+		'email_on_bugnote_min_severity' => 'default_email_on_bugnote_minimum_severity',
+		'email_on_status_min_severity' => 'default_email_on_status_minimum_severity',
+		'email_on_priority_min_severity' => 'default_email_on_priority_minimum_severity',
+		'email_bugnote_limit' => 'default_email_bugnote_limit',
+		'language' => 'default_language'
+		);
 
 	#===================================
 	# Preference Structure Definition
@@ -32,48 +62,30 @@
 		var $email_on_bugnote;
 		var $email_on_status;
 		var $email_on_priority;
-		var $email_on_new_minimum_severity;
-		var $email_on_assigned_minimum_severity;
-		var $email_on_feedback_minimum_severity;
-		var $email_on_resolved_minimum_severity;
-		var $email_on_closed_minimum_severity;
-		var $email_on_reopened_minimum_severity;
-		var $email_on_bugnote_minimum_severity;
-		var $email_on_status_minimum_severity;
-		var $email_on_priority_minimum_severity;
+		var $email_on_new_min_severity;
+		var $email_on_assigned_min_severity;
+		var $email_on_feedback_min_severity;
+		var $email_on_resolved_min_severity;
+		var $email_on_closed_min_severity;
+		var $email_on_reopened_min_severity;
+		var $email_on_bugnote_min_severity;
+		var $email_on_status_min_severity;
+		var $email_on_priority_min_severity;
 		var $email_bugnote_limit;
 		var $language;
 
 		function UserPreferences() {
 			$this->default_profile                   	= 0;
 			$this->default_project              	 	= ALL_PROJECTS;
-			$this->advanced_report                   	= config_get( 'default_advanced_report');
-			$this->advanced_view                     	= config_get( 'default_advanced_view');
-			$this->advanced_update                   	= config_get( 'default_advanced_update');
-			$this->refresh_delay                     	= config_get( 'default_refresh_delay');
-			$this->redirect_delay                    	= config_get( 'default_redirect_delay');
-			$this->bugnote_order                     	= config_get( 'default_bugnote_order');
-			$this->email_on_new                      	= config_get( 'default_email_on_new');
-			$this->email_on_assigned                 	= config_get( 'default_email_on_assigned');
-			$this->email_on_feedback                 	= config_get( 'default_email_on_feedback');
-			$this->email_on_resolved                 	= config_get( 'default_email_on_resolved');
-			$this->email_on_closed                   	= config_get( 'default_email_on_closed');
-			$this->email_on_reopened                 	= config_get( 'default_email_on_reopened');
-			$this->email_on_bugnote                  	= config_get( 'default_email_on_bugnote');
-			$this->email_on_status                   	= config_get( 'default_email_on_status');
-			$this->email_on_priority                 	= config_get( 'default_email_on_priority');
-			$this->email_on_new_minimum_severity     	= config_get( 'default_email_on_new_minimum_severity' );
-			$this->email_on_assigned_minimum_severity	= config_get( 'default_email_on_assigned_minimum_severity' );
-			$this->email_on_feedback_minimum_severity	= config_get( 'default_email_on_feedback_minimum_severity' );
-			$this->email_on_resolved_minimum_severity	= config_get( 'default_email_on_resolved_minimum_severity' );
-			$this->email_on_closed_minimum_severity  	= config_get( 'default_email_on_closed_minimum_severity' );
-			$this->email_on_reopened_minimum_severity	= config_get( 'default_email_on_reopened_minimum_severity' );
-			$this->email_on_bugnote_minimum_severity 	= config_get( 'default_email_on_bugnote_minimum_severity' );
-			$this->email_on_status_minimum_severity	 	= config_get( 'default_email_on_status_minimum_severity' );
-			$this->email_on_priority_minimum_severity	= config_get( 'default_email_on_priority_minimum_severity' );
-			$this->email_bugnote_limit               	= config_get( 'default_email_bugnote_limit' );
-			$this->language                          	= config_get( 'default_language');
 		}
+
+		function Get( $t_string ) {
+			global $g_default_mapping;
+			if( !isset( $this->{$t_string} ) ) {
+				$this->{$t_string} = config_get( $g_default_mapping[$t_string] );
+			}
+			return $this->{$t_string} ;
+ 		}
 	}
 
 	#===================================
@@ -97,11 +109,11 @@
 		$c_user_id		= db_prepare_int( $p_user_id );
 		$c_project_id	= db_prepare_int( $p_project_id );
 
-		$t_user_pref_table = config_get( 'mantis_user_pref_table' );
-
 		if ( isset ( $g_cache_user_pref[$c_user_id][$c_project_id] ) ) {
 			return $g_cache_user_pref[$c_user_id][$c_project_id];
 		}
+
+		$t_user_pref_table = config_get( 'mantis_user_pref_table' );
 
 		$query = "SELECT *
 				  FROM $t_user_pref_table
@@ -186,7 +198,7 @@
 		$t_values	= array();
 
 		foreach ( $t_vars as $var => $val ) {
-			array_push( $t_values, '\'' . db_prepare_string( $p_prefs->$var ) . '\'' );
+			array_push( $t_values, '\'' . db_prepare_string( $p_prefs->Get( $var ) ) . '\'' );
 		}
 
 		$t_vars_string		= implode( ', ', array_keys( $t_vars ) );
@@ -218,14 +230,20 @@
 		$t_pairs = array();
 
 		foreach ( $t_vars as $var => $val ) {
-			array_push( $t_pairs, "$var = '" . db_prepare_string( $p_prefs->$var ) . '\'' );
+			if( is_bool( $p_prefs->$var ) ) {
+				array_push( $t_pairs, "$var = " . db_prepare_bool( $p_prefs->Get( $var ) ) );
+			} else if( is_int( $p_prefs->$var ) ) {
+				array_push( $t_pairs, "$var = " . db_prepare_int( $p_prefs->Get( $var ) ) );
+			} else {
+				array_push( $t_pairs, "$var = '" . db_prepare_string( $p_prefs->Get( $var ) ) . '\'' );
+			}
 		}
 
 		$t_pairs_string = implode( ', ', $t_pairs );
 
 	    $query = "UPDATE $t_user_pref_table
 				  SET $t_pairs_string
-				  WHERE user_id='$c_user_id' AND project_id='$c_project_id'";
+				  WHERE user_id=$c_user_id AND project_id=$c_project_id";
 		db_query( $query );
 
 		user_pref_clear_cache( $p_user_id, $p_project_id );
@@ -280,6 +298,26 @@
 		return true;
 	}
 
+	# --------------------
+	# delete all preferences for a project for all users (part of deleting the project)
+	# returns true if the prefs were successfully deleted
+	#
+	# It is far more efficient to delete them all in one query than to
+	#  call user_pref_delete() for each one and the code is short so that's
+	#  what we do
+	function user_pref_delete_project( $p_project_id ) {
+		$c_project_id = db_prepare_int( $p_project_id );
+
+		$t_user_pref_table = config_get( 'mantis_user_pref_table' );
+
+		$query = "DELETE FROM $t_user_pref_table
+				  WHERE project_id='$c_project_id'";
+		db_query( $query );
+
+		# db_query() errors on failure so:
+		return true;
+	}
+
 
 	#===================================
 	# Data Access
@@ -296,6 +334,8 @@
 	# --------------------
 	# return the user's preferences in a UserPreferences object
 	function user_pref_get( $p_user_id, $p_project_id = ALL_PROJECTS ) {
+		global $g_default_mapping;
+
 		$t_prefs = new UserPreferences;
 
 		$row = user_pref_cache_row( $p_user_id, $p_project_id, false );
@@ -323,6 +363,8 @@
 			if ( in_array( $var, $t_row_keys, true ) ) {
 				# Store that value in the object
 				$t_prefs->$var = $row[$var];
+			} else {
+				$t_prefs->$var = $t_prefs->Get( $var );
 			}
 		}
 
@@ -339,7 +381,7 @@
 		$t_vars = get_object_vars( $t_prefs );
 
 		if ( in_array( $p_pref_name, array_keys( $t_vars ), true ) ) {
-			return $t_prefs->$p_pref_name;
+			return $t_prefs->Get( $p_pref_name );
 		} else {
 			error_parameters( $p_pref_name );
 			trigger_error( ERROR_DB_FIELD_NOT_FOUND, WARNING );

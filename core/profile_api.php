@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: profile_api.php,v 1.7 2004-04-08 18:04:53 prescience Exp $
+	# $Id: profile_api.php,v 1.14 2005-05-18 21:26:01 jlatour Exp $
 	# --------------------------------------------------------
 
 	### Profile API ###
@@ -28,10 +28,25 @@
 		$c_os_build		= db_prepare_string( $p_os_build );
 		$c_description	= db_prepare_string( $p_description );
 
-		user_ensure_unprotected( $p_user_id );
+		if ( ALL_USERS != $p_user_id ) {
+			user_ensure_unprotected( $p_user_id );
+		}
 
-		# platform, os, os_build cannot be blank
-		if ( is_blank( $c_platform ) || is_blank( $c_os ) || is_blank( $c_os_build ) ) {
+		# platform cannot be blank
+		if ( is_blank( $c_platform ) ) {
+			error_parameters( lang_get( 'platform' ) );
+			trigger_error( ERROR_EMPTY_FIELD, ERROR );
+		}
+
+		# os cannot be blank
+		if ( is_blank( $c_os ) ) {
+			error_parameters( lang_get( 'operating_system' ) );
+			trigger_error( ERROR_EMPTY_FIELD, ERROR );
+		}
+
+		# os_build cannot be blank
+		if ( is_blank( $c_os_build ) ) {
+			error_parameters( lang_get( 'version' ) );
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}
 
@@ -57,7 +72,9 @@
 		$c_user_id		= db_prepare_int( $p_user_id );
 		$c_profile_id	= db_prepare_int( $p_profile_id );
 
-		user_ensure_unprotected( $p_user_id );
+		if ( ALL_USERS != $p_user_id ) {
+			user_ensure_unprotected( $p_user_id );
+		}
 
 		$t_user_profile_table = config_get( 'mantis_user_profile_table' );
 
@@ -80,10 +97,25 @@
 		$c_os_build		= db_prepare_string( $p_os_build );
 		$c_description	= db_prepare_string( $p_description );
 
-		user_ensure_unprotected( $p_user_id );
+		if ( ALL_USERS != $p_user_id ) {
+			user_ensure_unprotected( $p_user_id );
+		}
 
-		# platform, os, os_build cannot be blank
-		if ( is_blank( $c_platform ) || is_blank( $c_os ) || is_blank( $c_os_build ) ) {
+		# platform cannot be blank
+		if ( is_blank( $c_platform ) ) {
+			error_parameters( lang_get( 'platform' ) );
+			trigger_error( ERROR_EMPTY_FIELD, ERROR );
+		}
+
+		# os cannot be blank
+		if ( is_blank( $c_os ) ) {
+			error_parameters( lang_get( 'operating_system' ) );
+			trigger_error( ERROR_EMPTY_FIELD, ERROR );
+		}
+
+		# os_build cannot be blank
+		if ( is_blank( $c_os_build ) ) {
+			error_parameters( lang_get( 'version' ) );
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}
 
@@ -121,7 +153,22 @@
 
 		return db_fetch_array( $result );
 	}
+	
+	# --------------------
+	# Return a profile row from the database
+	function profile_get_row_direct( $p_profile_id ) {
+		$c_profile_id	= db_prepare_int( $p_profile_id );
 
+		$t_user_profile_table = config_get( 'mantis_user_profile_table' );
+
+		$query = "SELECT *
+				  FROM $t_user_profile_table
+				  WHERE id='$c_profile_id'";
+	    $result = db_query( $query );
+
+		return db_fetch_array( $result );
+	}
+	
 	# --------------------
 	# Return an array containing all rows for a given user
 	function profile_get_all_rows( $p_user_id ) {
@@ -144,6 +191,69 @@
 		return $t_rows;
 	}
 
+	# --------------------
+	# Return an array containing all profiles for a given user,
+	# including global profiles
+	function profile_get_all_for_user( $p_user_id ) {
+		if ( ALL_USERS == $p_user_id ) {
+			return profile_get_all_rows( ALL_USERS );
+		} else {
+			return array_merge( profile_get_all_rows( ALL_USERS ),
+		                    profile_get_all_rows( $p_user_id ) );
+		}
+	}
+	
+	# --------------------
+	# Return an array containing all profiles used in a given project
+	function profile_get_all_for_project( $p_project_id ) {
+		$t_project_where = helper_project_specific_where( $p_project_id );
+
+		$t_bug_table = config_get( 'mantis_bug_table' );
+		$t_user_profile_table = config_get( 'mantis_user_profile_table' );
+
+		$query = "SELECT DISTINCT(up.id), up.*
+				  FROM $t_user_profile_table up, $t_bug_table b
+				  WHERE $t_project_where
+				  AND up.id = b.profile_id";
+	    $result = db_query( $query );
+
+		$t_rows = array();
+		$t_row_count = db_num_rows( $result );
+
+		for ( $i=0 ; $i < $t_row_count ; $i++ ) {
+			array_push( $t_rows, db_fetch_array( $result ) );
+		}
+
+		return $t_rows;
+	}
+
+	# --------------------
+	# Return an array containing all global profiles
+	function profile_get_global() {
+		return profile_get_all_rows( ALL_USERS );
+	}
+	# --------------------
+	# Returns the default profile
+	function profile_get_default( $p_user_id ) {
+
+		$c_user_id = db_prepare_int( $p_user_id );
+		$t_mantis_user_pref_table = config_get( 'mantis_user_pref_table' );
+
+		$query = "SELECT default_profile
+			FROM $t_mantis_user_pref_table
+			WHERE user_id='$c_user_id'";
+		$result = db_query( $query );
+
+	    $t_default_profile = db_result( $result, 0, 0 );
+
+	    return $t_default_profile;
+	}
+	# --------------------
+	# Returns whether the specified profile is global
+	function profile_is_global( $p_profile_id ) {
+		$t_row = profile_get_row( ALL_USERS, $p_profile_id );
+		return ( $t_row !== false );
+	}
 	#===================================
 	# Data Modification
 	#===================================

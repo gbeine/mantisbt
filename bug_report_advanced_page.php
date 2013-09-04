@@ -6,11 +6,12 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_report_advanced_page.php,v 1.45 2004-10-24 19:04:36 thraxisp Exp $
+	# $Id: bug_report_advanced_page.php,v 1.52 2005-07-16 13:50:13 vboctor Exp $
 	# --------------------------------------------------------
 
 	# This file POSTs data to report_bug.php
 
+	$g_allow_browser_cache = 1;
 	require_once( 'core.php' );
 
 	$t_core_path = config_get( 'core_path' );
@@ -30,8 +31,6 @@
 						( 0 == $f_master_bug_id ) ? '' : '?m_id=' . $f_master_bug_id );
 	}
 
-	access_ensure_project_level( config_get( 'report_bug_threshold' ) );
-
 	if( $f_master_bug_id > 0 ) {
 		# master bug exists...
 		bug_ensure_exists( $f_master_bug_id );
@@ -42,10 +41,23 @@
 			trigger_error( ERROR_BUG_READ_ONLY_ACTION_DENIED, ERROR );
 		}
 
-		# the user can at least update the master bug (needed to add the relationship)...
-		access_ensure_bug_level( config_get( 'update_bug_threshold' ), $f_master_bug_id );
-
 		$t_bug = bug_prepare_display( bug_get( $f_master_bug_id, true ) );
+
+		# the user can at least update the master bug (needed to add the relationship)...
+		access_ensure_bug_level( config_get( 'update_bug_threshold', null, $t_bug->project_id ), $f_master_bug_id );
+
+		#@@@ (thraxisp) Note that the master bug is cloned into the same project as the master, independent of
+		#       what the current project is set to.
+		if( $t_bug->project_id != helper_get_current_project() ) {
+            # in case the current project is not the same project of the bug we are viewing...
+            # ... override the current project. This to avoid problems with categories and handlers lists etc.
+            $g_project_override = $t_bug->project_id;
+            $t_changed_project = true;
+        } else {
+            $t_changed_project = false;
+        }
+
+	    access_ensure_project_level( config_get( 'report_bug_threshold' ) );
 
 		$f_build				= $t_bug->build;
 		$f_platform				= $t_bug->platform;
@@ -66,16 +78,9 @@
 		$f_view_state			= $t_bug->view_state;
 
 		$t_project_id			= $t_bug->project_id;
+	} else {
+	    access_ensure_project_level( config_get( 'report_bug_threshold' ) );
 
-		if( $t_project_id != helper_get_current_project() ) {
-			# in case the current project is not the same project of the bug we are cloning...
-			# ...se set on fly the current project. This to avoid problems with categories and handlers lists etc.
-			$t_redirect_url = "set_project.php?project_id=" . $t_project_id .
-				"&make_default=no&ref=" . urlencode( "bug_report_advanced_page.php?m_id=" . $f_master_bug_id );
-			print_header_redirect( $t_redirect_url );
-		}
-	}
-	else {
 		$f_build				= gpc_get_string( 'build', '' );
 		$f_platform				= gpc_get_string( 'platform', '' );
 		$f_os					= gpc_get_string( 'os', '' );
@@ -90,11 +95,13 @@
 		$f_priority				= gpc_get_int( 'priority', config_get( 'default_bug_priority' ) );
 		$f_summary				= gpc_get_string( 'summary', '' );
 		$f_description			= gpc_get_string( 'description', '' );
-		$f_steps_to_reproduce	= gpc_get_string( 'steps_to_reproduce', '' );
-		$f_additional_info		= gpc_get_string( 'additional_info', '' );
+		$f_steps_to_reproduce	= gpc_get_string( 'steps_to_reproduce', config_get( 'default_bug_steps_to_reproduce' ) );
+		$f_additional_info		= gpc_get_string( 'additional_info', config_get ( 'default_bug_additional_info' ) );
 		$f_view_state			= gpc_get_int( 'view_state', config_get( 'default_bug_view_status' ) );
 
 		$t_project_id			= helper_get_current_project();
+
+		$t_changed_project		= false;
 	}
 
 	$f_report_stay			= gpc_get_bool( 'report_stay' );
@@ -133,6 +140,9 @@
 		<?php echo lang_get( 'category' ) ?> <?php print_documentation_link( 'category' ) ?>
 	</td>
 	<td width="70%">
+		<?php if ( $t_changed_project ) {
+			echo "[" . project_get_field( $t_bug->project_id, 'name' ) . "] ";
+		} ?>
 		<select tabindex="1" name="category">
 			<?php print_category_option_list( $f_category ) ?>
 		</select>
@@ -368,7 +378,7 @@
 		<?php if($t_def['require_report']) {?><span class="required">*</span><?php } ?><?php echo lang_get_defaulted( $t_def['name'] ) ?>
 	</td>
 	<td>
-		<?php print_custom_field_input( $t_def, $f_master_bug_id ) ?>
+		<?php print_custom_field_input( $t_def, ( $f_master_bug_id === 0 ) ? null : $f_master_bug_id ) ?>
 	</td>
 </tr>
 <?php
@@ -386,7 +396,7 @@
 
 
 <!-- File Upload (if enabled) -->
-<?php if ( file_allow_bug_upload() ) { 
+<?php if ( file_allow_bug_upload() ) {
 	$t_max_file_size = (int)min( ini_get_number( 'upload_max_filesize' ), ini_get_number( 'post_max_size' ), config_get( 'max_file_size' ) );
 ?>
 <tr <?php echo helper_alternate_class() ?>>
@@ -430,7 +440,7 @@
 		<?php echo lang_get( 'relationship_with_parent' ) ?>
 	</td>
 	<td>
-		<?php relationship_list_box_for_cloned_bug( BUG_BLOCKS ) ?>
+		<?php relationship_list_box( BUG_BLOCKS ) ?>
 		<?php PRINT '<b>' . lang_get( 'bug' ) . ' ' . bug_format_id( $f_master_bug_id ) . '</b>' ?>
 	</td>
 </tr>
@@ -465,8 +475,12 @@
 </div>
 
 <!-- Autofocus JS -->
+<?php if ( ON == config_get( 'use_javascript' ) ) { ?>
 <script type="text/javascript" language="JavaScript">
-window.document.report_bug_form.category.focus();
+<!--
+	window.document.report_bug_form.category.focus();
+-->
 </script>
+<?php } ?>
 
 <?php html_page_bottom1( __FILE__ ) ?>

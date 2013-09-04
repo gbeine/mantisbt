@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: view_all_set.php,v 1.38 2004-10-28 00:31:05 thraxisp Exp $
+	# $Id: view_all_set.php,v 1.55 2005-06-03 16:03:13 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php require_once( 'core.php' ) ?>
@@ -21,107 +21,120 @@
 	# these are all possibly multiple selections for advanced filtering
 	$f_show_category = array();
 	if ( is_array( gpc_get( 'show_category', null ) ) ) {
-		$f_show_category = gpc_get_string_array( 'show_category', 'any' );
+		$f_show_category = gpc_get_string_array( 'show_category', META_FILTER_ANY );
 	} else {
-		$f_show_category = gpc_get_string( 'show_category', 'any' );
+		$f_show_category = gpc_get_string( 'show_category', META_FILTER_ANY );
 		$f_show_category = array( $f_show_category );
 	}
 
 	$f_show_severity = array();
 	if ( is_array( gpc_get( 'show_severity', null ) ) ) {
-		$f_show_severity = gpc_get_string_array( 'show_severity', 'any' );
+		$f_show_severity = gpc_get_string_array( 'show_severity', META_FILTER_ANY );
 	} else {
-		$f_show_severity = gpc_get_string( 'show_severity', 'any' );
+		$f_show_severity = gpc_get_string( 'show_severity', META_FILTER_ANY );
 		$f_show_severity = array( $f_show_severity );
 	}
 
 	$f_show_status = array();
 	if ( is_array( gpc_get( 'show_status', null ) ) ) {
-		$f_show_status = gpc_get_string_array( 'show_status', 'any' );
+		$f_show_status = gpc_get_string_array( 'show_status', META_FILTER_ANY );
 	} else {
-		$f_show_status = gpc_get_string( 'show_status', 'any' );
+		$f_show_status = gpc_get_string( 'show_status', META_FILTER_ANY );
 		$f_show_status = array( $f_show_status );
 	}
 
 	$f_hide_status = array();
 	if ( is_array( gpc_get( 'hide_status', null ) ) ) {
-		$f_hide_status = gpc_get_string_array( 'hide_status', 'none' );
+		$f_hide_status = gpc_get_string_array( 'hide_status', META_FILTER_NONE );
 	} else {
-		$f_hide_status = gpc_get_string( 'hide_status', 'none' );
+		$f_hide_status = gpc_get_string( 'hide_status', META_FILTER_NONE );
 		$f_hide_status = array( $f_hide_status );
 	}
 
 	$f_reporter_id = array();
 	if ( is_array( gpc_get( 'reporter_id', null ) ) ) {
-		$f_reporter_id = gpc_get_string_array( 'reporter_id', 'any' );
+		$f_reporter_id = gpc_get_string_array( 'reporter_id', META_FILTER_ANY );
 	} else {
-		$f_reporter_id = gpc_get_string( 'reporter_id', 'any' );
+		$f_reporter_id = gpc_get_string( 'reporter_id', META_FILTER_ANY );
 		$f_reporter_id = array( $f_reporter_id );
 	}
 
 	$f_handler_id = array();
 	if ( is_array( gpc_get( 'handler_id', null ) ) ) {
-		$f_handler_id = gpc_get_string_array( 'handler_id', 'any' );
+		$f_handler_id = gpc_get_string_array( 'handler_id', META_FILTER_ANY );
 	} else {
-		$f_handler_id = gpc_get_string( 'handler_id', 'any' );
+		$f_handler_id = gpc_get_string( 'handler_id', META_FILTER_ANY );
 		$f_handler_id = array( $f_handler_id );
 	}
 
 	$f_show_resolution = array();
 	if ( is_array( gpc_get( 'show_resolution', null ) ) ) {
-		$f_show_resolution = gpc_get_string_array( 'show_resolution', 'any' );
+		$f_show_resolution = gpc_get_string_array( 'show_resolution', META_FILTER_ANY );
 	} else {
-		$f_show_resolution = gpc_get_string( 'show_resolution', 'any' );
+		$f_show_resolution = gpc_get_string( 'show_resolution', META_FILTER_ANY );
 		$f_show_resolution = array( $f_show_resolution );
 	}
 
 	$f_show_build = array();
 	if ( is_array( gpc_get( 'show_build', null ) ) ) {
-		$f_show_build = gpc_get_string_array( 'show_build', 'any' );
+		$f_show_build = gpc_get_string_array( 'show_build', META_FILTER_ANY );
 	} else {
-		$f_show_build = gpc_get_string( 'show_build', 'any' );
+		$f_show_build = gpc_get_string( 'show_build', META_FILTER_ANY );
 		$f_show_build = array( $f_show_build );
 	}
 
 	$f_show_version = array();
 	if ( is_array( gpc_get( 'show_version', null ) ) ) {
-		$f_show_version = gpc_get_string_array( 'show_version', 'any' );
+		$f_show_version = gpc_get_string_array( 'show_version', META_FILTER_ANY );
 	} else {
-		$f_show_version = gpc_get_string( 'show_version', 'any' );
+		$f_show_version = gpc_get_string( 'show_version', META_FILTER_ANY );
 		$f_show_version = array( $f_show_version );
 	}
 
 	$f_fixed_in_version = array();
 	if ( is_array( gpc_get( 'fixed_in_version', null ) ) ) {
-		$f_fixed_in_version = gpc_get_string_array( 'fixed_in_version', 'any' );
+		$f_fixed_in_version = gpc_get_string_array( 'fixed_in_version', META_FILTER_ANY );
 	} else {
-		$f_fixed_in_version = gpc_get_string( 'fixed_in_version', 'any' );
+		$f_fixed_in_version = gpc_get_string( 'fixed_in_version', META_FILTER_ANY );
 		$f_fixed_in_version = array( $f_fixed_in_version );
+	}
+	
+	$f_show_profile = array();
+	if ( is_array( gpc_get( 'show_profile', null ) ) ) {
+		$f_show_profile = gpc_get_string_array( 'show_profile', META_FILTER_ANY );
+	} else {
+		$f_show_profile = gpc_get_string( 'show_profile', META_FILTER_ANY );
+		$f_show_profile = array( $f_show_profile );
 	}
 
 	$f_show_priority = array();
-        if ( is_array( gpc_get( 'show_priority', null ) ) ) {
-                $f_show_priority = gpc_get_string_array( 'show_priority', 'any' );
-        } else {
-                $f_show_priority = gpc_get_string( 'show_priority', 'any' );
-                $f_show_priority = array( $f_show_priority );
-        }
-
+	if ( is_array( gpc_get( 'show_priority', null ) ) ) {
+		$f_show_priority = gpc_get_string_array( 'show_priority', META_FILTER_ANY );
+	} else {
+		$f_show_priority = gpc_get_string( 'show_priority', META_FILTER_ANY );
+		$f_show_priority = array( $f_show_priority );
+	}
 
 	$f_user_monitor = array();
 	if ( is_array( gpc_get( 'user_monitor', null ) ) ) {
-		$f_user_monitor = gpc_get_string_array( 'user_monitor', 'any' );
+		$f_user_monitor = gpc_get_string_array( 'user_monitor', META_FILTER_ANY );
 	} else {
-		$f_user_monitor = gpc_get_string( 'user_monitor', 'any' );
+		$f_user_monitor = gpc_get_string( 'user_monitor', META_FILTER_ANY );
 		$f_user_monitor = array( $f_user_monitor );
 	}
 
 	# these are only single values, even when doing advanced filtering
 	$f_per_page				= gpc_get_int( 'per_page', -1 );
 	$f_highlight_changed	= gpc_get_string( 'highlight_changed', config_get( 'default_show_changed' ) );
+	$f_sticky_issues		= gpc_get_bool( 'sticky_issues' );
 	# sort direction
-	$f_sort					= gpc_get_string( 'sort', 'last_updated' );
-	$f_dir					= gpc_get_string( 'dir', 'DESC' );
+	$f_sort_d					= gpc_get_string( 'sort', '' );
+	$f_dir_d					= gpc_get_string( 'dir', '' );
+	$f_sort_0				= gpc_get_string( 'sort_0', 'last_updated' );
+	$f_dir_0				= gpc_get_string( 'dir_0', 'DESC' );
+	$f_sort_1				= gpc_get_string( 'sort_1', '' );
+	$f_dir_1				= gpc_get_string( 'dir_1', '' );
+
 	# date values
 	$f_start_month			= gpc_get_string( 'start_month', date( 'm' ) );
 	$f_end_month			= gpc_get_string( 'end_month', date( 'm' ) );
@@ -132,25 +145,79 @@
 	$f_search				= gpc_get_string( 'search', '' );
 	$f_and_not_assigned		= gpc_get_bool( 'and_not_assigned' );
 	$f_do_filter_by_date	= gpc_get_bool( 'do_filter_by_date' );
-	$f_view_state			= gpc_get_string( 'view_state', 'any' );
+	$f_view_state			= gpc_get_string( 'view_state', META_FILTER_ANY );
 
-	$t_custom_fields 		= custom_field_get_ids();
+	$t_custom_fields 		= custom_field_get_ids(); # @@@ (thraxisp) This should really be the linked ids, but we don't know the project
 	$f_custom_fields_data 	= array();
 	if ( is_array( $t_custom_fields ) && ( sizeof( $t_custom_fields ) > 0 ) ) {
 		foreach( $t_custom_fields as $t_cfid ) {
-			if ( is_array( gpc_get( 'custom_field_' . $t_cfid, null ) ) ) {
-				$f_custom_fields_data[$t_cfid] = gpc_get_string_array( 'custom_field_' . $t_cfid, 'any' );
+			if (custom_field_type( $t_cfid ) == CUSTOM_FIELD_TYPE_DATE) {
+				$t_control = gpc_get_string( 'custom_field_' . $t_cfid . '_control', null);
+
+				$t_year = gpc_get_int( 'custom_field_' . $t_cfid . '_start_year', null);
+				$t_month = gpc_get_int( 'custom_field_' . $t_cfid . '_start_month', null);
+				$t_day = gpc_get_int( 'custom_field_' . $t_cfid . '_start_day', null);
+				$t_start_date = mktime(0, 0, 0, $t_month, $t_day, $t_year);
+
+				$t_year = gpc_get_int( 'custom_field_' . $t_cfid . '_end_year', null);
+				$t_month = gpc_get_int( 'custom_field_' . $t_cfid . '_end_month', null);
+				$t_day = gpc_get_int( 'custom_field_' . $t_cfid . '_end_day', null);
+				$t_end_date = mktime(0, 0, 0, $t_month, $t_day, $t_year);
+
+				$f_custom_fields_data[$t_cfid] = array();
+				$f_custom_fields_data[$t_cfid][0] = $t_control;
+				$t_start = 1;
+				$t_end = 1;
+				$t_one_day = 86399;
+
+				switch ($t_control)
+				{
+				case CUSTOM_FIELD_DATE_ANY:
+				case CUSTOM_FIELD_DATE_NONE:
+					break ;
+				case CUSTOM_FIELD_DATE_BETWEEN:
+					$t_start = $t_start_date;
+					$t_end = $t_end_date + $t_one_day - 1;
+					break ;
+				case CUSTOM_FIELD_DATE_ONORBEFORE:
+					$t_end = $t_start_date + $t_one_day - 1;
+					break;
+				case CUSTOM_FIELD_DATE_BEFORE:
+					$t_end = $t_start_date;
+					break ;
+				case CUSTOM_FIELD_DATE_ON:
+					$t_start = $t_start_date;
+					$t_end = $t_start_date + $t_one_day - 1;
+					break;
+				case CUSTOM_FIELD_DATE_AFTER:
+					$t_start = $t_start_date + $t_one_day - 1;
+					$t_end = 2147483647; // Some time in 2038, max value of a signed int.
+					break;
+				case CUSTOM_FIELD_DATE_ONORAFTER:
+					$t_start = $t_start_date;
+					$t_end = 2147483647; // Some time in 2038, max value of a signed int.
+					break;
+				}
+				$f_custom_fields_data[$t_cfid][1] = $t_start;
+				$f_custom_fields_data[$t_cfid][2] = $t_end;
 			} else {
-				$f_custom_fields_data[$t_cfid] = gpc_get_string( 'custom_field_' . $t_cfid, 'any' );
-				$f_custom_fields_data[$t_cfid] = array( $f_custom_fields_data[$t_cfid] );
+				if ( is_array( gpc_get( 'custom_field_' . $t_cfid, null ) ) ) {
+					$f_custom_fields_data[$t_cfid] = gpc_get_string_array( 'custom_field_' . $t_cfid, META_FILTER_ANY );
+				} else {
+					$f_custom_fields_data[$t_cfid] = gpc_get_string( 'custom_field_' . $t_cfid, META_FILTER_ANY );
+					$f_custom_fields_data[$t_cfid] = array( $f_custom_fields_data[$t_cfid] );
+				}
 			}
 		}
 	}
 
+	$f_relationship_type = gpc_get_string( 'relationship_type', -1 );
+	$f_relationship_bug = gpc_get_string( 'relationship_bug', 0 );
+
 	if ( $f_temp_filter ) {
 		$f_type = 1;
 	}
-	
+
 	if ( $f_and_not_assigned ) {
 		$f_and_not_assigned = 'on';
 	}
@@ -159,22 +226,33 @@
 		$f_do_filter_by_date = 'on';
 	}
 
+	if ( $f_sticky_issues ) {
+		$f_sticky_issues = 'on';
+	} else {
+		$f_sticky_issues = 'off';
+	}
+
 	if ( $f_type < 0 ) {
 		print_header_redirect( 'view_all_bug_page.php' );
 	}
 
 	$t_hide_status_default = config_get( 'hide_status_default' );
-	
+
 	# show bugs per page
 	if ( $f_per_page < 1 ) {
 		$f_per_page = config_get( 'default_limit_view' );
 	}
 
+	# combine sort settings
+	#  (f_sort overrides f_sort_1 if set to keep old sorting code working in view_all_bug_inc)
+	$f_sort = ( ( $f_sort_d != "" ) ? $f_sort_d : $f_sort_0 ) . ( ( $f_sort_1 != "" ) ? "," . $f_sort_1 : "" );
+	$f_dir = ( ( $f_dir_d != "" ) ? $f_dir_d : $f_dir_0 ) . ( ( $f_dir_1 != "" ) ? "," . $f_dir_1 : "" );
+
 	# -1 is a special case stored query: it means we want to reset our filter
 	if ( ( $f_type == 3 ) && ( $f_source_query_id == -1 ) ) {
 		$f_type = 0;
-	} 
-	
+	}
+
 /*   array contents
      --------------
 	 0: version
@@ -202,27 +280,29 @@
 	22: $f_show_version
 	23: $f_do_filter_by_date
 	24: $f_custom_field
+	25: $f_relationship_type
+	26: $f_relationship_bug
+	27: $f_show_profile
+
 */
 	# Set new filter values.  These are stored in a cookie
 	$t_view_all_cookie_id = gpc_get_cookie( config_get( 'view_all_cookie' ), '' );
 	$t_view_all_cookie = filter_db_get_filter( $t_view_all_cookie_id );
 	$t_old_setting_arr	= explode( '#', $t_view_all_cookie, 2 );
-	
+
 	$t_setting_arr = array();
-	
+
 	# If we're not going to reset the cookie, make sure it's valid
 	if ( $f_type != 0 ) {
-		if ( ( $t_old_setting_arr[0] == 'v1' ) ||
-			 ( $t_old_setting_arr[0] == 'v2' ) || 
-			 ( $t_old_setting_arr[0] == 'v3' ) || 
-			 ( $t_old_setting_arr[0] == 'v4' ) ) {
+		$t_cookie_vers = (int) substr( $t_old_setting_arr[0], 1 );
+		if ( substr( config_get( 'cookie_version' ), 1 ) > $t_cookie_vers ) { # if the version is old, update it
 			gpc_clear_cookie( 'view_all_cookie' );
 			print_header_redirect( 'view_all_set.php?type=0' );
 		}
 		if ( isset( $t_old_setting_arr[1] ) ) {
 			$t_setting_arr = unserialize( $t_old_setting_arr[1] );
 		}
-	
+
 		if ( isset($t_setting_arr['highlight_changed']) ) {
 			check_varset( $f_highlight_changed, $t_setting_arr['highlight_changed'] );
 		} else {
@@ -270,6 +350,10 @@
 				$t_setting_arr['user_monitor'] = $f_user_monitor;
 				$t_setting_arr['view_state'] = $f_view_state;
 				$t_setting_arr['custom_fields'] = $f_custom_fields_data;
+				$t_setting_arr['sticky_issues'] = $f_sticky_issues;
+				$t_setting_arr['relationship_type'] = $f_relationship_type;
+				$t_setting_arr['relationship_bug'] = $f_relationship_bug;
+				$t_setting_arr['show_profile'] = $f_show_profile;
 
 				break;
 		# Set the sort order and direction
@@ -294,20 +378,22 @@
 			}
 		# Generalise the filter
 		case '4':
-				$t_setting_arr['show_category']	= array( "any" );
-				$t_setting_arr['reporter_id'] 	= array( "any" );
-				$t_setting_arr['handler_id'] 	= array( "any" );
-				$t_setting_arr['show_build'] 	= array( "any" );
-				$t_setting_arr['show_version'] 	= array( "any" );
-				$t_setting_arr['show_priority']	= array( "any" );
-				$t_setting_arr['fixed_in_version']	= array( "any" );
-				$t_setting_arr['user_monitor'] 		= array( "any" );
+				$t_setting_arr['show_category']	= array( META_FILTER_ANY );
+				$t_setting_arr['reporter_id'] 	= array( META_FILTER_ANY );
+				$t_setting_arr['handler_id'] 	= array( META_FILTER_ANY );
+				$t_setting_arr['show_build'] 	= array( META_FILTER_ANY );
+				$t_setting_arr['show_version'] 	= array( META_FILTER_ANY );
+				$t_setting_arr['show_priority']	= array( META_FILTER_ANY );
+				$t_setting_arr['fixed_in_version']	= array( META_FILTER_ANY );
+				$t_setting_arr['user_monitor'] 		= array( META_FILTER_ANY );
+				$t_setting_arr['relationship_type'] = -1;
+				$t_setting_arr['relationship_bug'] = 0;
 
-				$t_custom_fields 		= custom_field_get_ids();
+				$t_custom_fields 		= custom_field_get_ids(); # @@@ (thraxisp) This should really be the linked ids, but we don't know the project
 				$t_custom_fields_data 	= array();
 				if ( is_array( $t_custom_fields ) && ( sizeof( $t_custom_fields ) > 0 ) ) {
 					foreach( $t_custom_fields as $t_cfid ) {
-						$t_custom_fields_data[$t_cfid] =  array( "any" );
+						$t_custom_fields_data[$t_cfid] =  array( META_FILTER_ANY );
 					}
 				}
 				$t_setting_arr['custom_fields'] = $t_custom_fields_data;
@@ -318,14 +404,19 @@
 				$t_setting_arr['search'] = $f_search;
 
 				break;
+		# Just set the view_state (simple / advanced) value
+		case '6':
+				$t_setting_arr['_view_type'] = $f_view_type;
+
+				break;
 		# does nothing. catch all case
 		default:
 				break;
 	}
 
-	$t_setting_arr = filter_ensure_valid_filter( $t_setting_arr );
+	$tc_setting_arr = filter_ensure_valid_filter( $t_setting_arr );
 
-	$t_settings_serialized = serialize( $t_setting_arr );
+	$t_settings_serialized = serialize( $tc_setting_arr );
 	$t_settings_string = $t_cookie_version . '#' . $t_settings_serialized;
 
 	# If only using a temporary filter, don't store it in the database
@@ -334,11 +425,11 @@
 		$t_project_id = helper_get_current_project();
 		$t_project_id = ( $t_project_id * -1 );
 		$t_row_id = filter_db_set_for_current_user( $t_project_id, false, '', $t_settings_string );
-	
+
 		# set cookie values
 		gpc_set_cookie( config_get( 'view_all_cookie' ), $t_row_id, time()+config_get( 'cookie_time_length' ), config_get( 'cookie_path' ) );
 	}
-	
+
 	# redirect to print_all or view_all page
 	if ( $f_print ) {
 		$t_redirect_url = 'print_all_bug_page.php';
@@ -347,10 +438,8 @@
 	}
 
 	if ( $f_temp_filter ) {
-		$t_redirect_url = $t_redirect_url . '?filter=' . $t_settings_serialized;
-		# @@@ jlatour: Why this translation, instead of using urlencode?
-		$t_trans = array( '"' => '%22', ';' => '%3B', '%' => '%25', ' ' => '%20' );
-		$t_redirect_url = strtr( $t_redirect_url, $t_trans );
+		$t_token_id = token_add( $t_settings_serialized, TOKEN_FILTER);
+		$t_redirect_url = $t_redirect_url . '?filter=' . $t_token_id;
 		html_meta_redirect( $t_redirect_url, 0 );
 	} else {
 		print_header_redirect( $t_redirect_url );

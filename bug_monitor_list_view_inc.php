@@ -6,7 +6,7 @@
 	# See the files README and LICENSE for details
 
 	# --------------------------------------------------------
-	# $Id: bug_monitor_list_view_inc.php,v 1.12 2004-10-04 15:12:11 thraxisp Exp $
+	# $Id: bug_monitor_list_view_inc.php,v 1.14 2005-04-22 22:06:07 prichards Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -35,7 +35,7 @@
 <table class="width100" cellspacing="1">
 <tr>
 	<td class="form-title" colspan="2">
-		<a href="" onClick="ToggleDiv( 'monitoring', g_div_monitoring ); return false;"
+		<a href="" onclick="ToggleDiv( 'monitoring', g_div_monitoring ); return false;"
 		><img border="0" src="images/plus.png" alt="+" /></a>
 		<?php echo lang_get( 'users_monitoring_bug' ); ?>
 	</td>
@@ -56,7 +56,7 @@
 <tr>
 	<td class="form-title" colspan="2">
 <?php if ( ON == config_get( 'use_javascript' ) ) { ?>
-		<a href="" onClick="ToggleDiv( 'monitoring', g_div_monitoring ); return false;"
+		<a href="" onclick="ToggleDiv( 'monitoring', g_div_monitoring ); return false;"
 		><img border="0" src="images/minus.png" alt="-" /></a>
 <?php } ?>
 		<?php echo lang_get( 'users_monitoring_bug' ); ?>
@@ -71,13 +71,7 @@
  		for ( $i = 0; $i < $num_users; $i++ ) {
  			$row = db_fetch_array( $result );
 			echo ($i > 0) ? ', ' : '';
-			if ( FALSE == $row['enabled'] ) {
-				echo '<font STYLE="text-decoration: line-through">';
-			} else {
-				echo '<font STYLE="text-decoration: none">';
-			}
 			echo print_user( $row['user_id'] );
-			echo '</font>';
  		}
 ?>
 	</td>
@@ -88,7 +82,9 @@
 
 <?php if ( ON == config_get( 'use_javascript' ) ) { ?>
 <script type="text/javascript">
+<!--
 	SetDiv( "monitoring", g_div_monitoring );
+-->
 </script>
 <?php } ?>
 

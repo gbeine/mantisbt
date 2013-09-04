@@ -6,18 +6,18 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Revision: 1.56 $
+	# $Revision: 1.60 $
 	# $Author: thraxisp $
-	# $Date: 2004-10-17 00:14:27 $
+	# $Date: 2005-01-29 02:26:48 $
 	#
-	# $Id: view_all_bug_page.php,v 1.56 2004-10-17 00:14:27 thraxisp Exp $
+	# $Id: view_all_bug_page.php,v 1.60 2005-01-29 02:26:48 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'compress_api.php' );
 	require_once( $t_core_path.'filter_api.php' );
 ?>
@@ -29,7 +29,7 @@
 	$t_bug_count = null;
 	$t_page_count = null;
 
-	$rows = filter_get_bug_rows( $f_page_number, $t_per_page, $t_page_count, $t_bug_count );
+	$rows = filter_get_bug_rows( $f_page_number, $t_per_page, $t_page_count, $t_bug_count, null, null, null, true );
 	if ( $rows === false ) {
 		print_header_redirect( 'view_all_set.php?type=0' );
 	}

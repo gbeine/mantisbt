@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: relationship_graph_api.php,v 1.1 2004-09-25 14:16:08 prichards Exp $
+	# $Id: relationship_graph_api.php,v 1.4 2005-04-22 21:34:04 prichards Exp $
 	# --------------------------------------------------------
 
 	### Relationship Graph API ###
@@ -106,7 +106,7 @@
 		$t_id_string		= bug_format_id( $p_bug_id );
 		$t_graph_fontname	= config_get( 'relationship_graph_fontname' );
 		$t_graph_fontsize	= config_get( 'relationship_graph_fontsize' );
-		$t_graph_fontpath	= config_get( 'relationship_graph_fontpath' );
+		$t_graph_fontpath	= config_get( 'system_font_folder' );
 		$t_view_on_click	= config_get( 'relationship_graph_view_on_click' );
 		$t_neato_tool		= config_get( 'neato_tool' );
 
@@ -139,7 +139,7 @@
 			if ( $t_view_on_click )
 				$t_url = string_get_bug_view_url( $t_id );
 			else
-				$t_url = 'bug_relationship_graph.php?bug_id=' . $t_id . '&graph=relation';
+				$t_url = 'bug_relationship_graph.php?bug_id=' . $t_id . '&amp;graph=relation';
 
 			relgraph_add_bug_to_graph( $t_graph, $t_id_string, $t_bug,
 									   $t_url, $t_id == $p_bug_id );
@@ -242,7 +242,7 @@
 		$t_id_string		= bug_format_id( $p_bug_id );
 		$t_graph_fontname	= config_get( 'relationship_graph_fontname' );
 		$t_graph_fontsize	= config_get( 'relationship_graph_fontsize' );
-		$t_graph_fontpath	= config_get( 'relationship_graph_fontpath' );
+		$t_graph_fontpath	= config_get( 'system_font_folder' );
 		$t_view_on_click	= config_get( 'relationship_graph_view_on_click' );
 		$t_dot_tool			= config_get( 'dot_tool' );
 
@@ -282,7 +282,7 @@
 			if ( $t_view_on_click )
 				$t_url = string_get_bug_view_url( $t_related_bug_id );
 			else
-				$t_url = 'bug_relationship_graph.php?bug_id=' . $t_related_bug_id . '&graph=dependency&orientation=' . $t_graph_orientation;
+				$t_url = 'bug_relationship_graph.php?bug_id=' . $t_related_bug_id . '&amp;graph=dependency&orientation=' . $t_graph_orientation;
 
 			relgraph_add_bug_to_graph( $t_graph, $t_id_string, $t_related_bug,
 									   $t_url, $t_related_bug_id == $p_bug_id );

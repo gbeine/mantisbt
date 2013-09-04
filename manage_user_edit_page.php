@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: manage_user_edit_page.php,v 1.11 2004-05-26 03:22:16 int2str Exp $
+	# $Id: manage_user_edit_page.php,v 1.15 2005-05-13 01:57:16 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php require_once( 'core.php' ) ?>
@@ -121,15 +121,17 @@
 	</form>
 
 <!-- Delete Button -->
+<?php if ( !( ( ADMINISTRATOR <= $t_user['access_level'] ) && ( 1 >= user_count_level( ADMINISTRATOR ) ) ) ) { ?>
 	<form method="post" action="manage_user_delete.php">
 		<input type="hidden" name="user_id" value="<?php echo $t_user['id'] ?>" />
 		<input type="submit" class="button" value="<?php echo lang_get( 'delete_user_button' ) ?>" />
 	</form>
+<?php } ?>
 </div>
 <br />
 <div align="center">
 <?php
-	if ( ON == config_get( 'send_reset_password' ) ) {
+	if ( ( ON == config_get( 'send_reset_password' ) ) && ( ON == config_get( 'enable_email_notification' ) ) ) {
 		echo lang_get( 'reset_password_msg' );
 	} else {
 		echo lang_get( 'reset_password_msg2' );
@@ -138,8 +140,9 @@
 </div>
 
 
-<!-- PROJECT ACCESS (if permissions allow) -->
-<?php if ( access_has_global_level( config_get( 'manage_user_threshold' ) ) ) {
+<!-- PROJECT ACCESS (if permissions allow) and user is not ADMINISTRATOR -->
+<?php if ( access_has_global_level( config_get( 'manage_user_threshold' ) ) &&
+    !access_has_global_level( ADMINISTRATOR, $t_user['id'] ) ){
 ?>
 <br />
 <div align="center">

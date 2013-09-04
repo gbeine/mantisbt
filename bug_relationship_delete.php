@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_relationship_delete.php,v 1.7 2004-11-02 19:51:54 marcelloscata Exp $
+	# $Id: bug_relationship_delete.php,v 1.9 2005-06-28 11:04:05 vboctor Exp $
 	# --------------------------------------------------------
 
 	# ======================================================================
@@ -26,10 +26,6 @@
 
 	$f_rel_id = gpc_get_int( 'rel_id' );
 	$f_bug_id = gpc_get_int( 'bug_id' );
-
-	if ( current_user_is_anonymous()) {
-		access_denied();
-	}
 
 	# user has access to update the bug...
 	access_ensure_bug_level( config_get( 'update_bug_threshold' ), $f_bug_id );

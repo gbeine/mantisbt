@@ -412,6 +412,26 @@
 	}
 
 	# --------------------
+	# get a user id from an mail address
+	#  return false if the mail address does not exist
+	function user_get_id_by_mail( $p_mailadress ) {
+		$c_mailadress = db_prepare_string( $p_mailadress );
+
+		$t_user_table = config_get( 'mantis_user_table' );
+
+		$query = "SELECT id
+				  FROM $t_user_table
+				  WHERE email='$c_mailadress'";
+		$result = db_query( $query );
+
+		if ( 0 == db_num_rows( $result ) ) {
+			return false;
+		} else {
+			return db_result( $result );
+		}
+	}
+
+	# --------------------
 	# return all data associated with a particular user name
 	#  return false if the username does not exist
 	function user_get_row_by_name( $p_username ) {

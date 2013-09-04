@@ -306,6 +306,9 @@ CREATE TABLE mantis_project_table (
   access_min int(2) NOT NULL default '10',
   file_path varchar(250) NOT NULL default '',
   description text NOT NULL,
+  pop3_host varchar(255) default NULL,
+  pop3_user varchar(255) default NULL,
+  pop3_pass varchar(255) default NULL,
   PRIMARY KEY  (id),
   UNIQUE KEY name (name),
   KEY id (id)

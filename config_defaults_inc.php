@@ -1470,4 +1470,20 @@
 	# NOTE: These are meaningless under Windows! Just ignore them!
 	$g_dot_tool							= '/usr/bin/dot';
 	$g_neato_tool						= '/usr/bin/neato';
+
+	######################
+	# Mail Reporting
+	######################
+
+	# --- mail reporting settings -----
+	# This tells Mantis to report all the Mail with only one account
+	$g_mail_use_reporter    = ON;
+
+	# The account's name for mail reporting
+	# Also used for fallback if a user is not found in database
+	$g_mail_reporter        = 'Mail';
+
+	# Signup new users automatically (possible security risk!)
+	# Default is OFF, ignored if mail_use_reporter is ON
+	$g_mail_auto_signup	= OFF;
 ?>

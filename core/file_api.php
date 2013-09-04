@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: file_api.php,v 1.70 2005-06-27 14:07:41 vboctor Exp $
+	# $Id: file_api.php,v 1.72 2005-08-11 01:53:02 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -123,9 +123,9 @@
 		}
 
 		$t_reported_by_me	= bug_is_user_reporter( $p_bug_id, auth_get_current_user_id() );
-		$t_can_download		= access_has_bug_level( config_get( 'download_attachments_threshold' ), $p_bug_id );
+		$t_can_download		= access_has_bug_level( config_get( 'delete_attachments_threshold' ), $p_bug_id );
 # @@@ Fix this to be readable
-		$t_can_download		= $t_can_download || ( $t_reported_by_me && config_get( 'allow_download_own_attachments' ) );
+		$t_can_download		= $t_can_download || ( $t_reported_by_me && config_get( 'allow_delete_own_attachments' ) );
 
 		return $t_can_download;
 	}
@@ -676,7 +676,7 @@
 	# --------------------
 	# checks whether the specified upload path exists and is writable
 	function file_ensure_valid_upload_path( $p_upload_path ) {
-		if ( is_blank( $p_upload_path ) || !file_exists( $p_upload_path ) || !is_dir( $p_upload_path ) || !is_writable( $p_upload_path ) ) {
+		if ( is_blank( $p_upload_path ) || !file_exists( $p_upload_path ) || !is_dir( $p_upload_path ) || !is_writable( $p_upload_path ) || !is_readable( $p_upload_path ) ) {
 			trigger_error( ERROR_FILE_INVALID_UPLOAD_PATH, ERROR );
 		}
 	}

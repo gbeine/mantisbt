@@ -529,9 +529,7 @@
 	# get a user id from an mail address
 	#  return false if the mail address does not exist
 	function user_get_id_by_mail( $p_mailaddress ) {
-		
 		$c_mailaddress = db_prepare_string( $p_mailaddress );
-
 		$t_user_table = config_get( 'mantis_user_table' );
 
 		$query = "SELECT id

@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: config_defaults_inc.php,v 1.278 2005-07-22 23:37:07 vboctor Exp $
+	# $Id: config_defaults_inc.php,v 1.283 2005-09-11 11:24:09 vboctor Exp $
 	# --------------------------------------------------------
 
 
@@ -312,7 +312,7 @@
 	#############################
 
 	# --- version variables -----------
-	$g_mantis_version		= '1.0.0rc1';
+	$g_mantis_version		= '1.0.0rc2';
 	$g_show_version			= ON;
 
 	################################
@@ -330,6 +330,7 @@
 	$g_language_choices_arr	= array(
 		'auto',
 		'chinese_simplified',
+		'chinese_simplified_utf8',
 		'chinese_traditional',
 		'chinese_traditional_utf8',
 		'croatian',
@@ -1408,10 +1409,13 @@
 	# --- system logging ---
 	# This controls the logging of information to a separate file for debug or audit
 	# $g_log_level controls what information is logged
-	#  it is formed by ORing constants like LOG_EMAIL | LOG_PROJECT
-	#  see constant_inc for details on the log channels
-	# $g_log_destination specifies where the data goes
+	#  see constant_inc.php for details on the log channels available
+	#  e.g., $g_log_level = LOG_EMAIL | LOG_PROJECT;
+	#
+	# $g_log_destination specifies the file where the data goes
 	#   right now, only "file:<file path>" is supported
+	#   e.g., $g_log_destination = 'file:/tmp/mantis_log';
+	#   see http://www.php.net/error_log for details
 	$g_log_level = 0;
 	$g_log_destination = '';
 
@@ -1517,7 +1521,9 @@
 		'reported'      => '3',
 		'resolved'      => '4',
 		'recent_mod'	=> '5',
-		'monitored'	=> '6'
+		'monitored'		=> '6',
+		'feedback'		=> '0',
+		'verify'		=> '0'
 	);
 
 	# Toggle whether 'My View' boxes are shown in a fixed position (i.e. adjacent boxes start at the same vertical position)
@@ -1612,7 +1618,6 @@
 	# );
 	$g_custom_group_actions = array();
 
-
 	######################
 	# Mail Reporting
 	######################
@@ -1642,4 +1647,7 @@
 	# If big mails with attachments should be received, specify only one
 	$g_mail_fetch_max	= 1;
 
+	# Signup new users automatically (possible security risk!)
+	# Default is OFF, ignored if mail_use_reporter is ON
+	$g_mail_debug		= OFF;
 ?>

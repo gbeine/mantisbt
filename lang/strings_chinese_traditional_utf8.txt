@@ -6,15 +6,13 @@
 	# See the README and LICENSE files for details
 
 	# Chinese_Traditional_UTF8: Jonathan Tsai, tryweb@ichiayi.com
-	###########################################################################
-	# Chinese_Traditional_UTF8 strings for Mantis
-	# -------------------------------------------------
-	# $Revision: 1.1 $
-	# $Author: vboctor $
-	# $Date: 2005-07-22 23:11:57 $
-	#
-	# $Id: strings_chinese_traditional_utf8.txt,v 1.1 2005-07-22 23:11:57 vboctor Exp $
-	###########################################################################
+        # -------------------------------------------------
+        # $Revision: 1.4 $
+        # $Author: thraxisp $
+        # $Date: 2005-08-10 19:19:38 $
+        #
+        # $Id: strings_chinese_traditional_utf8.txt,v 1.4 2005-08-10 19:19:38 thraxisp Exp $
+        ###########################################################################
 ?>
 <?php
 # Charset
@@ -80,7 +78,7 @@ $s_duplicate_of = "複製 of";
 $s_has_duplicate = "已經複製";
 $s_related_to = "相關 to";
 $s_dependant_on = "上層 of";
-$s_blocks = "child of";
+$s_blocks = "下層 of";
 
 $s_new_bug = '新 Bug';
 $s_bugnote_added = 'Bug 筆記已新增';
@@ -203,63 +201,64 @@ $MANTIS_ERROR[ERROR_AUTH_INVALID_COOKIE] = '無法將登入資訊存入你的瀏
 $MANTIS_ERROR[ERROR_USER_PREFS_NOT_FOUND] = '無法找到這使用者的設定值.';
 $MANTIS_ERROR[ERROR_NEWS_NOT_FOUND]	 = '新的項目找不到.';
 $MANTIS_ERROR[ERROR_USER_CREATE_PASSWORD_MISMATCH] = '輸入的密碼與圖形中的英數字不符.';
-$MANTIS_ERROR[ERROR_GPC_ARRAY_EXPECTED]	 = 'An 陣列 was 預期 but a 字串 was 收到.';
-$MANTIS_ERROR[ERROR_GPC_ARRAY_UNEXPECTED] = 'A 字串 was 預期 but an 陣列 was 收到.';
-$MANTIS_ERROR[ERROR_GPC_NOT_NUMBER] = 'A 數字 was 預期 for %s.';
+$MANTIS_ERROR[ERROR_GPC_ARRAY_EXPECTED]	 = '預期是陣列但收到的是字串。';
+$MANTIS_ERROR[ERROR_GPC_ARRAY_UNEXPECTED] = '預期是字串但收到的是陣列。';
+$MANTIS_ERROR[ERROR_GPC_NOT_NUMBER] = '%s的預期數據為數值。';
 $MANTIS_ERROR[ERROR_BUG_NOT_FOUND]	= 'Bug %d 找不到.';
 $MANTIS_ERROR[ERROR_FILTER_NOT_FOUND]	 = '過濾條件 %d 無法找到.';
+$MANTIS_ERROR[ERROR_FILTER_TOO_OLD] = '你所要使用的過濾條件版本過舊, 煩請重新建立';
 $MANTIS_ERROR[ERROR_EMAIL_INVALID]	= 'E-Mail 格式不正確.';
-$MANTIS_ERROR[ERROR_USER_PROFILE_NOT_FOUND] = '個人設定找不到.';
-$MANTIS_ERROR[ERROR_FILE_NOT_ALLOWED]	 = '檔案 type not allowed for 上傳.';
-$MANTIS_ERROR[ERROR_FILE_DUPLICATE]	 = 'This is a 重複 檔案.  Please 刪除 the 檔案 first.';
-$MANTIS_ERROR[ERROR_FILE_INVALID_UPLOAD_PATH] = 'Invalid 上傳 path.  Directory either does not exist or not writable to webserver';
-$MANTIS_ERROR[ERROR_FILE_NO_UPLOAD_FAILURE] = 'No 檔案 was 上傳ed. Please go back和選擇 a 檔案 before pressing Upload';
-$MANTIS_ERROR[ERROR_FILE_MOVE_FAILED] = '上傳ed 檔案 could not be 搬移d to the 檔案 storage directory. Directory either does not exist or not writable to webserver';
-$MANTIS_ERROR[ERROR_BUG_DUPLICATE_SELF]	 = 'You cannot set an 問題 as a 重複的itself.';
+$MANTIS_ERROR[ERROR_USER_PROFILE_NOT_FOUND] = '找不到個人設定.';
+$MANTIS_ERROR[ERROR_FILE_NOT_ALLOWED]	 = '上傳檔案的類型不被接受.';
+$MANTIS_ERROR[ERROR_FILE_DUPLICATE]	 = '這是重複的檔案。請先刪除已重複的檔案。';
+$MANTIS_ERROR[ERROR_FILE_INVALID_UPLOAD_PATH] = '上傳路徑錯誤. 目錄可能不存在或者沒有寫入的權限';
+$MANTIS_ERROR[ERROR_FILE_NO_UPLOAD_FAILURE] = '沒有檔案被上傳. 請返回上頁並且選擇要上傳的檔案';
+$MANTIS_ERROR[ERROR_FILE_MOVE_FAILED] = '上傳檔案無法被搬移到檔案儲存目錄. 目錄可能不存在或者沒有寫入的權限';
+$MANTIS_ERROR[ERROR_BUG_DUPLICATE_SELF]	 = '你不能循環設定這問題。';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_NOT_FOUND] = '找不到自訂欄位';
-$MANTIS_ERROR[ERROR_CUSTOM_FIELD_NAME_NOT_UNIQUE] = 'This is a 重複 name.';
-$MANTIS_ERROR[ERROR_CUSTOM_FIELD_IN_USE] = 'At least one 專案 still uses this 欄位.';
-$MANTIS_ERROR[ERROR_CUSTOM_FIELD_INVALID_VALUE] = 'Invalid value for 欄位';
-$MANTIS_ERROR[ERROR_CUSTOM_FIELD_INVALID_DEFINITION] = 'Invalid 自訂欄位 definition';
-$MANTIS_ERROR[ERROR_LDAP_AUTH_FAILED]	 = 'LDAP Authentication Failed';
-$MANTIS_ERROR[ERROR_LDAP_SERVER_CONNECT_FAILED] = 'LDAP Server Connection Failed';
-$MANTIS_ERROR[ERROR_LDAP_UPDATE_FAILED]	 = 'LDAP Record 更新 has failed.';
-$MANTIS_ERROR[ERROR_LDAP_USER_NOT_FOUND] = 'LDAP 使用者 Record 找不到.';
-$MANTIS_ERROR[ERROR_DB_CONNECT_FAILED]	 = 'Database connection failed. Error 收到 from database was #%d: %s';
-$MANTIS_ERROR[ERROR_DB_QUERY_FAILED]	 = 'Database query failed.  Error 收到 from database was #%d: %s for the query: %s';
-$MANTIS_ERROR[ERROR_DB_SELECT_FAILED]	 = 'Database selection failed.  Error 收到 from database was #%d: %s';
-$MANTIS_ERROR[ERROR_CATEGORY_DUPLICATE] = 'A 類別 with that name already exists.';
-$MANTIS_ERROR[ERROR_CATEGORY_NO_ACTION] = 'No 複製 作業 was specified.';
-$MANTIS_ERROR[ERROR_CATEGORY_NOT_FOUND] = '類別 找不到.';
-$MANTIS_ERROR[ERROR_VERSION_DUPLICATE] = 'A 版本 with that name already exists.';
-$MANTIS_ERROR[ERROR_VERSION_NOT_FOUND] = '版本 找不到.';
-$MANTIS_ERROR[ERROR_USER_NAME_INVALID] = 'The username is invalid. Usernames may only contain letters, 數字, spaces, hyphens,和underscores.';
-$MANTIS_ERROR[ERROR_USER_DOES_NOT_HAVE_REQ_ACCESS] = '使用者 does not have required access level';
-$MANTIS_ERROR[ERROR_USER_REAL_MATCH_USER] = 'The "Real Name" chosen matches another 使用者\'s 登入 name. Please 選擇 another.';
-$MANTIS_ERROR[ERROR_SPONSORSHIP_NOT_ENABLED] = 'Sponsorship support not enabled.';
-$MANTIS_ERROR[ERROR_SPONSORSHIP_NOT_FOUND] = 'Sponsorship %d 找不到.';
-$MANTIS_ERROR[ERROR_SPONSORSHIP_AMOUNT_TOO_LOW] = 'Sponsorship (%s) is below minimum amount (%s).';
-$MANTIS_ERROR[ERROR_SPONSORSHIP_HANDLER_ACCESS_LEVEL_TOO_LOW] = '處理者 does not have the required access level to handle sponsored 問題.';
-$MANTIS_ERROR[ERROR_SPONSORSHIP_ASSIGNER_ACCESS_LEVEL_TOO_LOW] = 'Access Denied: 分派ing sponsored 問題 requires higher access level.';
-$MANTIS_ERROR[ERROR_SPONSORSHIP_SPONSOR_NO_EMAIL] = 'Sponsor has not provided an email address. Please 更新 your 個人設定.';
-$MANTIS_ERROR[ERROR_CONFIG_OPT_INVALID] = '參數設定 option \'%s\' has invalid value \'%s\'';
-$MANTIS_ERROR[ERROR_BUG_READ_ONLY_ACTION_DENIED] = 'The 作業 cannot be 執行ed because 問題 \'%d\' is read-only';
-$MANTIS_ERROR[ERROR_RELATIONSHIP_ALREADY_EXISTS] = "There is already a relationship between these two 問題.";
-$MANTIS_ERROR[ERROR_RELATIONSHIP_NOT_FOUND] = "Relationship 找不到.";
-$MANTIS_ERROR[ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_BUG_TOO_LOW] = "Access denied: The 問題 %d requires higher access level.";
-$MANTIS_ERROR[ERROR_RELATIONSHIP_SAME_BUG] = "An 問題 can't be 相關 to itself.";
-$MANTIS_ERROR[ERROR_SIGNUP_NOT_MATCHING_CAPTCHA] = 'Confirmation hash does not match. Please retry.';
-$MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_ENABLED] = 'The \'lost your password\' feature is not available.';
-$MANTIS_ERROR[ERROR_LOST_PASSWORD_NO_EMAIL_SPECIFIED] = 'You must provide an e-mail address in order to reset the password';
-$MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_MATCHING_DATA] = 'The provided information doesn\'t match any registered account!';
-$MANTIS_ERROR[ERROR_LOST_PASSWORD_CONFIRM_HASH_INVALID] = 'The confirmation URL is invalid or has already been used. Please signup again.';
+$MANTIS_ERROR[ERROR_CUSTOM_FIELD_NAME_NOT_UNIQUE] = '這是一個重複的名稱。';
+$MANTIS_ERROR[ERROR_CUSTOM_FIELD_IN_USE] = '最少有一個以上的專案仍在使用這欄位。';
+$MANTIS_ERROR[ERROR_CUSTOM_FIELD_INVALID_VALUE] = '這欄位的數值無效';
+$MANTIS_ERROR[ERROR_CUSTOM_FIELD_INVALID_DEFINITION] = '無效的自訂欄位定義';
+$MANTIS_ERROR[ERROR_LDAP_AUTH_FAILED]	 = 'LDAP 認證失敗';
+$MANTIS_ERROR[ERROR_LDAP_SERVER_CONNECT_FAILED] = '連線至 LDAP 伺服器失敗';
+$MANTIS_ERROR[ERROR_LDAP_UPDATE_FAILED]	 = '更新 LDAP 記錄失敗。';
+$MANTIS_ERROR[ERROR_LDAP_USER_NOT_FOUND] = '找不到 LDAP 帳號記錄。';
+$MANTIS_ERROR[ERROR_DB_CONNECT_FAILED]	 = '連線至資料庫伺服器失敗。資料庫的錯誤訊息是#%d: %s';
+$MANTIS_ERROR[ERROR_DB_QUERY_FAILED]	 = '資料庫查詢失敗。資料庫的錯誤訊息是#%d: %s，查詢%s';
+$MANTIS_ERROR[ERROR_DB_SELECT_FAILED]	 = '選擇資料庫失敗。資料庫的錯誤訊息是#%d: %s';
+$MANTIS_ERROR[ERROR_CATEGORY_DUPLICATE] = '相同名稱的類別已經存在.';
+$MANTIS_ERROR[ERROR_CATEGORY_NO_ACTION] = '沒有指定的複製作業.';
+$MANTIS_ERROR[ERROR_CATEGORY_NOT_FOUND] = '類別找不到.';
+$MANTIS_ERROR[ERROR_VERSION_DUPLICATE] = '相同名稱的版本已經存在.';
+$MANTIS_ERROR[ERROR_VERSION_NOT_FOUND] = '版本找不到.';
+$MANTIS_ERROR[ERROR_USER_NAME_INVALID] = '帳號名稱無效。帳號名稱只可以是字串、數字、空格、“-”或“_”.';
+$MANTIS_ERROR[ERROR_USER_DOES_NOT_HAVE_REQ_ACCESS] = '使用者沒有足夠的存取權限';
+$MANTIS_ERROR[ERROR_USER_REAL_MATCH_USER] = '這"真實姓名"與其他使用者的登入帳號相同. 請選擇使用另外的真實姓名.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_NOT_ENABLED] = '資助者支援未啟用.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_NOT_FOUND] = '資助者 %d 找不到.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_AMOUNT_TOO_LOW] = '資助金額﹝%s﹞底於最低金額﹝%s﹞。';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_HANDLER_ACCESS_LEVEL_TOO_LOW] = '處理者沒有足夠的存取權限去處理資助問題.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_ASSIGNER_ACCESS_LEVEL_TOO_LOW] = '拒絕存取: 分派資助的問題需要更高的存取權限.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_SPONSOR_NO_EMAIL] = '資助者沒有提供 E-Mail. 請更新你的個人設定.';
+$MANTIS_ERROR[ERROR_CONFIG_OPT_INVALID] = '參數設定選項 \'%s\' 出現不合理的內容 \'%s\'';
+$MANTIS_ERROR[ERROR_BUG_READ_ONLY_ACTION_DENIED] = '這作業無法執行, 因誤問題 \'%d\' 是設定唯讀狀態';
+$MANTIS_ERROR[ERROR_RELATIONSHIP_ALREADY_EXISTS] = "這兩個問題之前就已經設定為相關問題.";
+$MANTIS_ERROR[ERROR_RELATIONSHIP_NOT_FOUND] = "相關問題找不到.";
+$MANTIS_ERROR[ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_BUG_TOO_LOW] = "拒絕存取: 這問題 %d 需要更高的存取權限.";
+$MANTIS_ERROR[ERROR_RELATIONSHIP_SAME_BUG] = "不可將自己設定為相關問題.";
+$MANTIS_ERROR[ERROR_SIGNUP_NOT_MATCHING_CAPTCHA] = '確認編碼不符. 請重試一次.';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_ENABLED] = '\'忘記密碼\' 功能未啟用.';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_NO_EMAIL_SPECIFIED] = '你必須提供一個 E-Mail 來重新設定密碼';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_MATCHING_DATA] = '你提供的資料與已註冊的帳號不符!';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_CONFIRM_HASH_INVALID] = '這個認證網址不正確或是已經被點選認證過. 請重新申請.';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_MAX_IN_PROGRESS_ATTEMPTS_REACHED] = '目前已超過系統設定的使用限制數, 請聯繫系統管理員';
-$MANTIS_ERROR[ERROR_PROJECT_RECURSIVE_HIERARCHY] = 'That operation would 建立 a loop in the 下層專案 hierarchy.';
+$MANTIS_ERROR[ERROR_PROJECT_RECURSIVE_HIERARCHY] = '這樣會將自己建立為下層專案的下層專案而造成無窮迴路問題.';
 $MANTIS_ERROR[ERROR_USER_CHANGE_LAST_ADMIN] = '你不可以更改系統中最後一個系統管理員的權限';
 
 #$s_login_error = 'Your account may be disabled or blocked (due to too many failed 登入 attempts) or the username/password you entered is incorrect.';
 $s_login_error = '你的帳號可能被暫停或封鎖或者輸入不正確的帳號密碼.';
-$s_login_cookies_disabled = 'ERROR: 你的瀏覽器可能不支援 cookies 功能或是沒有將 cookies 功能開啟.';
+$s_login_cookies_disabled = '錯誤: 你的瀏覽器可能不支援 cookies 功能或是沒有將 cookies 功能開啟.';
 
 # General Strings
 $s_go_back = '回上頁';
@@ -283,13 +282,13 @@ $s_project_view_state_enum_string = '10:公開型,50:封閉型';
 $s_view_state_enum_string         = '10:公開,50:封閉';
 
 $s_priority_enum_string           = '10:無,20:低,30:一般,40:高,50:緊急,60:立即';
-$s_severity_enum_string           = '10:feature,20:trivial,30:text,40:tweak,50:minor,60:major,70:crash,80:block';
-$s_reproducibility_enum_string    = '10:always,30:sometimes,50:random,70:have not tried,90:unable to duplicate,100:N/A';
-$s_status_enum_string             = '10:新問題-new,20:有回覆-feedback,30:已收到-acknowledged,40:有確認-confirmed,50:已分派-assigned,80:已解決-resolved,90:已結案-closed';
+$s_severity_enum_string           = '10:特徵,20:不重要,30:文字,40:不耐壓,50:次要,60:重要,70:當機,80:咬住';
+$s_reproducibility_enum_string    = '10:時常,30:偶然,50:隨機,70:未測試,90:無法重現,100:N/A';
+$s_status_enum_string             = '10:新問題,20:有回覆,30:已收到,40:有確認,50:已分派,80:已解決,90:已結案';
 $s_resolution_enum_string         = '10:未結案,20:已修正,30:重設未結案,40:無法重現錯誤,50:無法修復,60:重複回報問題,70:不是 Bug,80:暫時擱置,90:不須修正';
-$s_projection_enum_string         = '10:none,30:tweak,50:minor fix,70:major rework,90:redesign';
-$s_eta_enum_string                = '10:none,20:小於 1 天,30:2-3 天,40:小於 1 周,50:小於 1 月,60:大於 1 月';
-$s_sponsorship_enum_string = '0:Unpaid,1:Requested,2:Paid';
+$s_projection_enum_string         = '10:沒有,30:壓力測試,50:小幅修正,70:主要修訂,90:重新設計';
+$s_eta_enum_string                = '10:沒有,20:< 一天,30:二至三天,40:< 一星期,50:< 一個月,60:> 一個月';
+$s_sponsorship_enum_string        = '0:未付款,1:已要求付款,2:已付款';
 
 # Email Strings
 $s_new_account_subject = '新帳號註冊通知';
@@ -318,9 +317,9 @@ $s_email_notification_title_for_action_bug_assigned = '以下的 bug 已經分�
 $s_email_notification_title_for_action_bug_reopened = '以下的 bug 已經重設未結案.';
 $s_email_notification_title_for_action_bug_deleted = '以下的 bug 已經刪除.';
 $s_email_notification_title_for_action_bug_updated = '以下的問題已經更新.';
-$s_email_notification_title_for_action_sponsorship_added = '以下的問題已經被 SPONSORED.';
-$s_email_notification_title_for_action_sponsorship_updated = 'A sponsorship of 以下的問題 was modified.';
-$s_email_notification_title_for_action_sponsorship_deleted = 'A sponsorship of 以下的問題 was withdrawn.';
+$s_email_notification_title_for_action_sponsorship_added = '以下的問題已經被資助.';
+$s_email_notification_title_for_action_sponsorship_updated = '這問題的資助部分已更改.';
+$s_email_notification_title_for_action_sponsorship_deleted = '這問題的資助部分已撤銷.';
 
 $s_email_notification_title_for_action_bugnote_submitted = 'Bug 筆記已經被新增到這 bug 內.';
 $s_email_notification_title_for_action_duplicate_of_relationship_added = "以下的問題已經被設定為重複的問題 %s.";
@@ -373,8 +372,8 @@ $s_no_password_change = '這個密碼已經被其他系統控制中, 所以目�
 $s_confirm_password  = '確認密碼';
 $s_access_level = '存取權限';
 $s_update_user_button = '更新使用者';
-$s_verify_warning = 'Your account information has been verified. The account confirmation message you have received is now invalid.';
-$s_verify_change_password = 'You must set a password here to allow you to log in again.';
+$s_verify_warning = '你的帳號資訊已經驗證無誤. 你所收到的帳號確認信現在已經失效.';
+$s_verify_change_password = '你必須在此設定密碼才可重新登入.';
 
 # account_prefs_page.php
 $s_default_account_preferences_title = '預設帳號喜好設定';
@@ -438,23 +437,23 @@ $s_submit_button = '送出';
 $s_profile_updated_msg = '個人設定更新...';
 
 # account_sponsor_page.php
-$s_my_sponsorship = 'My Sponsorships';
-$s_sponsor_all_projects = 'Note: These amounts reflect sponsorships in ALL PROJECTS.';
-$s_sponsor_project = 'Note: These amounts reflect sponsorships only in the %s project.';
-$s_update_sponsorship_button = 'Change Payment Status';
-$s_no_sponsored = 'No sponsored issues Assigned To yourself were found.';
-$s_own_sponsored = 'Issues You have Sponsored:';
-$s_issues_handled = 'Sponsored Issues You Have Been Assigned To:';
-$s_no_own_sponsored = 'You have not sponsored any issues.';
-$s_sponsor = 'Sponsor';
-$s_amount = 'Amount';
-$s_total_owing = 'Total Owing';
-$s_total_paid = 'Total Paid';
-$s_sponsor_hide = 'Hide Resolved and Paid';
-$s_sponsor_show = 'Show All';
+$s_my_sponsorship = '我的資助者';
+$s_sponsor_all_projects = '注意: 這金額將資助所有專案.';
+$s_sponsor_project = '注意: 這金額只資助 %s 這個專案.';
+$s_update_sponsorship_button = '更改付款狀態';
+$s_no_sponsored = '找不到指派給你的問題有被資助.';
+$s_own_sponsored = '你被資助的問題:';
+$s_issues_handled = '指派給你有被資助的問題:';
+$s_no_own_sponsored = '指派給你的問題均沒有被資助.';
+$s_sponsor = '資助者';
+$s_amount = '金額';
+$s_total_owing = '欠款總額';
+$s_total_paid = '付款總額';
+$s_sponsor_hide = '隱藏已解決及已付款';
+$s_sponsor_show = '全部顯視';
 
 # account_sponsor_update.php
-$s_payment_updated = 'Payment information updated.';
+$s_payment_updated = '付款資料已更新.';
 
 # account_update.php
 $s_account_updated_msg = '你的帳戶已經成功更新...';
@@ -466,7 +465,7 @@ $s_password_updated = '密碼已成功更新';
 # adm_permission_report.php
 
 # bug_action_group_page
-$s_multiple_projects = 'The issues you have selected are from different projects. The parameters below reflect the settings for all projects. If this is incorrect, please retry your change with a smaller number of issues selected.';
+$s_multiple_projects = '你所選擇的問題屬於不同的專案。以下參數將影響到所有專案的設定, 如果你不是想這樣的話, 請重新選定較少的問題.';
 
 # bug_assign.php
 $s_bug_assign_msg       = 'Bug 已經成功被指定...';
@@ -536,6 +535,9 @@ $s_reminder = '提醒訊息(會自動加入 Bug 筆記內)';
 $s_reminder_explain = '這訊息將被傳送到清單裡面指定的收信者, 去要求他們能夠回覆有關這問題的處理狀況.';
 $s_reminder_monitor = '系統會自動將這些指定的收信者設定監控這個問題. 他們也可以使用取消監控的功能將這問題移出他的監控清單內.';
 $s_reminder_store = '你所輸入的訊息也會被當成一個 Bug 筆記記錄在這 Bug 問題內.';
+
+# bug_set_sponsorship.php
+$s_confirm_sponsorship = '請確認你所要資助的這問題 %d - %s.';
 
 # bug_update.php
 $s_bug_updated_msg = 'Bug 已經成功被更新...';
@@ -650,7 +652,7 @@ $s_protected = '保護';
 $s_create_user_button = '建立使用者';
 
 # manage_page.php
-$s_hide_disabled = '隱藏 Disabled';
+$s_hide_disabled = '隱藏未啟用的';
 $s_filter_button = '確定過濾條件';
 $s_manage_users_link = '管理使用者';
 $s_manage_projects_link = '管理專案';
@@ -658,9 +660,9 @@ $s_manage_custom_field_link = '管理自訂欄位';
 $s_manage_global_profiles_link = '管理整體個人設定';
 $s_permissions_summary_report = '權限回報';
 $s_manage_config_link = '管理參數設定';
-$s_manage_threshold_config = 'Workflow Thresholds';
-$s_manage_email_config = 'Email 通知s';
-$s_manage_workflow_config = 'Workflow';
+$s_manage_threshold_config = '工作流程門檻';
+$s_manage_email_config = 'E-Mail 通知';
+$s_manage_workflow_config = '工作流程';
 $s_create_new_account_link = '建立帳號';
 $s_projects_link = '建立專案';
 $s_documentation_link = '說明';
@@ -668,7 +670,7 @@ $s_new_accounts_title = '新帳號';
 $s_1_week_title = '一週內';
 $s_never_logged_in_title = '從未登入';
 $s_prune_accounts = '清除帳號';
-$s_hide_inactive = '隱藏 未啟用';
+$s_hide_inactive = '隱藏未啟用';
 $s_manage_accounts_title = '管理帳號';
 $s_p = 'p';
 $s_date_created = '建立日期';
@@ -676,65 +678,65 @@ $s_last_visit = '最後一次瀏覽';
 $s_edit_user_link = '編輯使用者';
 
 # manage_config_email_page
-$s_config_all_projects = '注意: These 參數設定s affect ALL 專案.';
-$s_config_project = '注意: These 參數設定s affect only the %s 專案.';
-$s_colour_coding = 'In the table below, 以下的color code applies:';
-$s_colour_project = '專案 setting overrides others.';
-$s_colour_global = 'All 專案 設定值 override 預設 參數設定.';
+$s_config_all_projects = '注意: 這些參數設定將影響所有專案.';
+$s_config_project = '注意: 這些參數設定將只影響 %s 這個專案.';
+$s_colour_coding = '表格內如出現顏色, 請參考以下各顏色的內容說明:';
+$s_colour_project = '專案設定優先於其他設定.';
+$s_colour_global = '全部專案設定值優先預設參數設定.';
 $s_issue_reporter = '回報這問題的使用者';
 $s_issue_handler = '處理這問題的使用者';
 $s_users_added_bugnote = '已新增 Bug 筆記的使用者';
 $s_change_configuration = '更新參數設定';
-$s_message = 'Message';
-$s_default_notify = 'Setting 預設 通知 flags to';
-$s_action_notify = 'Setting 作業 通知 flags to';
-$s_notify_defaults_change_access = 'Who can 更動 通知 預設s';
-$s_notify_actions_change_access = 'Who can 更動 通知s';
-$s_revert_to_system = "刪除 All 專案設定值";
-$s_revert_to_all_project = "刪除 專案 Specific 設定值";
+$s_message = '訊息';
+$s_default_notify = '設定預設 E-Mail 通知';
+$s_action_notify = '設定作業 E-Mail 通知';
+$s_notify_defaults_change_access = '誰可以更動預設 E-Mail 通知';
+$s_notify_actions_change_access = '誰可以更動 E-Mail 通知';
+$s_revert_to_system = "刪除全部專案設定值";
+$s_revert_to_all_project = "刪除專案特定設定值";
 
 # manage_config_workflow_page
-$s_non_existent = 'non-existent';
-$s_current_status = 'Current 狀態';
-$s_next_status = 'Next 狀態';
-$s_workflow = 'Workflow';
-$s_workflow_thresholds = 'Thresholds that Affect Workflow';
-$s_threshold = 'Threshold';
+$s_non_existent = '不存在的';
+$s_current_status = '目前狀態';
+$s_next_status = '下個狀態';
+$s_workflow = '工作流程';
+$s_workflow_thresholds = '可影響工作流程門檻';
+$s_threshold = '門檻';
 $s_status_level = '狀態';
-$s_alter_level = 'Who can alter this value';
-$s_validation = 'Workflow Validation';
-$s_comment = 'Validation Comment';
-$s_superfluous = 'Arc from 狀態 to itself is implied,和need not be given explicitly';
-$s_unreachable = 'You cannot 搬移 an 問題 into this 狀態';
-$s_no_exit = 'You cannot 搬移 an 問題 out of this 狀態';
-$s_access_levels = 'Access Levels';
-$s_access_change = 'Minimum Access Level to 更動 to this 狀態';
-$s_desc_bug_submit_status = '狀態 to which a 新的問題 is set';
-$s_desc_bug_reopen_status = '狀態 to which 重設未結案 問題 are set';
-$s_desc_bug_resolved_status_threshold = '狀態 where an 問題 is considered 解決d';
-$s_workflow_change_access = 'Who can 更動 workflow';
-$s_access_change_access = 'Who can 更動 access levels';
+$s_alter_level = '誰可以調整內容';
+$s_validation = '工作流程確認';
+$s_comment = '確認附註';
+$s_superfluous = '狀態是多餘的及不必要的, 不需再提供';
+$s_unreachable = '你不能設定這問題為這個狀態';
+$s_no_exit = '你不能設定這問題為這以外的狀態';
+$s_access_levels = '存取權限';
+$s_access_change = '更動這個狀態的最小存取權限';
+$s_desc_bug_submit_status = '狀態已被設定為新的問題';
+$s_desc_bug_reopen_status = '狀態已被重設為未結案的問題';
+$s_desc_bug_resolved_status_threshold = '狀態已被設為已解決問題';
+$s_workflow_change_access = '誰可以更動工作流程';
+$s_access_change_access = '誰可以更動存取權限';
 
 # manage_config_workflow_set
-$s_default_not_in_flow = 'The 預設 狀態 of %s is not 已選擇 in the next 狀態es for %s. It will be ignored';
+$s_default_not_in_flow = ' %s 的預設狀態沒被選擇 %s 的下個狀態. 這個會被忽略的';
 
 # manage_config_work_threshold_page
-$s_assign_issue = 'Assign an 問題';
+$s_assign_issue = '分派問題';
 $s_allow_close_immediate = '允許問題在解決後就結案';
-$s_allow_reporter_close = 'Allow 回報人 to 結案 問題';
-$s_allow_reporter_reopen = 'Allow 回報人 to 重設未結案 問題';
-$s_set_status_assigned = 'Set 狀態 on assignment of 處理者';
-$s_allow_user_edit = 'Allow 使用者 to 編輯 their own Bug 筆記';
-$s_limit_access = 'Limit 回報人\'s access to their own 問題';
-$s_submit_status = '狀態 to which a 新的問題 is set';
-$s_assigned_status = '狀態 to set auto-分派ed 問題 to';
-$s_resolved_status = '狀態 where an 問題 is considered 解決d';
-$s_readonly_status = '狀態 where an 問題 becomes read only';
-$s_reopen_status = '狀態 to which a 重設未結案 問題 is set';
-$s_reopen_resolution = '分析 to which a 重設未結案 問題 is set';
+$s_allow_reporter_close = '允許回報人能結案';
+$s_allow_reporter_reopen = '允許回報人能重設未結案';
+$s_set_status_assigned = '設定處理者分派的狀態';
+$s_allow_user_edit = '允許使用者能編輯自己的 Bug 筆記';
+$s_limit_access = '限制回報人存取自己的問題';
+$s_submit_status = '這問題的狀態已被設為新的問題';
+$s_assigned_status = '這問題的狀態已被設為自動分派的問題';
+$s_resolved_status = '這問題的狀態已被設為已解決問題';
+$s_readonly_status = '這問題的狀態已被設為唯讀問題';
+$s_reopen_status = '這問題的狀態已被設為重設未結案問題';
+$s_reopen_resolution = '分析已被重設為未結案問題';
 
 # manage_config_revert_page
-$s_config_delete_sure = '你確定要刪除刪除這設定值 for';
+$s_config_delete_sure = '你確定要刪除刪除這設定值--';
 $s_in_project = '在專案';
 $s_delete_config_button = '刪除設定值';
 
@@ -748,7 +750,7 @@ $s_category_added_msg = '類別已新增...';
 $s_category_deleted_msg = '類別已刪除...';
 
 # manage_proj_category_delete_page.php
-$s_category_delete_sure_msg = '你確定要刪除此類別? 所有相關連的Bug將會被刪除!!';
+$s_category_delete_sure_msg = '你確定要刪除此類別? 所有相關連的 Bug 將會被刪除!!';
 $s_delete_category_button = '刪除類別';
 
 # manage_proj_category_edit_page.php
@@ -765,7 +767,7 @@ $s_add_subproject_title = '新增下層專案';
 $s_project_deleted_msg = '專案已經成功刪除...';
 
 # manage_proj_delete_page.php
-$s_project_delete_msg = '你確定要刪除此專案和所有附屬的Bug?';
+$s_project_delete_msg = '你確定要刪除此專案和所有附屬的 Bug?';
 $s_project_delete_button = '刪除專案';
 
 # manage_proj_edit_page.php
@@ -809,13 +811,13 @@ $s_version_added_msg = '版本已經成功已新增...';
 $s_version_deleted_msg = '版本已經成功已刪除...';
 
 # manage_proj_version_delete_page.php
-$s_version_delete_sure = '你確定要刪除此版本? 所有相關連的Bug將會被刪除!!';
+$s_version_delete_sure = '你確定要刪除此版本? 所有相關連的 Bug 將會被刪除!!';
 $s_delete_version_button = '刪除版本';
 
 # manage_proj_version_edit_page.php
 $s_edit_project_version_title = '編輯專案版本';
 $s_update_version_button = '更新版本';
-$s_released = 'Released';
+$s_released = '發行';
 
 # manage_proj_version_update.php
 $s_version_updated_msg = '版本已經成功更新...';
@@ -828,22 +830,22 @@ $s_account_deleted_msg = '帳號已刪除...';
 $s_delete_account_sure_msg = '你確定要刪除此一帳號?';
 
 # manage_user_prune.php
-$s_accounts_pruned_msg = 'All accounts that have never logged in和are older than 1 week have 被搬移';
-$s_prune_accounts_button = 'Prune';
-$s_confirm_account_pruning = '你確定 you want to 刪除 old accounts that have never logged in?';
+$s_accounts_pruned_msg = '所有未登入過以及超過一星期還未通過認證的帳號將被刪除';
+$s_prune_accounts_button = '清除';
+$s_confirm_account_pruning = '你確定你要刪除尚未登入過的帳號嗎?';
 
 # manage_user_page.php
 $s_edit_user_title = '編輯使用者';
 $s_reset_password_button = '重設密碼';
 $s_delete_user_button = '刪除使用者';
 $s_reset_password_msg = '點下[重設密碼]後系統會寄出一封通知信件, 點選信件內的 URL 就可以連上來更改密碼.';
-$s_reset_password_msg2 = 'Reset Password resets the password to be blank.';
-$s_show_all_users = 'ALL';
+$s_reset_password_msg2 = '重新設定密碼為空白.';
+$s_show_all_users = '全部使用者';
 
 # manage_user_reset.php
-$s_account_reset_protected_msg = '帳號受保護. Cannot reset the password.';
-$s_account_reset_msg = 'Confirmation message 已經被 sent to your email address...';
-$s_account_reset_msg2 = 'Account password 已經被 set to blank...';
+$s_account_reset_protected_msg = '帳號受保護. 不可以重設密碼.';
+$s_account_reset_msg = '確認訊息已經被寄送到你的 E-Mail 信箱...';
+$s_account_reset_msg2 = '這帳號的密碼已經被設為空白...';
 
 # manage_user_update.php
 $s_manage_user_protected_msg = '帳號受保護. 存取權限且保護功能已啟動. 否則，帳號將會被更新...';
@@ -851,8 +853,8 @@ $s_manage_user_updated_msg = '帳號成功更新...';
 
 # menu_inc.php
 $s_main_link = '首頁';
-$s_view_bugs_link = '檢視Bug';
-$s_report_bug_link = '回報Bug';
+$s_view_bugs_link = '檢視 Bug';
+$s_report_bug_link = '回報 Bug';
 $s_changelog_link = '版本更動紀錄';
 $s_summary_link = '摘要';
 $s_account_link = '個人帳號';
@@ -872,6 +874,8 @@ $s_my_view_title_reported = '我反應的';
 $s_my_view_title_assigned = '分派給我的 (尚未解決)';
 $s_my_view_title_resolved = '已經解決';
 $s_my_view_title_monitored = '我監控的';
+$s_my_view_title_feedback = '等待我的回覆';
+$s_my_view_title_verify = '等待我的確認';
 
 # news_add.php
 $s_news_added_msg = '新聞項目已新增...';
@@ -902,7 +906,7 @@ $s_select_post = '選擇發表';
 $s_news_updated_msg = '新聞項目已更新...';
 
 # news_view_page.php
-$s_back_link = 'Back';
+$s_back_link = '返回';
 
 # proj_doc_add.php
 $s_file_uploaded_msg = '檔案上傳成功';
@@ -959,7 +963,7 @@ $s_must_enter_severity = '您必須選擇嚴重性';
 $s_must_enter_reproducibility = '您必須選擇出現頻率';
 $s_must_enter_summary = '您必須輸入摘要';
 $s_must_enter_description = '您必須輸入說明';
-$s_report_more_bugs = '回報 More Bugs';
+$s_report_more_bugs = '回報更多 Bug';
 $s_submission_thanks_msg = '感謝您的意見! ^_^';
 
 # report_bug_advanced_page.php
@@ -970,10 +974,10 @@ $s_select_category = '選擇類別';
 $s_select_reproducibility = '選擇出現頻率';
 $s_select_severity = '選擇嚴重性';
 $s_or_fill_in = '或填入';
-$s_assign_to = '指定給';
+$s_assign_to = '指派給';
 $s_additional_information = '額外資訊';
 $s_submit_report_button = '送出回報';
-$s_check_report_more_bugs = 'check to 回報 more bugs';
+$s_check_report_more_bugs = '勾選可繼續回報其他的 Bug';
 
 # report_bug_page.php
 $s_advanced_report_link = '進階報告';
@@ -996,16 +1000,16 @@ $s_signup_button = '註冊';
 $s_no_password_request = '你的密碼正在被其他系統維護中, 請聯絡系統管理員來解決這問題!';
 
 # site_settings_edit_page.php
-$s_edit_site_settings_title = '編輯 Site 設定值';
+$s_edit_site_settings_title = '編輯整體設定值';
 $s_save_settings_button = '儲存設定值';
 
 # site_settings_page.php
-$s_site_settings_title = 'Site 設定值';
-$s_system_info_link = 'System Info';
-$s_site_settings_link = 'Site 設定值';
+$s_site_settings_title = '整體設定值';
+$s_system_info_link = '系統資訊';
+$s_site_settings_link = '整體設定值';
 
 # site_settings_update.php
-$s_site_settings_updated_msg = 'Site 設定值已更新完成';
+$s_site_settings_updated_msg = '整體設定值已更新完成';
 
 # summary_page.php
 $s_summary_title = '摘要';
@@ -1059,7 +1063,7 @@ $s_use_date_filters = '使用日期為過濾條件';
 $s_yes = '是';
 $s_no = '否';
 $s_open_filters = '更動過濾條件';
-$s_or_unassigned = '或 取消分派';
+$s_or_unassigned = '或取消分派';
 $s_ok = '是';
 $s_select_all = '選擇全部';
 
@@ -1070,17 +1074,17 @@ $s_query_deleted = '過濾條件已刪除';
 $s_save_query = '儲存目前的過濾條件';
 $s_reset_query = '重設過濾條件';
 $s_query_name = '過濾條件名稱';
-$s_query_exists = 'This particular query appears to already exist.';
-$s_query_dupe_name = 'Another query already has this name. Please 選擇 a different name for this query.';
-$s_query_blank_name = 'You cannot store a 過濾條件 without a name. Please give this 過濾條件 a name before saving it.';
-$s_query_store_error = 'There was an error saving this query.';
+$s_query_exists = '這個過濾條件已經存在.';
+$s_query_dupe_name = '另一個過濾條件已經使用這個名稱. 請改選另外一個名稱.';
+$s_query_blank_name = '你不可以沒指定過濾條件名稱. 儲存前請先給這過濾條件名稱.';
+$s_query_store_error = '儲存過濾條件過程出現錯誤.';
 $s_open_queries = '管理過濾條件';
-$s_query_delete_msg = '你確定 you wish to 刪除 this query?';
+$s_query_delete_msg = '你確定你要刪除這個過濾條件嗎?';
 
 # view_bug_advanced_page.php
 $s_view_simple_link = '簡易檢視';
 $s_viewing_bug_advanced_details_title = '檢視 Bug 進階詳細資料';
-$s_product_build = '產品 Build';
+$s_product_build = '產品建立';
 $s_system_profile = '系統說明';
 $s_update_bug_button = '更新 Bug';
 $s_bug_assign_to_button = '分派給:';
@@ -1088,8 +1092,8 @@ $s_bug_status_to_button = '更動狀態為:';
 $s_reopen_bug_button = '重設未結案問題';
 $s_move_bug_button = '搬移問題';
 $s_attached_files = '附件檔案';
-$s_publish = 'Publish';
-$s_cached = 'Cached';
+$s_publish = '發表';
+$s_cached = '快取';
 
 # view_bug_inc.php
 
@@ -1103,10 +1107,10 @@ $s_users_monitoring_bug = '使用者監控這 bug';
 $s_monitoring_user_list = '使用者清單';
 
 # bug_sponsorship_list_view_inc.php
-$s_no_users_sponsoring_bug = 'There are no 使用者 sponsoring this 問題.';
-$s_users_sponsoring_bug = '使用者 sponsoring this 問題';
-$s_sponsors_list = 'Sponsors List';
-$s_total_sponsorship_amount = '總數 Sponsorship = %s';
+$s_no_users_sponsoring_bug = '沒有使用者資助這問題.';
+$s_users_sponsoring_bug = '使用者資助這問題';
+$s_sponsors_list = '資助者清單';
+$s_total_sponsorship_amount = '資助總額 = %s';
 
 # custom field strings
 $s_add_custom_field_button = '新增自訂欄位';
@@ -1137,8 +1141,8 @@ $s_custom_field_require_update = '更新時需要這欄位';
 $s_custom_field_require_resolved = '解決時需要這欄位';
 $s_custom_field_require_closed = '結案時需要這欄位';
 
-$s_custom_field_sequence = 'Sequence';
-$s_custom_field_type_enum_string = '0:字串,1:整數,2:Float,3:Enumeration,4:E-Mail,5:Checkbox,6:List,7:Multiselection list,8:日期';
+$s_custom_field_sequence = '序列';
+$s_custom_field_type_enum_string = '0:字串,1:整數,2:浮點數字,3:列舉項目,4:E-Mail,5:選項,6:清單,7:多重選項清單,8:日期';
 
 $s_confirm_used_custom_field_deletion = '這欄位已經在一個以上的專案使用. 如果確定繼續執行, 使用這欄位的資料內容將會完全被刪除. 而且執行之後就無法復原. 如果你不要刪除這欄位, 請點選瀏覽器的 [上一頁] 按鈕. 要刪除的話, 就點下面的按鈕';
 $s_confirm_custom_field_deletion = '你確定要刪除這自訂欄位和使用到這自訂欄位的資料嗎?';
@@ -1152,7 +1156,7 @@ $s_filter_closed = "已結案";
 $s_filter_resolved = "已解決";
 $s_hide_closed = "隱藏已結案";
 $s_hide_resolved = "隱藏已解決";
-$s_and_above = 'And Above';
+$s_and_above = '以及之前';
 $s_advanced_filters = '進階過濾條件';
 $s_simple_filters = '簡易過濾條件';
 $s_monitored_by = '監控人';
@@ -1164,12 +1168,13 @@ $s_attachment_alt = "A";
 $s_phpmailer_language = 'en';
 
 # Sponsorship Strings
-$s_sponsors = '%d sponsor(s)';
-$s_sponsorship_added = 'Sponsorship 已新增';
-$s_sponsorship_updated = 'Sponsorship 已更新';
-$s_sponsorship_deleted = 'Sponsorship 已刪除';
-$s_sponsorship_paid = 'Sponsorship Paid';
-$s_sponsorship_more_info = 'More information about sponsorship';
+$s_sponsors = '%d 資助者';
+$s_sponsorship_added = '資助已新增';
+$s_sponsorship_updated = '資助已更新';
+$s_sponsorship_deleted = '資助已刪除';
+$s_sponsorship_paid = '資助款已付';
+$s_sponsorship_more_info = '更多有關資助的資訊';
+$s_sponsorship_total = '資助總數';
 
 # URL explaining the process of sponsoring an 問題.  This is defined here rather than
 # in the config to allow for a URL per language.  This can be set to an empty string if there
@@ -1191,12 +1196,12 @@ $s_relationship_deleted = "相關問題已刪除";
 $s_no_relationship = "沒有相關問題";
 $s_relationship_replaced = "相關問題已被取代";
 $s_replace_relationship_button = "取代";
-$s_replace_relationship_sure_msg = "There is already a relationship between the two 問題. 你確定 you want to replace it?";
-$s_relationship_with_parent = "Relationship with the 上層 問題";
+$s_replace_relationship_sure_msg = "這兩個問題已建立為相關問題. 你確定你要取代這關聯嗎?";
+$s_relationship_with_parent = "上層問題為關聯問題";
 $s_delete_relationship_button = "刪除";
-$s_delete_relationship_sure_msg = "你確定 you wish to 刪除 this relationship?";
-$s_relationship_warning_blocking_bugs_not_resolved = "Not all the children of this 問題 are yet 已解決 or 已結案.";
-$s_relationship_warning_blocking_bugs_not_resolved_2 = "<b>ATTENTION</b>. Not all the children of this 問題 are yet 已解決 or 已結案.<br>Before <b>resolving/closing</b> a 上層 問題, all the 問題 相關 as child with this one should be 已解決 or 已結案.";
+$s_delete_relationship_sure_msg = "你確定你要刪除這個相關問題嗎?";
+$s_relationship_warning_blocking_bugs_not_resolved = "並非所有這問題的下層問題都已解決或已結案.";
+$s_relationship_warning_blocking_bugs_not_resolved_2 = "<b>注意</b>. 不是所有這問題的下層問題已解決或已結案.<br>在<b>解決或結案</b>之前, 這問題的所有下層相關問題應該是已解決或已結案的狀態.";
 $s_create_child_bug_button = "建立複製";
 $s_bug_cloned_to = "問題已被複製";
 $s_bug_created_from = "問題建立來源";
@@ -1205,12 +1210,12 @@ $s_bug_created_from = "問題建立來源";
 $s_viewing_bug_relationship_graph_title = "相關問題圖";
 $s_relation_graph = "相關問題圖";
 $s_dependency_graph = "依存問題圖";
-$s_vertical = "Vertical";
-$s_horizontal = "Horizontal";
+$s_vertical = "垂直";
+$s_horizontal = "水平";
 $s_view_issue = "檢視問題";
 
 # Source Control Integration
-$s_checkin = 'Checkin';
+$s_checkin = '登入';
 
 # Pemissions report
 $s_perm_rpt_capability = '權限功能';
@@ -1219,69 +1224,69 @@ $s_issues = '問題';
 $s_report_issue = '回報問題';
 $s_update_issue = '更新問題';
 $s_monitor_issue = '監控問題';
-$s_handle_issue = '處理 an 問題';
-$s_move_issue = '搬移 an 問題';
-$s_delete_issue = '刪除 an 問題';
-$s_reopen_issue = '重設未結案 an 問題';
+$s_handle_issue = '處理問題';
+$s_move_issue = '搬移問題';
+$s_delete_issue = '刪除問題';
+$s_reopen_issue = '重設未結案問題';
 $s_view_private_issues = '檢視封閉問題';
-$s_update_readonly_issues = '更新 readonly 問題';
+$s_update_readonly_issues = '更新唯讀問題';
 $s_update_issue_status = '更新問題狀態';
 $s_set_view_status = '設定檢視狀態 (公開 vs 封閉)';
 $s_update_view_status = '更新檢視狀態 (公開 vs 封閉)';
-$s_show_list_of_users_monitoring_issue = 'Show list of 使用者 監控中的問題';
-$s_notes = 'NOTES';
-$s_add_notes = 'Add notes';
-$s_update_notes = '更新 notes';
-$s_delete_note = '刪除 note';
-$s_view_private_notes = '檢視封閉 notes';
+$s_show_list_of_users_monitoring_issue = '顯示監控這問題的使用者清單';
+$s_notes = '筆記';
+$s_add_notes = '新增筆記';
+$s_update_notes = '更新筆記';
+$s_delete_note = '刪除筆記';
+$s_view_private_notes = '檢視封閉筆記';
 $s_news = '新聞';
 $s_view_private_news = '檢視封閉新聞';
 $s_manage_news = '管理新聞';
-$s_view_list_of_attachments = '檢視 list of attachments';
-$s_download_attachments = 'Download attachments';
-$s_delete_attachments = '刪除 attachments';
+$s_view_list_of_attachments = '檢視附件清單';
+$s_download_attachments = '下載附件';
+$s_delete_attachments = '刪除附件';
 $s_delete_attachment_button = "刪除";
-$s_delete_attachment_sure_msg = "你確定 you wish to 刪除 this attachment?";
-$s_upload_issue_attachments = '上傳問題 attachments';
+$s_delete_attachment_sure_msg = "你確定你要刪除這個附件嗎?";
+$s_upload_issue_attachments = '上傳問題的附件';
 $s_filters = '過濾條件';
 $s_save_filters = '儲存過濾條件';
-$s_save_filters_as_shared = '儲存過濾條件 as shared';
-$s_use_saved_filters = '使用已儲存過濾條件';
+$s_save_filters_as_shared = '儲存為共用的過濾條件';
+$s_use_saved_filters = '使用已儲存的過濾條件';
 $s_create_project = '建立專案';
 $s_delete_project = '刪除專案';
 $s_manage_project = '管理專案';
-$s_manage_user_access_to_project = '管理使用者 access to a 專案';
-$s_automatically_included_in_private_projects = 'Automatically included in 封閉型';
-$s_project_documents = '專案 DOCUMENTS';
-$s_view_project_documents = '檢視專案 documents';
-$s_upload_project_documents = '上傳專案 documents';
-$s_link_custom_fields_to_projects = 'Link 自訂 欄位 to 專案';
-$s_sponsorships = 'SPONSORSHIPS';
-$s_view_sponsorship_details = '檢視 sponsorship details';
-$s_view_sponsorship_total = '檢視 sponsorship 總數';
-$s_sponsor_issue = 'Sponsor 問題';
-$s_assign_sponsored_issue = '分派 sponsored 問題';
-$s_handle_sponsored_issue = '處理 sponsored 問題';
-$s_others = 'OTHERS';
-$s_see_email_addresses_of_other_users = 'See email addresses of other 使用者';
-$s_send_reminders = 'Send reminders';
-$s_add_profiles = 'Add 個人設定';
-$s_notify_of_new_user_created = 'Notify of 新的使用者已建立';
-$s_email_notification = 'EMAIL 通知';
+$s_manage_user_access_to_project = '管理存取專案的使用者權限';
+$s_automatically_included_in_private_projects = '自動加入到封閉型專案';
+$s_project_documents = '專案文件';
+$s_view_project_documents = '檢視專案文件';
+$s_upload_project_documents = '上傳專案文件';
+$s_link_custom_fields_to_projects = '連結自訂欄位到專案';
+$s_sponsorships = '資助者';
+$s_view_sponsorship_details = '檢視資助者資料';
+$s_view_sponsorship_total = '檢視資助者總數';
+$s_sponsor_issue = '資助者問題';
+$s_assign_sponsored_issue = '分派被資助的問題';
+$s_handle_sponsored_issue = '處理被資助的問題';
+$s_others = '其他';
+$s_see_email_addresses_of_other_users = '看其他使用者的 E-Mail';
+$s_send_reminders = '傳送一個提醒訊息';
+$s_add_profiles = '新增個人設定';
+$s_notify_of_new_user_created = '新的使用者已建立通知';
+$s_email_notification = 'E-Mail 通知';
 $s_status_changed_to = '狀態更動為';
-$s_email_on_deleted = 'Email on 刪除';
-$s_email_on_sponsorship_changed = 'Email on Sponsorship 更動d';
-$s_email_on_relationship_changed = 'Email on Relationship 更動d';
+$s_email_on_deleted = '在刪除時發出 E-Mail';
+$s_email_on_sponsorship_changed = '資助資料更動時發出 E-Mail';
+$s_email_on_relationship_changed = '相關問題更動時發出 E-Mail';
 
 # DHTML filters
-$s_loading = 'Loading...';
+$s_loading = '載入中...';
 
 # filter_api.php
-$s_between = 'Between' ;
-$s_on_or_before = 'On Or Before' ;
-$s_before = 'Before' ;
+$s_between = '之間' ;
+$s_on_or_before = '於此或之前' ;
+$s_before = '之前' ;
 # $s_on = 'On' ; # @@@ (thraxisp) this already exists (~ line 499)
-$s_after = 'After' ;
-$s_on_or_after = 'On Or After' ;
+$s_after = '之後' ;
+$s_on_or_after = '於此或之後' ;
 
 ?>

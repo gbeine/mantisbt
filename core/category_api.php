@@ -186,7 +186,7 @@
 
 		$t_project_category_table = config_get( 'mantis_project_category_table' );
 
-		$query = "SELECT category, user_id
+		$query = "SELECT category, user_id, pop3_host, pop3_user, pop3_pass
 				FROM $t_project_category_table
 				WHERE project_id='$c_project_id' AND
 					category='$c_category'";

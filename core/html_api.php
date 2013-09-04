@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: html_api.php,v 1.180 2005-07-22 23:13:24 vboctor Exp $
+	# $Id: html_api.php,v 1.184 2005-08-10 17:08:55 thraxisp Exp $
 	# --------------------------------------------------------
 
 	###########################################################################
@@ -108,11 +108,11 @@
 
 		if ( auth_is_user_authenticated() ) {
 			html_login_info();
-		}
 
-		if( ON == config_get( 'show_project_menu_bar' ) ) {
-			print_project_menu_bar();
-			PRINT '<br />';
+			if( ON == config_get( 'show_project_menu_bar' ) ) {
+				print_project_menu_bar();
+				PRINT '<br />';
+			}
 		}
 		print_menu();
 	}
@@ -195,10 +195,14 @@
 	function html_title( $p_page_title = null ) {
 		$t_title = config_get( 'window_title' );
 		echo "\t", '<title>';
-		if ( $p_page_title === null ) {
+		if ( 0 == strlen( $p_page_title ) ) {
 			echo string_display( $t_title );
 		} else {
-			echo $p_page_title . ' - ' . string_display( $t_title );
+			if ( 0 == strlen( $t_title ) ) {
+				echo $p_page_title;
+			} else {
+				echo $p_page_title . ' - ' . string_display( $t_title );
+			}
 		}
 		echo '</title>', "\n";
 	}
@@ -627,13 +631,13 @@
 		}
 
 		PRINT '<br /><div align="center">';
-		if ( access_has_project_level( ADMINISTRATOR ) ) {
+		if ( access_has_global_level( ADMINISTRATOR ) ) {
 			print_bracket_link( $t_manage_user_page, lang_get( 'manage_users_link' ) );
 		}
 		if ( access_has_project_level( config_get( 'manage_project_threshold' ) ) ) {
 			print_bracket_link( $t_manage_project_menu_page, lang_get( 'manage_projects_link' ) );
 		}
-		if ( access_has_project_level( config_get( 'manage_custom_fields_threshold' ) ) ) {
+		if ( access_has_global_level( config_get( 'manage_custom_fields_threshold' ) ) ) {
 			print_bracket_link( $t_manage_custom_field_page, lang_get( 'manage_custom_field_link' ) );
 		}
 		if ( access_has_global_level( config_get( 'manage_global_profile_threshold' ) ) ) {

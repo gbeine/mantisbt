@@ -32,7 +32,7 @@
 				print_r($t_mail);
 			}
 			$GLOBALS['g_cache_current_user_id'] = mail_get_user( $t_mail['From'] );
-                        mail_add_bug($t_mail, $t_mailaccount);
+			mail_add_bug($t_mail, $t_mailaccount);
 		}
 	}
 ?>

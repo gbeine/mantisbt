@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: filter_api.php,v 1.119 2005-07-19 13:42:46 vboctor Exp $
+	# $Id: filter_api.php,v 1.122 2005-08-26 17:05:11 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -162,10 +162,21 @@
 		# private bug selection
 		if ( !access_has_project_level( config_get( 'private_bug_threshold' ), $t_project_id, $t_user_id ) ) {
 			$t_public = VS_PUBLIC;
-			array_push( $t_where_clauses, "($t_bug_table.view_state='$t_public' OR $t_bug_table.reporter_id='$t_user_id')" );
+			$t_private = VS_PRIVATE;
+			switch ( $t_filter['view_state'] ) {
+				case META_FILTER_ANY:
+					array_push( $t_where_clauses, "($t_bug_table.view_state='$t_public' OR $t_bug_table.reporter_id='$t_user_id')" );
+					break;
+				case VS_PUBLIC:
+					array_push( $t_where_clauses, "($t_bug_table.view_state='$t_public')" );
+					break;
+				case VS_PRIVATE:
+					array_push( $t_where_clauses, "($t_bug_table.view_state='$t_private' AND $t_bug_table.reporter_id='$t_user_id')" );
+					break;
+			}
 		} else {
 			$t_view_state = db_prepare_int( $t_filter['view_state'] );
-			if ( ( $t_view_state != META_FILTER_ANY ) && ( !is_blank( $t_view_state ) ) ) {
+			if ( ( $t_filter['view_state'] != META_FILTER_ANY ) && ( !is_blank( $t_filter['view_state'] ) ) ) {
 				array_push( $t_where_clauses, "($t_bug_table.view_state='$t_view_state')" );
 			}
 		}
@@ -1035,7 +1046,10 @@
 			$t_show_version = ( ON == config_get( 'show_product_version' ) )
 					|| ( ( AUTO == config_get( 'show_product_version' ) )
 								&& ( count( version_get_all_rows_with_subs( $t_project_id ) ) > 0 ) );
-
+			# overload handler_id setting if user isn't supposed to see them (ref #6189)
+			if ( ! access_has_project_level( config_get( 'view_handler_threshold' ), $t_project_id ) ) { 
+				$t_filter['handler_id'] = array( META_FILTER_ANY ); 
+			} 
 		?>
 
 		<tr <?php PRINT "class=\"" . $t_trclass . "\""; ?>>
@@ -2574,6 +2588,7 @@
 		<!-- Handler -->
 		<select <?php PRINT $t_select_modifier;?> name="handler_id[]">
 			<option value="<?php echo META_FILTER_ANY ?>" <?php check_selected( $t_filter['handler_id'], META_FILTER_ANY ); ?>>[<?php echo lang_get( 'any' ) ?>]</option>
+			<?php if ( access_has_project_level( config_get( 'view_handler_threshold' ) ) ) { ?>
 			<option value="<?php echo META_FILTER_NONE ?>" <?php check_selected( $t_filter['handler_id'], META_FILTER_NONE ); ?>>[<?php echo lang_get( 'none' ) ?>]</option>
 			<?php
 				if ( access_has_project_level( config_get( 'handle_bug_threshold' ) ) ) {
@@ -2583,6 +2598,7 @@
 				}
 			?>
 			<?php print_assign_to_option_list( $t_filter['handler_id'] ) ?>
+			<?php } ?>
 		</select>
 		<?php
 	}
@@ -2848,7 +2864,7 @@
 				}
 				foreach( $t_accessible_custom_fields_values[$j] as $t_item ) {
 					if ( ( strtolower( $t_item ) != META_FILTER_ANY ) && ( strtolower( $t_item ) != META_FILTER_NONE ) ) {
-						echo '<option value="' .  htmlentities( $t_item )  . '" ';
+						echo '<option value="' .  string_html_entities( $t_item )  . '" ';
 						if ( isset( $t_filter['custom_fields'][ $p_field_id ] ) ) {
 							check_selected( $t_filter['custom_fields'][ $p_field_id ], $t_item );
 						}

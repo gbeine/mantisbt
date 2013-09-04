@@ -9,13 +9,13 @@
 	# Polish: Jaroslaw Lewandowski <jotel@jotel.net>
 	# Polish: Kacper Kruszewski <kacper@netcetera.pl>
 	# Polish: Tomasz Czerniejewski <tomc at artifexmundi com> 2005/04/06
-	# Polish: Arkadiusz Hutta <hutta@poczta.onet.pl> 2005/07/21
+	# Polish: Arkadiusz Hutta <hutta@poczta.onet.pl> 2005/08/10
 	# -------------------------------------------------
-	# $Revision: 1.92 $
-	# $Author: bigbadger $
-	# $Date: 2005-07-22 04:59:32 $
+	# $Revision: 1.95 $
+	# $Author: vboctor $
+	# $Date: 2005-08-10 22:22:53 $
 	#
-	# $Id: strings_polish.txt,v 1.92 2005-07-22 04:59:32 bigbadger Exp $
+	# $Id: strings_polish.txt,v 1.95 2005-08-10 22:22:53 vboctor Exp $
 	###########################################################################
 ?>
 <?php
@@ -88,7 +88,7 @@ $s_new_bug = 'Nowe Zagadnienie';
 $s_bugnote_added = 'Dodano komentarz';
 $s_bugnote_edited = 'Edycja komentarza';
 $s_bugnote_deleted = 'Usuniêto komentarz';
-$s_summary_updated = 'Zaktualizowano podsumowanie';
+$s_summary_updated = 'Zaktualizowano temat';
 $s_description_updated = 'Zaktualizowano opis';
 $s_additional_information_updated = 'Zaktualizowano informacje dodatkowe';
 $s_steps_to_reproduce_updated = 'Zaktualizowano kroki, by powtórzyæ';
@@ -145,7 +145,7 @@ $s_by_resolution_pct = 'wg rozwi±zania procentowo';
 $s_by_severity_mix = 'wg wa¿no¶ci i statusu';
 $s_by_priority_mix = 'wg priorytetu i statusu';
 $s_by_resolution_mix = 'wg rozwi±zania i statusu';
-$s_synthesis_link = 'Podsumowanie';
+$s_synthesis_link = 'Temat';
 $s_status_link = 'Wg stanu';
 $s_priority_link = 'Wg priorytetu';
 $s_severity_link = 'Wg wa¿no¶ci';
@@ -210,6 +210,7 @@ $MANTIS_ERROR[ERROR_GPC_ARRAY_UNEXPECTED] = 'Tablica zamiast ci±gu w %s.';
 $MANTIS_ERROR[ERROR_GPC_NOT_NUMBER] = 'Oczekiwano liczby w %s.';
 $MANTIS_ERROR[ERROR_BUG_NOT_FOUND]	= 'Nie znaleziono zagadnienia %d.';
 $MANTIS_ERROR[ERROR_FILTER_NOT_FOUND]	 = 'Nie znaleziono filtru %d.';
+$MANTIS_ERROR[ERROR_FILTER_TOO_OLD] = 'Filtr, którego próbujesz u¿yæ jest zbyt stary, aby mo¿na go by³o uaktualniæ. Proszê stworzyæ ten filtr od nowa.';
 $MANTIS_ERROR[ERROR_EMAIL_INVALID]	= 'Nieprawid³owy email.';
 $MANTIS_ERROR[ERROR_USER_PROFILE_NOT_FOUND] = 'Nieznaleziono profilu.';
 $MANTIS_ERROR[ERROR_FILE_NOT_ALLOWED]	= 'Pliki tego typu nie mog± byæ przesy³ane.';
@@ -243,7 +244,7 @@ $MANTIS_ERROR[ERROR_SPONSORSHIP_NOT_FOUND] = 'Sponsoring %d nie znaleziony.';
 $MANTIS_ERROR[ERROR_SPONSORSHIP_AMOUNT_TOO_LOW] = 'Sponsoring (%s) jest poni¿e minimalnej kwoty (%s).';
 $MANTIS_ERROR[ERROR_SPONSORSHIP_HANDLER_ACCESS_LEVEL_TOO_LOW] = 'Operator nie ma wystarczaj±cych uprawnieñ do obs³ugi sponsorowanych zagadnieñ.';
 $MANTIS_ERROR[ERROR_SPONSORSHIP_ASSIGNER_ACCESS_LEVEL_TOO_LOW] = 'Przypisywanie sponsorowanych zagadnieñ wymaga wiêkszych uprawnieñ.';
-$MANTIS_ERROR[ERROR_SPONSORSHIP_SPONSOR_NO_EMAIL] = 'Sponsor ma nie podany adres email. Proszê zaktualizowaæ swój profil.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_SPONSOR_NO_EMAIL] = 'Sponsor nie ma podanego adresu email. Proszê zaktualizowaæ swój profil.';
 $MANTIS_ERROR[ERROR_CONFIG_OPT_INVALID] = 'Opcja konfiguracji \'%s\' ma nieprawid³ow± warto¶æ \'%s\'';
 $MANTIS_ERROR[ERROR_BUG_READ_ONLY_ACTION_DENIED] = 'Akcja nie mo¿e zostaæ wykonana poniewa¿ zg³oszenie \'%d\' jest tylko do odczytu.';
 $MANTIS_ERROR[ERROR_RELATIONSHIP_ALREADY_EXISTS] = "Istnieje ju¿ powi±zanie pomiêdzy tymi dwoma zg³oszeniami.";
@@ -257,7 +258,7 @@ $MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_MATCHING_DATA] = 'Podane dane nie pasuj± d
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_CONFIRM_HASH_INVALID] = 'Adres potwierdzaj±cy jest nieprawid³owy lub zosta³ ju¿ u¿yty. Proszê zapisaæ siê ponownie.';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_MAX_IN_PROGRESS_ATTEMPTS_REACHED] = 'Osi±gniêto maksymaln± liczbê oczekuj±cych ¿±dañ. Proszê skonaktowaæ siê z administratorem.';
 $MANTIS_ERROR[ERROR_PROJECT_RECURSIVE_HIERARCHY] = 'Ta operacja spowodowa³aby pêtlê w hierarchii podprojektów.';
-$MANTIS_ERROR[ERROR_USER_CHANGE_LAST_ADMIN] = 'You cannot change the access level of the only ADMINISTRATOR in the system.';
+$MANTIS_ERROR[ERROR_USER_CHANGE_LAST_ADMIN] = 'Nie mo¿esz zmieniæ poziomu dostêpu dla jedynego ADMINISTRATORA systemu.';
 
 #$s_login_error = 'Your account may be disabled or blocked (due to too many failed login attempts) or the username/password you entered is incorrect.';
 $s_login_error = 'Twoje konto mo¿e byæ wy³±czone lub nazwa u¿ytkownika/has³o nie s± poprawne.';
@@ -352,7 +353,7 @@ $s_email_duplicate = 'Duplikat Zagadnienia';
 $s_email_fixed_in_version = 'Rozwi±zane w wersji';
 $s_email_date_submitted = 'Data zg³oszenia';
 $s_email_last_modified = 'Data modyfikacji';
-$s_email_summary =  'Podsumowanie';
+$s_email_summary =  'Temat';
 $s_email_description = 'Opis';
 
 # account_delete.php
@@ -440,16 +441,16 @@ $s_submit_button = 'Wy¶lij';
 $s_profile_updated_msg = 'Profil zosta³ zaktualizowany...';
 
 # account_sponsor_page.php
-$s_my_sponsorship = 'Moj sponsoring';
+$s_my_sponsorship = 'Mój sponsoring';
 $s_update_sponsorship_button = 'Zmiñ status p³atno¶ci';
-$s_no_sponsored = 'No sponsored issues Assigned To yourself were found.';
+$s_no_sponsored = 'Nie znaleziono sponosorowanych Zagadnieñ przypisanych do Ciebie.';
 $s_own_sponsored = 'Zagadnienia, które sponsorowa³e¶:';
 $s_issues_handled = 'Zagadnienia sponsorowane, które s± przypisane do Ciebie:';
-$s_no_own_sponsored = 'You have not sponsored any issues.';
+$s_no_own_sponsored = 'Nie sponsorowa³e¶ ¿adnych zagadnieñ.';
 $s_sponsor = 'Sponsor';
 $s_amount = 'Kwota';
-$s_total_owing = 'Total Owing';
-$s_total_paid = 'Total Paid';
+$s_total_owing = '£±cznie zaleg³ych';
+$s_total_paid = '£±cznie op³aconych';
 $s_sponsor_hide = 'Ukryj rozwi±zane i op³acone';
 $s_sponsor_show = 'Poka¿ wszystkie';
 
@@ -537,6 +538,9 @@ $s_reminder_explain = 'Ten komentarz zostanie wys³any do osób monitoruj±cych zag
 $s_reminder_monitor = 'Ci odbiorcy zaczn± monitorowaæ zagadnienie. Mog± zrezygnowaæ za pomoc± przycisku Nie monitoruj.';
 $s_reminder_store = 'Ten komentarz zostanie zachowany z zagadnieniem.';
 
+# bug_set_sponsorship.php
+$s_confirm_sponsorship = 'Proszê potwierdziæ, ¿e chcesz sponsorowaæ zagadnienie %d na kwotê %s.';
+
 # bug_update.php
 $s_bug_updated_msg = 'Zagadnienie zosta³o pomy¶lnie zaktualizowane...';
 
@@ -564,7 +568,7 @@ $s_product_version = 'Wersja produktu';
 $s_build = 'Kompilacja';
 $s_fixed_in_version = 'Poprawione w wersji';
 $s_votes = 'G³osy';
-$s_summary = 'Podsumowanie';
+$s_summary = 'Temat';
 $s_description = 'Opis';
 $s_steps_to_reproduce = 'Kroki, by powtórzyæ';
 $s_update_information_button = 'Aktualizuj informacjê';
@@ -678,7 +682,7 @@ $s_edit_user_link = 'Edytuj dane';
 # manage_config_email_page
 $s_config_all_projects = 'Uwaga: Ta konfiguracja dotyczy WSZYSTKICH PROJEKTÓW.';
 $s_config_project = 'Uwaga: Ta konfiguracja dotyczy tylko projektu %s.';
-$s_colour_coding = 'In the table below, the following color code applies:';
+$s_colour_coding = 'W tabeli oznaczono poni¿szymi kolorami, które ustawienia bêd± stosowane:';
 $s_colour_project = 'Ustawienia dla projektu zastêpuj± pozosta³e.';
 $s_colour_global = 'Wszystkie ustawienia projektu zastêpuj± domy¶ln± konfiguracjê.';
 $s_issue_reporter = 'U¿ytkownik który zg³osi³ zagadnienie';
@@ -716,7 +720,7 @@ $s_workflow_change_access = 'Kto mo¿e modyfikowaæ przep³yw pracy';
 $s_access_change_access = 'Kto mo¿e modyfikowaæ poziomy dostêpu do statusów';
 
 # manage_config_workflow_set
-$s_default_not_in_flow = 'The default status of %s is not selected in the next statuses for %s. It will be ignored';
+$s_default_not_in_flow = 'Domy¶lna warto¶æ \'%s\' nie jest zaznaczona w¶ród nastêpnych statusów dla statusu \'%s\'. To ustawienie zostanie zignorowanie.';
 
 # manage_config_work_threshold_page
 $s_assign_issue = 'Przypisz zagadnienie';
@@ -734,8 +738,8 @@ $s_reopen_status = 'Status na który jest ustawiane ponownie otwarte zagadnienie'
 $s_reopen_resolution = 'Rozwi±zanie na które jest ustawiane ponownie otwarte zagadnienie';
 
 # manage_config_revert_page
-$s_config_delete_sure = 'Are you sure you want to delete the settings for';
-$s_in_project = 'in project';
+$s_config_delete_sure = 'Jeste¶ pewien, ¿e chcesz usun±æ ustawienia dla';
+$s_in_project = 'w projekcie';
 $s_delete_config_button = 'Usuñ ustawienia';
 
 # manage_proj_add.php
@@ -815,7 +819,7 @@ $s_delete_version_button = 'Usuñ wersjê';
 # manage_proj_version_edit_page.php
 $s_edit_project_version_title = 'Edycja wersji projektu';
 $s_update_version_button = 'Aktualizuj wersjê';
-$s_released = 'Released';
+$s_released = 'Opublikowana';
 
 # manage_proj_version_update.php
 $s_version_updated_msg = 'Wersja zosta³a pomy¶lnie zaktualizowana...';
@@ -872,6 +876,8 @@ $s_my_view_title_reported = 'Zg³oszone przeze mnie';
 $s_my_view_title_assigned = 'Przypisane do mnie (nie rozwi±zane)';
 $s_my_view_title_resolved = 'Rozwi±zane';
 $s_my_view_title_monitored = 'Monitorowane przeze mnie';
+$s_my_view_title_feedback = 'Awaiting Feedback from Me';
+$s_my_view_title_verify = 'Awaiting Confirmation of Resolution from Me';
 
 # news_add.php
 $s_news_added_msg = 'Nowa wiadomo¶æ zosta³a dodana...';
@@ -957,7 +963,7 @@ $s_updated_user_msg = 'U¿ytkownik zosta³ pomy¶lnie zaktualizowany';
 $s_must_enter_category = 'Nale¿y wybraæ kategoriê';
 $s_must_enter_severity = 'Nale¿y wybraæ wa¿no¶æ zagadnienia';
 $s_must_enter_reproducibility = 'Nale¿y wybraæ powtarzalno¶æ zagadnienia';
-$s_must_enter_summary = 'Nale¿y wpisaæ podsumowanie zagadnienia';
+$s_must_enter_summary = 'Nale¿y wpisaæ temat zagadnienia';
 $s_must_enter_description = 'Nale¿y wpisaæ opis zagadnienia';
 $s_report_more_bugs = 'Kontynuuj zg³aszanie';
 $s_submission_thanks_msg = 'Dziêkujemy za zg³oszenie zagadnienia';
@@ -1170,6 +1176,7 @@ $s_sponsorship_updated = 'Sponsoring zaktualizowany';
 $s_sponsorship_deleted = 'Sponsoring usuniêty';
 $s_sponsorship_paid = 'Sponsoring op³acony';
 $s_sponsorship_more_info = 'Wiêcej informacji o sponsorowaniu';
+$s_sponsorship_total = '£±czna kwota';
 
 # URL explaining the process of sponsoring an issue.  This is defined here rather than
 # in the config to allow for a URL per language.  This can be set to an empty string if there
@@ -1192,7 +1199,7 @@ $s_no_relationship = "brak powi±zañ";
 $s_relationship_replaced = "Powi±zanie zast±pione";
 $s_replace_relationship_button = "Zast±p";
 $s_replace_relationship_sure_msg = "Istnieje ju¿ powi±zanie miêdzy tymi zagadnieniami. Czy na pewno chcesz je zast±piæ?";
-$s_relationship_with_parent = "Relationship with the parent issue";
+$s_relationship_with_parent = "Powi±zanie z zagadnieniem ¼ród³owym";
 $s_delete_relationship_button = "Usuñ";
 $s_delete_relationship_sure_msg = "Czy na pewno chcesz usun±æ te powi±zanie?";
 $s_relationship_warning_blocking_bugs_not_resolved = "Nie wszyskie zagadnienia blokuj±ce s± rozwi±zane lub zamkniête.";

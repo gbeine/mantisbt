@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: upgrade.php,v 1.13 2005-07-22 23:28:24 thraxisp Exp $
+	# $Id: upgrade.php,v 1.15 2005-08-02 00:34:56 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -15,8 +15,53 @@
 	$g_error_send_page_header = false; # suppress page headers in the error handler
 
     # @@@ upgrade list moved to the bottom of upgrade_inc.php
-    
+
 	$f_advanced = gpc_get_bool( 'advanced', false );
+?>
+<?php
+
+	$result = @db_connect( config_get_global( 'dsn', false ), config_get_global( 'hostname' ), config_get_global( 'db_username' ), config_get_global( 'db_password' ), config_get_global( 'database_name' ) );
+	if ( false == $result ) {
+?>
+<html>
+<head>
+<title> Mantis Administration - Upgrade Installation </title>
+<link rel="stylesheet" type="text/css" href="admin.css" />
+</head>
+<body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff">
+	<tr class="top-bar">
+		<td class="links">
+			[ <a href="upgrade_list.php">Back to Upgrade List</a> ]
+			[ <a href="upgrade.php">Refresh view</a> ]
+			[ <a href="upgrade.php?advanced=<?php echo ( $f_advanced ? 0 : 1 ) ?>"><?php echo ( $f_advanced ? 'Simple' : 'Advanced' ) ?></a> ]
+		</td>
+		<td class="title">
+			Upgrade Installation
+		</td>
+	</tr>
+</table>
+<br /><br />
+<p>Opening connection to database [<?php echo config_get_global( 'database_name' ) ?>] on host [<?php echo config_get_global( 'hostname' ) ?>] with username [<?php echo config_get_global( 'db_username' ) ?>] failed ( <?php echo db_error_msg() ?> ).</p>
+</body>
+<?php
+        exit();
+	}
+
+	# check to see if the new installer was used
+    if ( -1 != config_get( 'database_version', -1 ) ) {
+		if ( OFF == $g_use_iis ) {
+			header( 'Status: 302' );
+		}
+		header( 'Content-Type: text/html' );
+
+		if ( ON == $g_use_iis ) {
+			header( "Refresh: 0;url=install.php" );
+		} else {
+			header( "Location: install.php" );
+		}
+		exit; # additional output can cause problems so let's just stop output here
+	}
 ?>
 <html>
 <head>
@@ -38,31 +83,6 @@
 </table>
 <br /><br />
 <?php
-
-	$result = @db_connect( config_get_global( 'dsn', false ), config_get_global( 'hostname' ), config_get_global( 'db_username' ), config_get_global( 'db_password' ), config_get_global( 'database_name' ) );
-	if ( false == $result ) {
-?>
-<p>Opening connection to database [<?php echo config_get_global( 'database_name' ) ?>] on host [<?php echo config_get_global( 'hostname' ) ?>] with username [<?php echo config_get_global( 'db_username' ) ?>] failed.</p>
-</body>
-<?php
-        exit();
-	}
-	
-	# check to see if the new installer was used
-    if ( -1 != config_get( 'database_version', -1 ) ) {
-		if ( OFF == $g_use_iis ) {
-			header( 'Status: 302' );
-		}
-		header( 'Content-Type: text/html' );
-
-		if ( ON == $g_use_iis ) {
-			header( "Refresh: 0;url=install.php" );
-		} else {
-			header( "Location: install.php" );
-		}
-		exit; # additional output can cause problems so let's just stop output here
-	}
-
 	if ( ! db_table_exists( config_get( 'mantis_upgrade_table' ) ) ) {
         # Create the upgrade table if it does not exist
         $query = "CREATE TABLE " . config_get( 'mantis_upgrade_table' ) .
@@ -75,7 +95,7 @@
 
 	# link the data structures and upgrade list
 	require_once ( 'upgrade_inc.php' );
-	
+
 	$upgrade_set->process_post_data( $f_advanced );
 ?>
 </body>

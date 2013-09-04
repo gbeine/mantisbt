@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: install.php,v 1.14 2005-07-21 15:18:28 thraxisp Exp $
+	# $Id: install.php,v 1.22 2005-08-10 17:10:12 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -57,7 +57,7 @@
 	# --------
 	# create an SQLArray to insert data
 	function InsertData( $p_table, $p_data ) {
-		$query = "INSERT INTO " . $p_table . " VALUES " . $p_data;
+		$query = "INSERT INTO " . $p_table . $p_data;
 		return Array( $query );
 	}
 
@@ -83,6 +83,7 @@
 	$f_admin_username = gpc_get( 'admin_username', '' );
 	$f_admin_password = gpc_get( 'admin_password', '');
 	$f_log_queries = gpc_get_bool( 'log_queries', false );
+	$f_db_exists = gpc_get_bool( 'db_exists', false );
 ?>
 <html>
 <head>
@@ -151,10 +152,10 @@ if ( 0 == $t_install_state ) {
 				if ( version_compare ( phpversion() , '4.0.6', '>=' ) ) {
 					print_test_result( GOOD );
 				} else {
-					print_test_result( BAD, 'Upgrade the version of PHP to a more recent version' );
+					print_test_result( BAD, true, 'Upgrade the version of PHP to a more recent version' );
 				}
 			} else {
-			 	print_test_result( BAD );
+			 	print_test_result( BAD, true, 'Upgrade the version of PHP to a more recent version' );
 			}
 		}
 	?>
@@ -199,6 +200,8 @@ if ( 2 == $t_install_state ) {
 					$t_support = function_exists('pg_connect');
 					break;
 				case 'mssql':
+				case 'odbc_mssql':
+				case 'ado_mssql':
 					$t_support = function_exists('mssql_connect');
 					break;
 				default:
@@ -208,7 +211,7 @@ if ( 2 == $t_install_state ) {
 			if ( $t_support ) {
 				print_test_result( GOOD );
 			} else {
-				print_test_result( BAD, true, 'database is not supported by PHP' );
+				print_test_result( BAD, true, 'database is not supported by PHP. Check that it has been compiled into your server.' );
 			}
 	?>
 </tr>
@@ -252,22 +255,52 @@ if ( 2 == $t_install_state ) {
 		$g_db = ADONewConnection($f_db_type);
 		$t_result = @$g_db->Connect($f_hostname, $f_admin_username, $f_admin_password);
 
-		$t_db_exists = false;
-
 		if ( $t_result == true ) {
 			print_test_result( GOOD );
 			# check if db exists for the admin
 			$t_result = @$g_db->Connect($f_hostname, $f_admin_username, $f_admin_password, $f_database_name);
 			if ( $t_result == true ) {
-				$t_db_exists = true;
+				$f_db_exists = true;
 			}
 		} else {
-			print_test_result( BAD, true, 'Does administrative user have access to the database?' );
+			print_test_result( BAD, true, 'Does administrative user have access to the database? ( ' .  db_error_msg() . ' )' );
 		}
 	?>
 </tr>
+
+<!-- display database version -->
+<tr>
+	<td bgcolor="#ffffff">
+		Checking Database Server Version
+		<?php
+			$t_version_info = $g_db->ServerInfo();
+			echo '<br /> Running ' . $f_db_type . ' version ' . $t_version_info['description'];
+		?>
+	</td>
+	<?php
+		$t_warning = '';
+		$t_error = '';
+		switch ( $f_db_type ) {
+			case 'mysql':
+				if ( function_exists ( 'version_compare' ) ) {
+					if ( version_compare ( $t_version_info['version'] , '4.1.0', '>' ) ) {
+						$t_warning = 'Please ensure that you installation supports the new password scheme used in MySQL 4.1.0 and later. See ' .
+							'<a href="http://dev.mysql.com/doc/mysql/en/password-hashing.html">http://dev.mysql.com/doc/mysql/en/password-hashing.html</a>.';
+					}
+				}
+				break;
+			case 'pgsql':
+			case 'mssql':
+			case 'odbc_mssql':
+			case 'ado_mssql':
+			default:
+		}
+			
+		print_test_result( ( '' == $t_error ) && ( '' == $t_warning ), ( '' != $t_error ), $t_error . ' ' . $t_warning );
+	?>
+</tr>
 <?php
-	if ( $t_db_exists ) {
+	if ( $f_db_exists ) {
 ?>
 <tr>
 	<td bgcolor="#ffffff">
@@ -280,7 +313,7 @@ if ( 2 == $t_install_state ) {
 		if ( $t_result == true ) {
 			print_test_result( GOOD );
 		} else {
-			print_test_result( BAD, false, 'Database user doesn\'t have access to the database' );
+			print_test_result( BAD, false, 'Database user doesn\'t have access to the database ( ' .  db_error_msg() . ' )' );
 		}
 	?>
 </tr>
@@ -425,7 +458,7 @@ if ( 3 == $t_install_state ) {
 			if( $ret == 2) {
 				print_test_result( GOOD );
 			} else {
-				print_test_result( BAD, true, 'Does administrative user have access to create the database?' );
+				print_test_result( BAD, true, 'Does administrative user have access to create the database? ( ' .  db_error_msg() . ' )' );
 				$t_install_state--;	# db creation failed, allow user to re-enter user/password info
 			}
 			$g_db->Close();
@@ -443,7 +476,7 @@ if ( 3 == $t_install_state ) {
 		if ( $t_result == true ) {
 			print_test_result( GOOD );
 		} else {
-			print_test_result( BAD, false, 'Database user doesn\'t have access to the database' );
+			print_test_result( BAD, false, 'Database user doesn\'t have access to the database ( ' .  db_error_msg() . ' )' );
 		}
 		$g_db->Close();
 	?>
@@ -465,7 +498,7 @@ if ( 3 == $t_install_state ) {
 		if ( $f_log_queries ) {
 			echo '<tr><td bgcolor="#ffffff" col_span="2"> Database Creation Suppressed, SQL Queries follow <pre>';
 		}
-			
+
 		while ( ( $i <= $lastid ) && ! $g_failed ) {
 			if ( ! $f_log_queries ) {
 				echo '<tr><td bgcolor="#ffffff">Create Schema ( ' . $upgrade[$i][0] . ' on ' . $upgrade[$i][1][0] . ' )</td>';
@@ -495,14 +528,14 @@ if ( 3 == $t_install_state ) {
 		}
 		if ( $f_log_queries ) {
 			# add a query to set the database version
-			echo 'INSERT INTO mantis_config_table ( value, type, access_reqd, config_id, project_id, user_id ) VALUES (' . $lastid . ', 1, 90, \'database_version\', 20, 0 );' . "\r\n";
+			echo 'INSERT INTO mantis_config_table ( value, type, access_reqd, config_id, project_id, user_id ) VALUES (\'' . $lastid . '\', 1, 90, \'database_version\', 20, 0 );' . "\r\n";
 			echo '</pre></br /><p style="color:red">Your database has not been created yet. Please create the database, then install the tables and data using the information above before proceeding</td></tr>';
 		}
-		
+
 	}
 	if ( false == $g_failed ) {
 		$t_install_state++;
-	} else { 
+	} else {
 		$t_install_state--;
 	}
 
@@ -524,6 +557,7 @@ if ( 4 == $t_install_state ) {
 		<input name="admin_username" type="hidden" value="<?php echo $f_admin_username ?>"></input>
 		<input name="admin_password" type="hidden" value="<?php echo $f_admin_password ?>"></input>
 		<input name="log_queries" type="hidden" value="<?php echo ( $f_log_queries ? 1 : 0 ) ?>"></input>
+		<input name="db_exists" type="hidden" value="<?php echo ( $f_db_exists ? 1 : 0 ) ?>"></input>
 <?php
 	# must post <input name="install" type="hidden" value="5"></input>
 	# rather than the following line
@@ -616,6 +650,86 @@ if ( 6 == $t_install_state ) {
 <!-- Checking register_globals are off -->
 <?php print_test( 'Checking for register_globals are off for mantis', ! ini_get_bool( 'register_globals' ), false, 'change php.ini to disable register_globals setting' ) ?>
 
+<tr>
+	<td bgcolor="#ffffff">
+		Attempting to connect to database as user
+	</td>
+	<?php
+		$g_db = ADONewConnection($f_db_type);
+		$t_result = @$g_db->Connect($f_hostname, $f_db_username, $f_db_password, $f_database_name);
+
+		if ( $t_result == true ) {
+			print_test_result( GOOD );
+		} else {
+			print_test_result( BAD, false, 'Database user doesn\'t have access to the database ( ' .  db_error_msg() . ' )' );
+		}
+	?>
+</tr>
+<tr>
+	<td bgcolor="#ffffff">
+		checking ability to SELECT records
+	</td>
+	<?php
+		$t_mantis_config_table = config_get_global( 'mantis_config_table' );
+		$t_query = "SELECT COUNT(*) FROM $t_mantis_config_table";
+		$t_result = @$g_db->Execute( $t_query );
+
+		if ( $t_result != false ) {
+			print_test_result( GOOD );
+			
+		} else {
+			print_test_result( BAD, true, 'Database user doesn\'t have SELECT access to the database ( ' .  db_error_msg() . ' )' );
+		}
+	?>
+</tr>
+<tr>
+	<td bgcolor="#ffffff">
+		checking ability to INSERT records
+	</td>
+	<?php
+		$t_query = "INSERT INTO $t_mantis_config_table ( value, type, access_reqd, config_id, project_id, user_id ) VALUES ('test', 1, 90, 'database_test', 20, 0 )";
+		$t_result = @$g_db->Execute( $t_query );
+
+		if ( $t_result != false ) {
+			print_test_result( GOOD );
+			
+		} else {
+			print_test_result( BAD, true, 'Database user doesn\'t have INSERT access to the database ( ' .  db_error_msg() . ' )' );
+		}
+	?>
+</tr>
+<tr>
+	<td bgcolor="#ffffff">
+		checking ability to UPDATE records
+	</td>
+	<?php
+		$t_query = "UPDATE $t_mantis_config_table SET value='test_update' WHERE config_id='database_test'";
+		$t_result = @$g_db->Execute( $t_query );
+
+		if ( $t_result != false ) {
+			print_test_result( GOOD );
+			
+		} else {
+			print_test_result( BAD, true, 'Database user doesn\'t have UPDATE access to the database ( ' .  db_error_msg() . ' )' );
+		}
+	?>
+</tr>
+<tr>
+	<td bgcolor="#ffffff">
+		checking ability to DELETE records
+	</td>
+	<?php
+		$t_query = "DELETE FROM $t_mantis_config_table WHERE config_id='database_test'";
+		$t_result = @$g_db->Execute( $t_query );
+
+		if ( $t_result != false ) {
+			print_test_result( GOOD );
+			
+		} else {
+			print_test_result( BAD, true, 'Database user doesn\'t have DELETE access to the database ( ' .  db_error_msg() . ' )' );
+		}
+	?>
+</tr>
 </table>
 <?php
 	if ( false == $g_failed ) {
@@ -627,9 +741,12 @@ if ( 7 == $t_install_state ) {
 # cleanup and launch upgrade
 ?>
 <p>Install was successful.</p>
+<?php if ( $f_db_exists ) { ?>
 <p><a href="../login_page.php">Continue</a> to log into Mantis</p>
+<?php } else { ?>
+<p>Please log in as the administrator and <a href="../manage_proj_create_page.php">create</a> your first project.
 
-<?php
+<?php }
 } # end install_state == 7
 
 
@@ -654,6 +771,7 @@ if( $g_failed ) {
 		<input name="admin_password" type="hidden" value="<?php echo $f_admin_password ?>"></input>
 		<input name="log_queries" type="hidden" value="<?php echo ( $f_log_queries ? 1 : 0 ) ?>"></input>
 		<input name="retry" type="submit" value="Retry"></input>
+		<input name="db_exists" type="hidden" value="<?php echo ( $f_db_exists ? 1 : 0 ) ?>"></input>
 	</td>
 </tr>
 </table>

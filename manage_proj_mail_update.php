@@ -10,9 +10,9 @@
 	# --------------------------------------------------------
 
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path . 'mail_api.php' );
 
 	$f_project_id	= gpc_get_int( 'project_id' );
@@ -28,7 +28,7 @@
 	else {
 		if ( is_blank( $f_pop3_user ) ) {
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
-		}
+	}
 		if ( is_blank( $f_pop3_pass ) ) {
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}

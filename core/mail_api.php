@@ -234,8 +234,8 @@
 			$t_headers = $t_pop3->getParsedHeaders($i);
 			$t_msg = $t_pop3->getMsg($i);
 			if (true == $t_mail_parse_mime &&
-			    true == isset( $t_headers['MIME-Version'] ) &&
-                            'multipart' == strtolower ( substr( $t_headers['Content-Type'], 0, 9 ) ) ) {
+				true == isset( $t_headers['MIME-Version'] ) &&
+				'multipart' == strtolower ( substr( $t_headers['Content-Type'], 0, 9 ) ) ) {
 				$t_mail = mail_parse_content( $t_msg );
 			} else {
 				$t_mail = $t_headers;
@@ -257,58 +257,53 @@
 	# --------------------
 	# return the mail parsed for Mantis
 	function mail_parse_content ( $p_mail ) {
-                $v_mail = array ();
+		$v_mail = array ();
 		$t_decoder = new Mail_mimeDecode($p_mail);
-                $t_params['include_bodies'] = true;
-                $t_params['decode_bodies']  = true;
-                $t_params['decode_headers'] = true;
+		$t_params['include_bodies'] = true;
+		$t_params['decode_bodies']  = true;
+		$t_params['decode_headers'] = true;
 		$t_structure = $t_decoder->decode($t_params);
-                $v_mail['To'] = $t_structure->headers['to'];
-                $v_mail['From'] = $t_structure->headers['from'];
-                $v_mail['Subject'] = $t_structure->headers['subject'];
-                if (is_array($t_structure->parts))
-                {
-                    $t_parts = mail_parse_parts( $t_structure->parts );
-                }
-                else
-                {
-                    $t_parts = array ( mail_parse_part( $t_structure ) );
-                }
-                if (strtolower($t_parts[0]['Content-Type']) == 'text/plain' ||
-                    strtolower($t_parts[0]['Content-Type']) == 'text/html' ) {
-                    $t_body['Body'] = $t_parts[0]['Body'];
-                }
-                else
-                {
-                    $t_body['Body'] = "It seems, there is no text... :-o";
-                }
-                $v_mail['X-Mantis-Parts'] = $t_parts;
-                $v_mail['X-Mantis-Body'] = $t_body['Body'];
-		
+		$v_mail['To'] = $t_structure->headers['to'];
+		$v_mail['From'] = $t_structure->headers['from'];
+		$v_mail['Subject'] = $t_structure->headers['subject'];
+		if (is_array($t_structure->parts)) {
+			$t_parts = mail_parse_parts( $t_structure->parts );
+		} else {
+                	$t_parts = array ( mail_parse_part( $t_structure ) );
+		}
+		if (strtolower($t_parts[0]['Content-Type']) == 'text/plain' ||
+			strtolower($t_parts[0]['Content-Type']) == 'text/html' ) {
+			$t_body['Body'] = $t_parts[0]['Body'];
+		} else {
+			$t_body['Body'] = "It seems, there is no text... :-o";
+		}
+		$v_mail['X-Mantis-Parts'] = $t_parts;
+		$v_mail['X-Mantis-Body'] = $t_body['Body'];
+
 		return $v_mail;
 	}
 
 	# --------------------
 	# return the parsed parts from the mail
 	function mail_parse_parts ( $p_parts ) {
-                $v_parts = array ();
-                foreach ( $p_parts as $t_part ) {
-                    array_push($v_parts, mail_parse_part( $t_part ));
-                }
-                
-                return $v_parts;
-        }
+		$v_parts = array ();
+		foreach ( $p_parts as $t_part ) {
+			array_push($v_parts, mail_parse_part( $t_part ));
+		}
+
+		return $v_parts;
+	}
 
 	# --------------------
 	# return one parsed part
 	function mail_parse_part ( $p_part ) {
-                $v_part = array ();
-                $v_part['Content-Type'] = $p_part->ctype_primary."/".$p_part->ctype_secondary;
-                $v_part['Name'] = $p_part->ctype_parameters['name'];
-                $v_part['Body'] = $p_part->body;
+		$v_part = array ();
+		$v_part['Content-Type'] = $p_part->ctype_primary."/".$p_part->ctype_secondary;
+		$v_part['Name'] = $p_part->ctype_parameters['name'];
+		$v_part['Body'] = $p_part->body;
 
-                return $v_part;
-        }
+		return $v_part;
+	}
 
 	# --------------------
 	# return the mailadress from the mail's 'From'
@@ -329,7 +324,7 @@
 	# --------------------
 	# return true if there is a valid mantis bug referernce in subject
 	function mail_is_a_bugnote ( $p_mail_subject ) {
-		return preg_match("/\[([A-Za-z0-9-_\.]*\s[0-9]{7})\]/", $p_mail_subject);
+		return preg_match("/\[([A-Za-z0-9-_\. ]*\s[0-9]{7})\]/", $p_mail_subject);
 	}
 
 	# --------------------
@@ -383,14 +378,14 @@
 			file_add($p_bug_id, $t_file_name,  $p_part['Name'], $p_part['Content-Type'], 'bug');
 			unlink($t_file_name);
 		}
-        }
+	}
 
 	# --------------------
 	# Adds a bug which is reported via email
 	# Taken from bug_report.php and 
 	function mail_add_bug ( $p_mail, $p_account ) {
 		$t_mail_save_from	= config_get( 'mail_save_from' );
-                
+
 		$t_bug_data = new BugData;
 		$t_bug_data->build			= gpc_get_string( 'build', '' );
 		$t_bug_data->platform			= gpc_get_string( 'platform', '' );
@@ -416,7 +411,6 @@
 		else {
 			$t_bug_data->description	= $p_mail['X-Mantis-Body'];
 		}
-		$t_bug_data->description		= "Report from: ".$p_mail['From']."\n\n".$p_mail['X-Mantis-Body'];
 		$t_bug_data->steps_to_reproduce		= gpc_get_string( 'steps_to_reproduce', '' );
 		$t_bug_data->additional_information	= $p_mail['X-Mantis-Complete'];
 
@@ -424,7 +418,7 @@
 
 		$t_bug_data->reporter_id		= mail_get_user( $p_mail['From'] );
 
-                if ( mail_is_a_bugnote( $p_mail['Subject'] ) ) {
+		if ( mail_is_a_bugnote( $p_mail['Subject'] ) ) {
 			# Add a bug note
 			$t_bug_id = mail_get_bug_id_from_subject( $p_mail['Subject'] );
 			if ( ! bug_is_readonly( $t_bug_id ) ) {
@@ -436,7 +430,7 @@
 			$t_bug_id = bug_create( $t_bug_data );
 			email_new_bug( $t_bug_id );
 		}
-                # Add files
+		# Add files
 		if ( null != $p_mail['X-Mantis-Parts'] ) {
 			foreach ($p_mail['X-Mantis-Parts'] as $part) {
 				mail_add_file ( $t_bug_id, $part );

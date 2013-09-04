@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: proj_doc_page.php,v 1.47 2005-06-03 18:06:38 thraxisp Exp $
+	# $Id: proj_doc_page.php,v 1.50 2005-08-16 14:36:43 thraxisp Exp $
 	# --------------------------------------------------------
 
 	require_once( 'core.php' );
@@ -52,14 +52,14 @@
 	}			
 
 	$query = "SELECT pft.id, pft.project_id, pft.filename, pft.filesize, pft.title, pft.description, pft.date_added
-				FROM $t_project_file_table pft, $t_user_table ut
-					LEFT JOIN $t_project_table pt on pft.project_id = pt.id
-					LEFT JOIN $t_project_user_list_table as pult 
-						on pft.project_id = pult.project_id and pult.user_id = $t_user_id
-				WHERE ut.id = $t_user_id AND pft.project_id in (" . implode( ',', $t_projects ) . ") AND 
-					( pt.view_state = $t_pub OR pt.view_state is null OR
-						( pt.view_state = $t_priv and pult.user_id = $t_user_id ) OR 
-						( pult.user_id is null and ut.access_level $t_access_clause ) )
+				FROM $t_project_file_table pft
+					LEFT JOIN $t_project_table pt ON pft.project_id = pt.id
+					LEFT JOIN $t_project_user_list_table pult 
+						ON pft.project_id = pult.project_id AND pult.user_id = $t_user_id
+					LEFT JOIN $t_user_table ut ON ut.id = $t_user_id
+				WHERE pft.project_id in (" . implode( ',', $t_projects ) . ") AND
+					( ( ( pt.view_state = $t_pub OR pt.view_state is null ) AND pult.user_id is null AND ut.access_level $t_access_clause ) OR
+						( pult.user_id = $t_user_id AND pult.access_level $t_access_clause ) )
 				ORDER BY pt.name ASC, pft.title ASC";
 	$result = db_query( $query );
 	$num_files = db_num_rows( $result );

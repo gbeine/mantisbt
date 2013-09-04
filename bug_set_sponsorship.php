@@ -6,7 +6,7 @@
 	# See the files README and LICENSE for details
 
 	# --------------------------------------------------------
-	# $Id: bug_set_sponsorship.php,v 1.3 2005-05-01 16:20:22 thraxisp Exp $
+	# $Id: bug_set_sponsorship.php,v 1.5 2005-07-25 16:34:10 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -28,8 +28,19 @@
 	$f_bug_id	= gpc_get_int( 'bug_id' );
 	$f_amount	= gpc_get_int( 'amount' );
 
+	$t_bug = bug_get( $f_bug_id, true );
+	if( $t_bug->project_id != helper_get_current_project() ) {
+		# in case the current project is not the same project of the bug we are viewing...
+		# ... override the current project. This to avoid problems with categories and handlers lists etc.
+		$g_project_override = $t_bug->project_id;
+	}
+
 	access_ensure_bug_level( config_get( 'sponsor_threshold' ), $f_bug_id );
 
+	helper_ensure_confirmed( 
+		sprintf( lang_get( 'confirm_sponsorship' ), $f_bug_id, sponsorship_format_amount( $f_amount ) ),
+		lang_get( 'sponsor_issue' ) );
+			
 	if ( $f_amount == 0 ) {
 		# if amount == 0, delete sponsorship by current user (if any)
 		$t_sponsorship_id = sponsorship_get_id( $f_bug_id );
@@ -51,6 +62,5 @@
 		}
 	}
 
-	$t_referrer = $_SERVER['HTTP_REFERER'];
-	print_header_redirect( $t_referrer );
+	print_header_redirect_view( $f_bug_id );
 ?>

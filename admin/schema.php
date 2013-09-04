@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: schema.php,v 1.5 2005-07-05 23:48:49 thraxisp Exp $
+	# $Id: schema.php,v 1.8 2005-08-03 14:20:34 thraxisp Exp $
 	# --------------------------------------------------------
 	
 	# Each entry below defines the schema. The upgrade array consists of
@@ -345,7 +345,11 @@ $upgrade[] = Array('CreateIndexSQL',Array('idx_enable',config_get('mantis_user_t
 $upgrade[] = Array('CreateIndexSQL',Array('idx_access',config_get('mantis_user_table'),'access_level'));
 
 $upgrade[] = Array('InsertData', Array( config_get('mantis_user_table'), 
-    "(1, 'administrator', '', 'root@localhost', '63a9f0ea7bb98050796b649e85481845', '2003-02-16 02:03:48', '2004-07-08 23:59:22', 1, 1, 90, 3, 0, 0, MD5(NOW()))" )
-    "(2, 'mail', 'Mail Reporter', 'nomail@localhost', 'a268462c3c679a9027658c5aa723f97c', '2003-02-16 02:03:48', '2004-07-08 23:59:22', 1, 0, 25, 0, 0, 0, MD5(NOW()))" )
-    );
+    "(username, realname, email, password, date_created, last_visit, enabled, protected, access_level, login_count, lost_password_request_count, failed_login_count, cookie_string) VALUES 
+        ('administrator', '', 'root@localhost', '63a9f0ea7bb98050796b649e85481845', " . db_now() . ", " . db_now() . ", 1, 0, 90, 3, 0, 0, '" . 
+             md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "')" ) );
+$upgrade[] = Array('InsertData', Array( config_get('mantis_user_table'), 
+    "(username, realname, email, password, date_created, last_visit, enabled, protected, access_level, login_count, lost_password_request_count, failed_login_count, cookie_string) VALUES 
+        ('mail', 'Mail Reporter', 'root@nomail@localhost', 'a268462c3c679a9027658c5aa723f97c', " . db_now() . ", " . db_now() . ", 1, 0, 25, 0, 0, 0, '" . 
+             md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "')" ) );
 ?>

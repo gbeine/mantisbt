@@ -11,7 +11,6 @@ the doc/INSTALL file.
 
 This patch changes the following files:
     core/category_api.php
-    core/file_api.php
     core/user_api.php
     admin/schema.php
     config_defaults_inc.php
@@ -82,6 +81,10 @@ This addon is distributed under the same conditions as Mantis itself.
 Gerrit Beine, August 2004
 
 Changelog:
+Sep 2005:
+	- update to Mantis 1.0.0rc2
+	- fixed a bug in getting all categories for a project
+		category_get_all_rows in core/category_api.php
 Aug 2005:
 	- update to Mantis 1.0.0rc1
 	- include the additional patches submitted by
@@ -107,3 +110,4 @@ Sep 2004:
 	- update to Mantis 0.19.0
 Aug 2004:
 	- create patch for Mantis 0.18.3
+

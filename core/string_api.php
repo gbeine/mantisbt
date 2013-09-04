@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: string_api.php,v 1.73 2005-07-16 17:38:06 prichards Exp $
+	# $Id: string_api.php,v 1.75 2005-08-07 15:29:07 ryandesign Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -187,7 +187,7 @@
 			$t_replace_with = '[CVS] '.$t_cvs_web.'\\1?rev=\\4\\5';
 		}
 
-		return preg_replace( '/cvs:([^\.\s:,\?!]+(\.[^\.\s:,\?!]+)*)(:)?(\d\.[\d\.]+)?([\W\s])?/i',
+		return preg_replace( '/cvs:([^\.\s:,\?!<]+(\.[^\.\s:,\?!<]+)*)(:)?(\d\.[\d\.]+)?([\W\s])?/i',
 							 $t_replace_with,
 							 $p_string );
 	}
@@ -638,6 +638,17 @@
 			$t_string = $t_map[ $p_string ];
 		}
 		return lang_get_defaulted( $t_string );
+	}
+
+	# --------------------
+	# Calls htmlentities on the specified string, passing along
+	# the current charset, if the current PHP version supports it.
+	function string_html_entities( $p_string ) {
+		if ( php_version_at_least( '4.1.0' ) ) {
+			return htmlentities( $p_string, ENT_COMPAT, lang_get( 'charset' ) );
+		} else {
+			return htmlentities( $p_string );
+		}
 	}
 
 ?>

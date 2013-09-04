@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: html_api.php,v 1.130 2004-09-04 05:06:04 thraxisp Exp $
+	# $Id: html_api.php,v 1.139 2004-10-25 01:34:28 thraxisp Exp $
 	# --------------------------------------------------------
 
 	###########################################################################
@@ -22,6 +22,7 @@
 	#     html_head_begin
 	#     html_css
 	#     html_content_type
+	#     html_rss_link
 	#  (html_meta_redirect)
 	#     html_title
 	#   html_page_top2
@@ -54,6 +55,28 @@
 	require_once( $t_core_dir . 'project_api.php' );
 	require_once( $t_core_dir . 'helper_api.php' );
 
+	$g_rss_feed_url = null;
+
+	# --------------------
+	# Sets the url for the rss link associated with the current page.
+	# null: means no feed (default).
+	function html_set_rss_link( $p_rss_feed_url )
+	{
+		global $g_rss_feed_url;
+		$g_rss_feed_url = $p_rss_feed_url;
+	}
+
+	# --------------------
+	# Prints the link that allows auto-detection of the associated feed.
+	function html_rss_link()
+	{
+		global $g_rss_feed_url;
+
+		if ( $g_rss_feed_url !== null ) {
+			echo "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"RSS\" href=\"$g_rss_feed_url\" />";
+		}
+	}
+
 	# --------------------
 	# Print the part of the page that comes before meta redirect tags should
 	#  be inserted
@@ -63,6 +86,7 @@
 		html_css();
 		html_content_type();
 		include( config_get( 'meta_include_file' ) );
+		html_rss_link();
 		html_title( $p_page_title );
 		html_head_javascript();
 	}
@@ -354,9 +378,9 @@
 					$t_time = $g_queries_array[$i][1];
 					$t_total += $t_time;
 					if ( true == $g_queries_array[$i][2] ) {
-						echo "\t",  '<tr><td style="color: red">', ($i+1), '</td><td style="color: red">', $t_time , '</td><td style="color: red">', htmlspecialchars($g_queries_array[$i][0]), '</td></tr>', "\n";
+						echo "\t",  '<tr valign="top"><td style="color: red">', ($i+1), '</td><td style="color: red">', $t_time , '</td><td style="color: red">', htmlspecialchars($g_queries_array[$i][0]), '</td></tr>', "\n";
 					} else {
-						echo "\t",  '<tr><td>', ($i+1), '</td><td>'. $t_time . '</td><td>', htmlspecialchars($g_queries_array[$i][0]), '</td></tr>', "\n";
+						echo "\t",  '<tr valign="top"><td>', ($i+1), '</td><td>'. $t_time . '</td><td>', htmlspecialchars($g_queries_array[$i][0]), '</td></tr>', "\n";
 					}
 				}
 				echo "\t", '<tr><td></td><td>', $t_total, '</td><td></td></tr>', "\n";
@@ -437,12 +461,17 @@
 					$t_menu_options[] = '<a href="proj_doc_page.php">' . lang_get( 'docs_link' ) . '</a>';
 				}
 
-				# Manage Users (admins) or Manage Project (managers)
-				if ( access_has_project_level( config_get( 'manage_project_threshold' ) ) ) {
+				# Manage Users (admins) or Manage Project (managers) or Manage Custom Fields
+				$t_show_access = min( config_get( 'manage_project_threshold' ), config_get( 'manage_custom_fields_threshold' ), ADMINISTRATOR );
+				if ( access_has_project_level( $t_show_access ) ) {
 					if ( access_has_project_level( ADMINISTRATOR ) ) {
 						$t_link = 'manage_user_page.php';
 					} else {
-						$t_link = 'manage_proj_page.php';
+						if ( access_has_project_level( config_get( 'manage_project_threshold' ) ) ) {
+							$t_link = 'manage_proj_page.php';
+						} else {
+							$t_link = 'manage_custom_field_page.php';
+						}
 					}
 					$t_menu_options[] = "<a href=\"$t_link\">" . lang_get( 'manage_link' ) . '</a>';
 				}
@@ -523,27 +552,44 @@
 	# --------------------
 	# Print the menu for the manage section
 	# $p_page specifies the current page name so it's link can be disabled
-	function print_manage_menu( $p_page='' ) {
-		if ( !access_has_project_level( ADMINISTRATOR ) ) {
-			return;
-		}
-
+	function print_manage_menu( $p_page = '' ) {
 		$t_manage_user_page 		= 'manage_user_page.php';
 		$t_manage_project_menu_page = 'manage_proj_page.php';
 		$t_manage_custom_field_page = 'manage_custom_field_page.php';
+		$t_permissions_summary_report = 'adm_permissions_report.php';
 		# $t_documentation_page 		= 'documentation_page.php';
 
 		switch ( $p_page ) {
-			case $t_manage_user_page				: $t_manage_user_page 				= ''; break;
-			case $t_manage_project_menu_page: $t_manage_project_menu_page 	= ''; break;
-			case $t_manage_custom_field_page: $t_manage_custom_field_page 	= ''; break;
-			# case $t_documentation_page		: $t_documentation_page 		= ''; break;
+			case $t_manage_user_page:
+				$t_manage_user_page = '';
+				break;
+			case $t_manage_project_menu_page:
+				$t_manage_project_menu_page = '';
+				break;
+			case $t_manage_custom_field_page:
+				$t_manage_custom_field_page = '';
+				break;
+			case $t_permissions_summary_report:
+				$t_permissions_summary_report = '';
+				break;
+#			case $t_documentation_page:
+#				$t_documentation_page = '';
+#				break;
 		}
 
 		PRINT '<br /><div align="center">';
+		if ( access_has_project_level( ADMINISTRATOR ) ) {
 			print_bracket_link( $t_manage_user_page, lang_get( 'manage_users_link' ) );
+		}
+		if ( access_has_project_level( config_get( 'manage_project_threshold' ) ) ) {
 			print_bracket_link( $t_manage_project_menu_page, lang_get( 'manage_projects_link' ) );
+		}
+		if ( access_has_project_level( config_get( 'manage_custom_fields_threshold' ) ) ) {
 			print_bracket_link( $t_manage_custom_field_page, lang_get( 'manage_custom_field_link' ) );
+		}
+		if ( access_has_project_level( ADMINISTRATOR ) ) {
+			print_bracket_link( $t_permissions_summary_report, lang_get( 'permissions_summary_report' ) );
+		}
 			# print_bracket_link( $t_documentation_page, lang_get( 'documentation_link' ) );
 		PRINT '</div>';
 	}
@@ -680,40 +726,9 @@
 		$t_bug_current_state = bug_get_field( $p_bug_id, 'status' );
 		$t_current_access = access_get_project_level( $t_bug_project_id );
 		
-		$t_enum_status = config_get( 'status_enum_string'); 
-		$t_enum_workflow = config_get( 'status_enum_workflow' );
-		if ( count( $t_enum_workflow ) < 1 ) {
-			# workflow not defined, use default enum
-			$t_arr  = explode_enum_string( $t_enum_status );
-		} else {
-			# workflow defined - find allowed states
-			$t_arr  = explode_enum_string( $t_enum_workflow[$t_bug_current_state] );
-		}
+		$t_enum_list = get_status_option_list( $t_current_access, $t_bug_current_state, false, 
+				( bug_get_field( $p_bug_id, 'reporter_id' ) == auth_get_current_user_id() && ( ON == config_get( 'allow_reporter_close' ) ) ) );
 
-		$t_enum_count = count( $t_arr );
-		$t_enum_list = array();
-		for ( $i = 0; $i < $t_enum_count; $i++ ) {
-			$t_elem  = explode_enum_arr( $t_arr[$i] );
-			$t_elem2 = get_enum_element( 'status', $t_elem[0] );
-			$t_status = $t_elem[0];
-			if ( ( $t_status <> $t_bug_current_state ) && ( $t_current_access >= access_get_status_threshold( $t_status ) ) ) {
-				$t_enum_list[$t_status] = $t_elem2;
-			} 
-			# handle reporter can re-open
-			if ( ( config_get( 'bug_reopen_status' ) == $t_status ) && 
-						( config_get( 'bug_resolved_status_threshold' ) <= $t_bug_current_state ) && 
-						( ON == config_get( 'allow_reporter_reopen' ) ) && 
-						( bug_get_field( $p_bug_id, 'reporter_id' ) == auth_get_current_user_id() ) ) {
-				$t_enum_list[$t_status] = get_enum_to_string( lang_get( 'resolution_enum_string' ), config_get( 'bug_reopen_resolution' ) );
-			}
-			# handle reporter can close
-			if ( ( CLOSED == $t_status ) && 
-						( ON == config_get( 'allow_reporter_close' ) ) && 
-						( bug_get_field( $p_bug_id, 'reporter_id' ) == auth_get_current_user_id() ) ) {
-				$t_enum_list[$t_status] = $t_elem2;
-			}
-		} # end for
-		
 		if ( count( $t_enum_list ) > 0 ) {
 			echo "<form method=\"post\" action=\"bug_change_status_page.php\">";
 
@@ -722,9 +737,7 @@
 
 			echo " <select name=\"new_status\">"; # space at beginning of line is important
 			foreach ( $t_enum_list as $key => $val ) {
-				echo "<option value=\"$key\"";
-				check_selected( $val, $t_bug_current_state );  # select current status which doesn't exist, hence no selection
-				echo ">$val</option>";
+				echo "<option value=\"$key\">$val</option>";
 			}
 			echo '</select>';
 
@@ -747,7 +760,7 @@
 		}
 
 		# make sure current user has access to modify bugs.
-		if ( !access_has_bug_level( config_get( 'update_bug_threshold' ), $p_bug_id ) ) {
+		if ( !access_has_bug_level( config_get( 'update_bug_assign_threshold', config_get( 'update_bug_threshold' ) ), $p_bug_id ) ) {
 			return;
 		}
 
@@ -755,19 +768,18 @@
 		$t_handler_id = bug_get_field( $p_bug_id, 'handler_id' );
 		$t_current_user_id = auth_get_current_user_id();
 		$t_new_status = ( ON == config_get( 'auto_set_status_to_assigned' ) ) ? config_get( 'bug_assigned_status' ) : $t_status;
-		$t_assign_threshold = access_get_status_threshold( $t_new_status, bug_get_field( $p_bug_id, 'project_id' ) );
 
 		$t_options = array();
 		$t_default_assign_to = null;
 
 		if ( ( $t_handler_id != $t_current_user_id ) &&
-			( access_has_bug_level( $t_assign_threshold, $p_bug_id, $t_current_user_id ) ) ) {
+			( access_has_bug_level( config_get( 'handle_bug_threshold' ), $p_bug_id, $t_current_user_id ) ) ) {
 		    $t_options[] = array( $t_current_user_id, '[' . lang_get( 'myself' ) . ']' );
 			$t_default_assign_to = $t_current_user_id;
 		}
 
 		if ( ( $t_handler_id != $t_reporter_id ) && user_exists( $t_reporter_id ) &&
-			( access_has_bug_level( $t_assign_threshold, $p_bug_id, $t_reporter_id ) ) ) {
+			( access_has_bug_level( config_get( 'handle_bug_threshold' ), $p_bug_id, $t_reporter_id ) ) ) {
 		    $t_options[] = array( $t_reporter_id, '[' . lang_get( 'reporter' ) . ']' );
 
 			if ( $t_default_assign_to === null ) {
@@ -811,7 +823,7 @@
 
 		$t_project_id = bug_get_field( $p_bug_id, 'project_id' );
 		# 0 means currently selected
-		print_assign_to_option_list( 0, $t_project_id, $t_assign_threshold );
+		print_assign_to_option_list( 0, $t_project_id );
 		PRINT "</select>";
 
 		$t_bug_id = string_attribute( $p_bug_id );
@@ -866,16 +878,15 @@
 		$t_reopen_status = config_get( 'bug_reopen_status' );
 		$t_project = bug_get_field( $p_bug_id, 'project_id' );
 
-		if ( bug_check_workflow( $t_status, $t_reopen_status ) &&
-			( access_has_bug_level( access_get_status_threshold( $t_reopen_status, $t_project ), $p_bug_id ) ||
-			( ( bug_get_field( $p_bug_id, 'reporter_id' ) == auth_get_current_user_id() ) &&
-	 		  ( ON == config_get( 'allow_reporter_reopen' ) ) 
-			 	) )
+		if ( access_has_bug_level( config_get( 'reopen_bug_threshold' ), $p_bug_id ) ||
+				( ( bug_get_field( $p_bug_id, 'reporter_id' ) == auth_get_current_user_id() ) &&
+	 		  	( ON == config_get( 'allow_reporter_reopen' ) ) 
+				)
 			 ) {
 			html_button( 'bug_change_status_page.php',
 						 lang_get( 'reopen_bug_button' ),
 						 array( 'bug_id' => $p_bug_id ,
-						 				'new_status' => config_get( 'bug_reopen_status' ) ) );
+						 				'new_status' => $t_reopen_status ) );
 		}
 	}
 
@@ -965,13 +976,12 @@
 			echo '</td>';
 		} 
 
-# now handled by button_bug_change_status
-#		if ( $t_resolved <= $t_status ) { # resolved is not the same as readonly
-#			PRINT '<td class="center">';
-#			# REOPEN button
-#			html_button_bug_reopen( $p_bug_id );
-#			PRINT '</td>';
-#		}
+		if ( $t_resolved <= $t_status ) { # resolved is not the same as readonly
+			PRINT '<td class="center">';
+			# REOPEN button
+			html_button_bug_reopen( $p_bug_id );
+			PRINT '</td>';
+		}
 
 		if ( !$t_readonly ) {
 			# MOVE button

@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: obsolete.php,v 1.27 2004-08-15 23:13:02 thraxisp Exp $
+	# $Id: obsolete.php,v 1.29 2004-10-13 15:25:15 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### Obsolete API ###
@@ -91,10 +91,11 @@
 	config_obsolete( 'hide_closed_default', 'hide_status_default' );
 
 	config_obsolete( 'close_bug_threshold', 'set_status_threshold' );
-	config_obsolete( 'reopen_bug_threshold', 'set_status_threshold' );
 	
 	config_obsolete( 'status_pulldown_enum_mask_string', '' );
 	config_obsolete( 'to_email', '' );
 	config_obsolete( 'use_bcc', '' );
-	
+
+#removed in 0.19.1
+	config_obsolete( 'port', 'hostname');
 ?>

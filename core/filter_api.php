@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: filter_api.php,v 1.57 2004-08-21 13:07:14 prichards Exp $
+	# $Id: filter_api.php,v 1.62 2004-10-28 00:31:04 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -293,6 +293,27 @@
 			array_push( $t_where_clauses, '('. implode( ' OR ', $t_clauses ) .')' );
 		}
 
+		# priority 
+                $t_any_found = false;
+                foreach( $t_filter['show_priority'] as $t_filter_member ) {
+                        if ( 'any' == $t_filter_member ) {
+                                $t_any_found = true;
+                        }
+                }
+                if ( count( $t_filter['show_priority'] ) == 0 ) {
+                        $t_any_found = true;
+                }
+                if ( !$t_any_found ) {
+                        $t_clauses = array();
+
+                        foreach( $t_filter['show_priority'] as $t_filter_member ) {
+                                $c_show_priority = db_prepare_int( $t_filter_member );
+                                array_push( $t_clauses, "($t_bug_table.priority='$c_show_priority')" );
+                        }
+                        array_push( $t_where_clauses, '('. implode( ' OR ', $t_clauses ) .')' );
+                }
+
+
 		# product build
 		$t_any_found = false;
 		foreach( $t_filter['show_build'] as $t_filter_member ) {
@@ -455,15 +476,25 @@
 			}
 		}
 
+		$t_textsearch_where_clause = '';
+		$t_textsearch_wherejoin_clause = '';
 		# Simple Text Search - Thnaks to Alan Knowles
 		if ( !is_blank( $t_filter['search'] ) ) {
 			$c_search = db_prepare_string( $t_filter['search'] );
-			array_push( $t_where_clauses,
-							"((summary LIKE '%$c_search%')
+			$c_search_int = db_prepare_int( $t_filter['search'] );
+			$t_textsearch_where_clause = "((summary LIKE '%$c_search%')
 							 OR ($t_bug_text_table.description LIKE '%$c_search%')
 							 OR ($t_bug_text_table.steps_to_reproduce LIKE '%$c_search%')
 							 OR ($t_bug_text_table.additional_information LIKE '%$c_search%')
-							 OR ($t_bug_table.id LIKE '%$c_search%'))" );
+							 OR ($t_bug_table.id = '$c_search_int'))";
+
+			$t_textsearch_wherejoin_clause = "((summary LIKE '%$c_search%')
+							 OR ($t_bug_text_table.description LIKE '%$c_search%')
+							 OR ($t_bug_text_table.steps_to_reproduce LIKE '%$c_search%')
+							 OR ($t_bug_text_table.additional_information LIKE '%$c_search%')
+							 OR ($t_bug_table.id LIKE '%$c_search%')
+							 OR ($t_bugnote_text_table.note LIKE '%$c_search%'))";
+							 
 			array_push( $t_where_clauses, "($t_bug_text_table.id = $t_bug_table.bug_text_id)" );
 
 			$t_from_clauses = array( $t_bug_text_table, $t_project_table, $t_bug_table );
@@ -481,10 +512,46 @@
 			$t_where	= '';
 		}
 
+		# Possibly do two passes. First time, grab the IDs of issues that match the filters. Second time, grab the IDs of issues that
+		# have bugnotes that match the text search if necessary.
+		$t_id_array = array();
+		for ( $i = 0; $i < 2; $i++ ) {
+			$t_id_where = $t_where;
+			$t_id_join = $t_join;
+			if ( $i == 0 ) {
+				if ( !is_blank( $t_id_where ) && !is_blank( $t_textsearch_where_clause ) ) {
+					$t_id_where = $t_id_where . ' AND ' . $t_textsearch_where_clause;
+				}
+			} else if ( !is_blank( $t_textsearch_wherejoin_clause ) ) {
+				$t_id_where = $t_id_where . ' AND ' . $t_textsearch_wherejoin_clause;
+				$t_id_join = $t_id_join . " INNER JOIN $t_bugnote_table ON $t_bugnote_table.bug_id = $t_bug_table.id";
+				$t_id_join = $t_id_join . " INNER JOIN $t_bugnote_text_table ON $t_bugnote_text_table.id = $t_bugnote_table.bugnote_text_id";
+			}
+			$query  = "SELECT DISTINCT $t_bug_table.id
+						$t_from
+						$t_id_join
+						$t_id_where";
+			if ( ( $i == 0 ) || ( !is_blank( $t_textsearch_wherejoin_clause ) ) ) {
+				$result = db_query( $query );
+				$row_count = db_num_rows( $result );
+
+				for ( $j=0; $j < $row_count; $j++ ) {
+					$row = db_fetch_array( $result );
+					$t_id_array[] = db_prepare_int ( $row['id'] );
+				}
+			}
+		}
+
+		$t_id_array = array_unique( $t_id_array );
+		if ( count( $t_id_array ) > 0 ) {
+			$t_where = "WHERE $t_bug_table.id = " . implode( " OR $t_bug_table.id = ", $t_id_array );
+		} else {
+			$t_where = "WHERE 1 != 1";
+		}
+		$t_from = 'FROM ' . $t_bug_table;
+
 		# Get the total number of bugs that meet the criteria.
-		$query = "SELECT COUNT( DISTINCT $t_bug_table.id ) as count $t_from $t_join $t_where";
-		$result = db_query( $query );
-		$bug_count = db_result( $result );
+		$bug_count = count( $t_id_array );
 
 		# write the value back in case the caller wants to know
 		$p_bug_count = $bug_count;
@@ -650,13 +717,14 @@
 		$t_tdclass = 'small-caption';
 		$t_trclass = 'row-category2';
 		$t_action  = 'view_all_set.php?f=3';
-
+		
 		if ( $p_for_screen == false ) {
 			$t_tdclass = 'print';
 			$t_trclass = '';
 			$t_action  = 'view_all_set.php';
 		}
-?>
+?> 
+
 		<br />
 		<form method="post" name="filters" action="<?php PRINT $t_action; ?>">
 		<input type="hidden" name="type" value="5" />
@@ -671,7 +739,7 @@
 		<input type="hidden" name="page_number" value="<?php PRINT $p_page_number ?>" />
 		<input type="hidden" name="view_type" value="<?php PRINT $t_view_type ?>" />
 		<table class="width100" cellspacing="1">
-
+		
 		<?php
 		if ( $p_expanded ) {
 			$t_filter_cols = 7;
@@ -963,9 +1031,12 @@
 			<td colspan="2" class="small-caption" valign="top">
 				<a href="<?php PRINT $t_filters_url . 'show_version[]'; ?>"><?php PRINT lang_get( 'product_version' ) ?>:</a>
 			</td>
-			<td colspan="2" class="small-caption" valign="top">
+			<td colspan="1" class="small-caption" valign="top">
 				<a href="<?php PRINT $t_filters_url . 'fixed_in_version[]'; ?>"><?php PRINT lang_get( 'fixed_in_version' ) ?>:</a>
 			</td>
+			<td colspan="1" class="small-caption" valign="top">
+                                <a href="<?php PRINT $t_filters_url . 'show_priority[]'; ?>"><?php PRINT lang_get( 'priority' ) ?>:</a>
+                        </td>
 		</tr>
 
 		<tr class="row-1">
@@ -1093,7 +1164,7 @@
 								}
 							?>
 			</td>
-			<td colspan="2" class="small-caption" valign="top">
+			<td colspan="1" class="small-caption" valign="top">
 							<?php
 								$t_output = '';
 								$t_any_found = false;
@@ -1123,6 +1194,36 @@
 								}
 							?>
 			</td>
+			<td colspan="1" class="small-caption" valign="top">
+                                                        <?php
+							        $t_output = '';
+                                                                $t_any_found = false;
+                                                                if ( count( $t_filter['show_priority'] ) == 0 ) {
+                                                                        PRINT lang_get( 'any' );
+                                                                } else {
+                                                                        $t_first_flag = true;
+                                                                        foreach( $t_filter['show_priority'] as $t_current ) {
+                                                                                $t_this_string = '';
+                                                                                if ( ( $t_current == 'any' ) || ( is_blank( $t_current ) ) ) {
+                                                                                        $t_any_found = true;
+                                                                                } else {
+                                                                                        $t_this_string = get_enum_element( 'priority', $t_current );
+                                                                                }
+                                                                                if ( $t_first_flag != true ) {
+                                                                                        $t_output = $t_output . '<br>';
+                                                                                } else {
+                                                                                        $t_first_flag = false;
+                                                                                }
+                                                                                $t_output = $t_output . $t_this_string;
+                                                                        }
+                                                                        if ( true == $t_any_found ) {
+                                                                                PRINT lang_get( 'any' );
+                                                                        } else {
+                                                                                PRINT $t_output;
+                                                                        }
+                                                                }
+                                                        ?>
+                        </td>
 		</tr>
 
 		<tr <?php PRINT "class=\"" . $t_trclass . "\""; ?>>
@@ -1588,11 +1689,21 @@
 		$result = db_query( $query );
 	}
 
-	function filter_db_get_available_queries( ) {
+	function filter_db_get_available_queries( $p_project_id = null, $p_user_id = null ) {
 		$t_filters_table = config_get( 'mantis_filters_table' );
 		$t_overall_query_arr = array();
-		$t_project_id = helper_get_current_project();
-		$t_user_id = auth_get_current_user_id();
+		
+		if ( null === $p_project_id ) {
+			$t_project_id = helper_get_current_project();
+		} else {
+			$t_project_id = db_prepare_int( $p_project_id );
+		}
+
+		if ( null === $p_user_id ) {
+			$t_user_id = auth_get_current_user_id();
+		} else {
+			$t_user_id = db_prepare_int( $p_user_id );
+		}
 
 		# If the user doesn't have access rights to stored queries, just return
 		if ( !access_has_project_level( config_get( 'stored_query_use_threshold' ) ) ) {
@@ -1695,6 +1806,7 @@
 									  'reporter_id' => 'int',
 									  'handler_id' => 'string',
 									  'show_resolution' => 'int',
+									  'show_priority' => 'int',
 									  'show_build' => 'string',
 									  'show_version' => 'string',
 									  'hide_status' => 'int',

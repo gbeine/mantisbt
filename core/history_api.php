@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: history_api.php,v 1.28 2004-08-17 18:01:18 thraxisp Exp $
+	# $Id: history_api.php,v 1.30 2004-10-05 21:10:14 prichards Exp $
 	# --------------------------------------------------------
 
 	### History API ###
@@ -279,11 +279,11 @@
 					$t_note = lang_get( 'bugnote_view_state' ) . ": " . $p_old_value . ": " . $p_new_value;
 					break;
 				case BUG_MONITOR:
-					$p_old_value = user_get_field( $p_old_value, 'username' );
+					$p_old_value = user_get_name( $p_old_value );
 					$t_note = lang_get( 'bug_monitor' ) . ": " . $p_old_value;
 					break;
 				case BUG_UNMONITOR:
-					$p_old_value = user_get_field( $p_old_value, 'username' );
+					$p_old_value = user_get_name( $p_old_value );
 					$t_note = lang_get( 'bug_end_monitor' ) . ": " . $p_old_value;
 					break;
 				case BUG_DELETED:
@@ -303,6 +303,10 @@
 					break;
 				case BUG_ADD_RELATIONSHIP:
 					$t_note = lang_get( 'relationship_added' );
+					$t_change = relationship_get_description_for_history( $p_old_value ) . ' ' . bug_format_id( $p_new_value );
+					break;
+				case BUG_REPLACE_RELATIONSHIP:
+					$t_note = lang_get( 'relationship_replaced' );
 					$t_change = relationship_get_description_for_history( $p_old_value ) . ' ' . bug_format_id( $p_new_value );
 					break;
 				case BUG_DEL_RELATIONSHIP:

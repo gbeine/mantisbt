@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: custom_function_api.php,v 1.7 2004-08-27 00:29:55 thraxisp Exp $
+	# $Id: custom_function_api.php,v 1.9 2004-10-08 17:23:35 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### Custom Function API ###
@@ -73,7 +73,7 @@
 	# In case of invalid data, this function should call trigger_error()
 	# p_issue_id is the issue number that can be used to get the existing state
 	# p_new_issue_data is an object (BugData) with the appropriate fields updated
-	function custom_function_default_issue_update_validate( $p_issue_id, $p_new_issue_data ) {
+	function custom_function_default_issue_update_validate( $p_issue_id, $p_new_issue_data, $p_bugnote_text ) {
 	}
 
 	# --------------------
@@ -113,4 +113,17 @@
 	# issue before it was deleted.
 	function custom_function_default_issue_delete_notify( $p_issue_data ) {
 	}
+
+	# --------------------
+	# Hook for authentication
+	# can Mantis update the password
+	function custom_function_default_auth_can_change_password( ) {
+		$t_can_change = array( PLAIN, CRYPT, CRYPT_FULL_SALT, MD5 );
+		if ( in_array( config_get( 'login_method' ), $t_can_change ) ) {
+			return true;
+		}else{
+			return false;
+		}
+	}
+
 ?>

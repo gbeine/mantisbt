@@ -6,7 +6,7 @@
 	# See the files README and LICENSE for details
 
 	# --------------------------------------------------------
-	# $Id: bugnote_view_inc.php,v 1.18 2004-08-08 11:39:00 jlatour Exp $
+	# $Id: bugnote_view_inc.php,v 1.22 2004-10-05 17:20:26 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -82,8 +82,14 @@
 		# prefix all bugnote data with v3_
 		$row = db_fetch_array( $result );
 		extract( $row, EXTR_PREFIX_ALL, 'v3' );
+		if ( db_unixtimestamp( $v3_date_submitted ) != db_unixtimestamp( $v3_last_modified ) )
+			$t_bugnote_modified = true;
+		else
+			$t_bugnote_modified = false;
+		
 		$v3_date_submitted = date( config_get( 'normal_date_format' ), ( db_unixtimestamp( $v3_date_submitted ) ) );
-
+		$v3_last_modified = date( config_get( 'normal_date_format' ), ( db_unixtimestamp( $v3_last_modified ) ) );
+		
 		# grab the bugnote text and id and prefix with v3_
 		$query = "SELECT note
 				FROM $t_bugnote_text_table
@@ -93,7 +99,8 @@
 
 		$v3_note = $row['note'];
 		$v3_note = string_display_links( $v3_note );
-
+		$t_bugnote_id_formatted = bugnote_format_id( $v3_id );
+		
 		if ( VS_PRIVATE == $v3_view_state ) {
 			$t_bugnote_css		= 'bugnote-private';
 			$t_bugnote_note_css	= 'bugnote-note-private';
@@ -102,15 +109,28 @@
 			$t_bugnote_note_css	= 'bugnote-note-public';
 		}
 ?>
-<tr class="bugnote">
-	<td class="<?php echo $t_bugnote_css ?>">
-		<?php print_user( $v3_reporter_id ) ?>
+<tr class="bugnote" name="<?php echo $v3_id ?>" id="<?php echo $v3_id ?>">
+        <td class="<?php echo $t_bugnote_css ?>">
+		<span class="small">(<?php echo $t_bugnote_id_formatted ?>)</span><br />
+		<?php if ( FALSE == user_get_field( $v3_reporter_id, 'enabled' ) ) {
+				echo '<font STYLE="text-decoration: line-through">';
+			} else {
+				echo '<font STYLE="text-decoration: none">';
+			}
+			echo print_user( $v3_reporter_id );
+			echo '</font>'; 
+		?>
 		<?php if ( VS_PRIVATE == $v3_view_state ) { ?>
 		<span class="small">[ <?php echo lang_get( 'private' ) ?> ]</span>
 		<?php } ?>
 		<br />
-		<span class="small"><?php echo $v3_date_submitted ?></span><br /><br />
-		<span class="small">
+		<span class="small"><?php echo $v3_date_submitted ?></span><br />
+		<?php
+		if ( true == $t_bugnote_modified ) {
+			echo '<span class="small">'.lang_get( 'edited_on').' '.$v3_last_modified.'</span><br />';
+		}
+		?>
+		<br /><span class="small">
 		<?php
 			# only admins and the bugnote creator can edit/delete this bugnote
 			# bug must be open to be editable
@@ -133,7 +153,20 @@
 		</span>
 	</td>
 	<td class="<?php echo $t_bugnote_note_css ?>">
-		<?php echo $v3_note ?>
+		<?php 
+			switch ( $v3_note_type ) {
+				case REMINDER:
+					echo '<div class="italic">' . lang_get( 'reminder_sent_to' ) . ': ';
+					$v3_note_attr = substr( $v3_note_attr, 1, strlen( $v3_note_attr ) - 2 );
+					$t_to = array();
+					foreach ( explode( '|', $v3_note_attr ) as $t_recipient ) {
+						$t_to[] = user_get_name( $t_recipient );
+					}
+					echo implode( ', ', $t_to ) . '</div><br />';
+				default:
+					echo $v3_note;
+			}
+		?>
 	</td>
 </tr>
 <tr>

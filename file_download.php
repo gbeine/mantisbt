@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: file_download.php,v 1.28 2004-06-16 04:28:29 robertjf Exp $
+	# $Id: file_download.php,v 1.30 2004-10-15 18:49:31 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -75,6 +75,9 @@
 	# Added Quotes (") around file name.
 	header( 'Content-Disposition: filename="' . file_get_display_name( $v_filename ) . '"' );
 	header( 'Content-Description: Download Data' );
+	# prevent file caching @@@ (thraxisp) we may want to suppress this for small files
+	header( 'Pragma: no-cache' );
+	header( 'Expires: 0' );
 
 	# dump file content to the connection.
 	switch ( config_get( 'file_upload_method' ) ) {
@@ -88,7 +91,7 @@
 				readfile( $v_diskfile );
 			} else {
 				$ftp = file_ftp_connect();
-				file_ftp_get ( $ftp, $v_diskfile, $v_filename );
+				file_ftp_get ( $ftp, $v_diskfile, $v_diskfile );
 				file_ftp_disconnect( $ftp );
 				readfile( $v_diskfile );
 			}

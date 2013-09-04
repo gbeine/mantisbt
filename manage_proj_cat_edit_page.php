@@ -28,9 +28,7 @@
 	$t_mail = mail_get_account_data( $f_project_id );
 	if ( $t_mail['pop3_categories'] ) {
 		$t_category_mail = mail_category_get_account_data( $f_project_id, $f_category );
-		print_r($t_category_mail);
 	}
-
 ?>
 <?php html_page_top1() ?>
 <?php html_page_top2() ?>

@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: lang_api.php,v 1.32 2004-08-31 15:22:30 thraxisp Exp $
+	# $Id: lang_api.php,v 1.34 2004-09-26 02:05:14 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### Language (Internationalization) API ##
@@ -65,13 +65,13 @@
 			$t_lang = user_pref_get_language( auth_get_current_user_id() );
 		}
 
-		if ( 'auto' == $t_lang ) {
-			$t_lang = lang_map_auto();
-		}
-
 		# Otherwise fall back to default
 		if ( false === $t_lang ) {
 			$t_lang = config_get( 'default_language' );
+		}
+
+		if ( 'auto' == $t_lang ) {
+			$t_lang = lang_map_auto();
 		}
 
 		# Remember the language
@@ -143,7 +143,14 @@
 		$t_lang = $p_lang;
 
 		if ( null === $t_lang ) {
-			$t_lang = lang_get_default();
+			$t_lang = config_get( 'default_language' );
+		}
+
+		# don't allow 'auto' as a language to be pushed onto the stack
+		#  The results from auto are always the local user, not what the
+		#  override wants
+		if ( 'auto' == $t_lang ) {
+			$t_lang = config_get( 'fallback_language' );
 		}
 
 		$g_lang_overrides[] = $t_lang;
@@ -205,6 +212,8 @@
 		#  because we don't have a concept of falling back on a language.  The
 		#  language files actually *contain* English strings if none has been
 		#  defined in the correct language
+		# @@@ thraxisp - not sure if this is still true. Strings from last language loaded 
+		#      may still be in memeory if a new language is loaded.
 
 		if ( lang_exists( $p_string, $t_lang ) ) {
 			return $g_lang_strings[ $t_lang ][ $p_string];

@@ -8,15 +8,15 @@
 	# Italian: Luca Pescatore, l.pescatore@network.it
 	# Italian: Marco Vassura,  m.vassura@itools.it
 	# Italian: Lele Gaifax, lele@seldati.it
+	# Italian: Marcello Scata' marcello@marcelloscata.com
 	# -------------------------------------------------
-	# $Revision: 1.79 $
-	# $Author: bigbadger $
-	# $Date: 2004-09-11 04:05:11 $
+	# $Revision: 1.86 $
+	# $Author: marcelloscata $
+	# $Date: 2004-11-02 19:54:01 $
 	#
-	# $Id: strings_italian.txt,v 1.79 2004-09-11 04:05:11 bigbadger Exp $
+	# $Id: strings_italian.txt,v 1.86 2004-11-02 19:54:01 marcelloscata Exp $
 	###########################################################################
-?>
-<?php
+
 # Charset
 $s_charset = "windows-1252";
 
@@ -73,7 +73,7 @@ $s_empty_password_button = "Conferma password vuota";
 
 $s_duplicate_of = "duplicato di";
 $s_has_duplicate = "é duplicata da";
-$s_related_to = "relativa a";
+$s_related_to = "in relazione con";
 $s_dependant_on = "padre di";
 $s_blocks = "figlia di";
 
@@ -124,12 +124,12 @@ $s_graph_imp_status_title = "Grafico di sintesi per stato";
 $s_graph_imp_priority_title = "Grafico di sintesi per priorità";
 $s_graph_imp_severity_title = "Grafico di sintesi per severità";
 $s_graph_imp_category_title = "Grafico di sintesi per categoria";
-$s_graph_imp_resolution_title = "Grafico di sintesi per motivazione"; /* MASC */
+$s_graph_imp_resolution_title = "Grafico di sintesi per motivazione";
 $s_by_status_pct = "Per stato (%)";
 $s_by_priority_pct = "Per priorita' (%)";
 $s_by_severity_pct = "Per severita' (%)";
 $s_by_category_pct = "Per categoria (%)";
-$s_by_resolution_pct = "per motivazione (%)";
+$s_by_resolution_pct = "Per motivazione (%)";
 $s_by_severity_mix = "Per severita' e stato";
 $s_by_priority_mix = "Per priorita' e stato";
 $s_by_resolution_mix = "Per motivazione e stato";
@@ -139,6 +139,15 @@ $s_priority_link = "Per priorità";
 $s_severity_link = "Per severità";
 $s_category_link = "Per categoria";
 $s_resolution_link = "Per motivazione";
+$s_legend_still_open = "Ancora aperte";
+$s_legend_resolved = "Risolte";
+$s_legend_assigned = "Assegnate";
+$s_legend_total = "Totale";
+$s_legend_opened = "Aperte";
+$s_legend_closed = "Chiuse";
+$s_legend_reported = "Riportate";
+$s_cumulative = "Cumulative";
+$s_not_enough_data = "Non ci sono abbastanza dati per creare un grafico";
 
 # print_all_bug_page.php : display selected bugs
 $s_hide_button = "Mostra solo quelli selezionati";
@@ -176,6 +185,7 @@ $MANTIS_ERROR[ERROR_BUGNOTE_NOT_FOUND] = 'Note not found.';
 $MANTIS_ERROR[ERROR_PROJECT_NOT_FOUND] = 'Project not found.';
 $MANTIS_ERROR[ERROR_DB_FIELD_NOT_FOUND] = 'Database field \'%s\' not found.';
 $MANTIS_ERROR[ERROR_FTP_CONNECT_ERROR]	 = 'Unable to connect to FTP server.';
+$MANTIS_ERROR[ERROR_HANDLER_ACCESS_TOO_LOW]	 = 'Issue handler does not have sufficient access rights to handle issue at this status.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_NOT_UNIQUE] = 'A project with that name already exists.  Please go back and enter a different name.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_INVALID] = 'Invalid project name specified.  Project names cannot be blank.';
 $MANTIS_ERROR[ERROR_USER_NOT_FOUND]	 = 'User not found.';
@@ -246,6 +256,7 @@ $s_prefix_for_deleted_users = "utente";
 
 $s_administrator = "Amministratore";
 $s_myself = "Me stesso";
+$s_default_access_level = 'Livello di accesso di default';
 
 # Enum Strings
 $s_access_levels_enum_string      = "10:osservatore,25:segnalatore,40:aggiornatore,55:sviluppatore,70:manager,90:amministratore";
@@ -254,12 +265,12 @@ $s_project_view_state_enum_string = "10:pubblico,50:privato";
 $s_view_state_enum_string         = "10:pubblico,50:privato";
 
 $s_priority_enum_string           = "10:nessuna,20:bassa,30:normale,40:alta,50:urgente,60:immediata";
-$s_severity_enum_string           = "10:nuova funzionalità,20:banale,30:ortografia,40:ritocco,50:minore,60:maggiore,70:crash,80:blocco";
+$s_severity_enum_string           = "10:nuova funzionalita',20:banale,30:ortografia,40:ritocco,50:minore,60:maggiore,70:crash,80:blocco";
 $s_reproducibility_enum_string    = "10:sempre,30:qualche volta,50:casuale,70:non testato,90:non riproducibile,100:non pertinente";
 $s_status_enum_string             = "10:nuovo,20:da discutere,30:riconosciuto,40:confermato,50:assegnato,80:risolto,90:chiuso";
-$s_resolution_enum_string         = "10:aperto,20:risolto,30:riaperto,40:incapace di riprodurlo,50:non correggibile,60:duplicato,70:non è un bug,80:sospeso,90:non verrà corretto";
+$s_resolution_enum_string         = "10:aperta,20:risolta,30:riaperta,40:incapace di riprodurla,50:non correggibile,60:duplicata,70:non e' una anomalia,80:sospesa,90:non verra' corretta";
 $s_projection_enum_string         = "10:nessuno,30:ritocco,50:fix minore,70:considerevole,90:riscrittura";
-$s_eta_enum_string                = "10:nessuno,20:meno di un giorno,30:2-3 giorni,40:meno di una settimana,50:meno di un mese,60:più di un mese";
+$s_eta_enum_string                = "10:nessuno,20:meno di un giorno,30:2-3 giorni,40:meno di una settimana,50:meno di un mese,60:piu' di un mese";
 
 # Email Strings
 $s_new_account_subject = "Nuovo account registrato";
@@ -275,7 +286,8 @@ $s_new_account_signup_msg = "E' stato creato il seguente account:";
 $s_reset_request_msg = "Qualcuno (probabilmente te) ha richiesto di cambiare la password di accesso attraverso una procedura di verifica via email. Se questa richiesta non é stata fatta da te, ignora semplicemente questo messaggio.\n\nSe invece hai effettivamente richiesto tu la verifica, visita l'indirizzo di seguito riportato e potrai cambiare la tua password:";
 $s_reset_request_in_progress_msg = "Se hai fornito il corretto nome utente e indirizzo email del tuo account, ti verrà inviata una email all'indirizzo del tuo account con un codice di convalida. Quando riceverai questa email, segui le istruzioni in essa riportate.";
 
-$s_email_notification_title_for_status_bug_feedback = "La seguente anomalia richiede il tuo FEEDBACK.";
+$s_email_notification_title_for_status_bug_new = 'La seguente anomalia é stata ri-posta nello stato NUOVO';
+$s_email_notification_title_for_status_bug_feedback = "La seguente anomalia é stata posta in DISCUSSIONE.";
 $s_email_notification_title_for_status_bug_acknowledged = "La seguente anomalia é stata RICONOSCIUTA.";
 $s_email_notification_title_for_status_bug_confirmed = "La seguente anomalia é stata CONFERMATA.";
 $s_email_notification_title_for_status_bug_assigned = "La seguente anomalia é stata ASSEGNATA.";
@@ -286,16 +298,24 @@ $s_email_notification_title_for_action_bug_submitted = "La seguente anomalia é s
 $s_email_notification_title_for_action_bug_assigned = "La seguente anomalia é stata ASSEGNATA.";
 $s_email_notification_title_for_action_bug_reopened = "La seguente anomalia é stata RIAPERTA.";
 $s_email_notification_title_for_action_bug_deleted = "La seguente anomalia é stata ELIMINATA.";
-$s_email_notification_title_for_action_bug_updated = "La seguente anomalia é stata AGGIORNATA."; #MASC
+$s_email_notification_title_for_action_bug_updated = "La seguente anomalia é stata AGGIORNATA.";
 $s_email_notification_title_for_action_sponsorship_added = "La seguente anomalia é stata SPONSORIZZATA.";
 $s_email_notification_title_for_action_sponsorship_updated = "Una sponsorizzazione della seguente anomalia é stata modificata.";
 $s_email_notification_title_for_action_sponsorship_deleted = "Una sponsorizzazione della seguente anomalia é stata eliminata.";
 
 $s_email_notification_title_for_action_bugnote_submitted = "Una NOTA é stata aggiunta a questa anomalia.";
-$s_email_notification_title_for_action_relationship_added = "E' stata aggiunta una RELAZIONE alla seguente anomalia.";
-$s_email_notification_title_for_action_relationship_deleted = "E' stata eliminata una RELAZIONE dalla seguente anomalia.";
-$s_email_notification_title_for_action_relationship_child_resolved = "E' stata RISOLTA una anomalia in RELAZIONE con l'anomalia seguente.";
-$s_email_notification_title_for_action_relationship_child_closed = "E' stata CHIUSA una anomalia in RELAZIONE con l'anomalia seguente.";
+$s_email_notification_title_for_action_duplicate_of_relationship_added = "Nuova relazione: la seguente anomalia é DUPLICATA dall'anomalia %s.";
+$s_email_notification_title_for_action_has_duplicate_relationship_added = "Nuova relazione: l'anomalia %s DUPLICA la seguente anomalia.";
+$s_email_notification_title_for_action_related_to_relationship_added = "Nuova relazione: la seguente anomalia é IN RELAZIONE con l'anomalia %s.";
+$s_email_notification_title_for_action_dependant_on_relationship_added = "Nuova relazione: la seguente anomalia é PADRE dell'anomalia %s.";
+$s_email_notification_title_for_action_blocks_relationship_added = "Nuova relazione: la seguente anomalia é FIGLIA dell'anomalia %s.";
+$s_email_notification_title_for_action_duplicate_of_relationship_deleted = "Eliminata la relazione per cui la seguente anomalia era DUPLICATA dall'anomalia %s.";
+$s_email_notification_title_for_action_has_duplicate_relationship_deleted = "Eliminata la relazione per cui l'anomalia %s DUPLICAVA la seguente anomalia.";
+$s_email_notification_title_for_action_related_to_relationship_deleted = "Eliminata la relazione per cui la seguente anomalia era IN RELAZIONE con l'anomalia %s.";
+$s_email_notification_title_for_action_dependant_on_relationship_deleted = "Eliminata la relazione per cui la seguente anomalia era PADRE dell'anomalia %s.";
+$s_email_notification_title_for_action_blocks_relationship_deleted = "Eliminata la relazione per cui la seguente anomalia era FIGLIA dell'anomalia %s.";
+$s_email_notification_title_for_action_relationship_child_resolved = "E' stata RISOLTA l'anomalia %s in RELAZIONE con la seguente anomalia.";
+$s_email_notification_title_for_action_relationship_child_closed = "E' stata CHIUSA l'anomalia %s in RELAZIONE con la seguente anomalia.";
 
 $s_email_reporter = "Segnalato da";
 $s_email_handler = "In carico a";
@@ -330,12 +350,13 @@ $s_username = "Nome Utente";
 $s_realname = "Nominativo";
 $s_email = "Email";
 $s_password = "Password";
+$s_no_password_change = 'La password é gestita da un altro sistema, non può quindi essere modificata da questa applicazione.';
 $s_confirm_password  = "Conferma Password";
 $s_access_level = "Livello di Accesso";
 $s_update_user_button = "Aggiorna Account";
 
 # account_prefs_page.php
-$s_default_account_preferences_title = "Preferenze Utente di Default";
+$s_default_account_preferences_title = "Preferenze Utente";
 $s_default_project = "Progetto di Default";
 $s_advanced_report = "Report dettagliato";
 $s_advanced_view = "Scheda dettagliata";
@@ -343,9 +364,9 @@ $s_advanced_update = "Aggiornamento dettagliato";
 $s_refresh_delay = "Ritardo di Refresh";
 $s_redirect_delay = "Ritardo di Reindirizzamento";
 $s_with_minimum_severity = "Con severità minima di";
-$s_bugnote_order = 'Bugnotes Sort Order';
-$s_bugnote_order_asc = 'Cronologico';
-$s_bugnote_order_desc = 'Cronologico inverso';
+$s_bugnote_order = "Ordinamento note";
+$s_bugnote_order_asc = "Cronologico";
+$s_bugnote_order_desc = "Cronologico inverso";
 $s_email_on_new = "Email su 'Nuovo'";
 $s_email_on_assigned = "Email su 'Assegnato'";
 $s_email_on_feedback = "Email su 'Da Discutere'";
@@ -355,7 +376,7 @@ $s_email_on_reopened = "Email su 'Riaperto'";
 $s_email_on_bugnote_added = "Email su 'Aggiunta Nota ad anomalia'";
 $s_email_on_status_change = "Email su 'Cambio Stato'";
 $s_email_on_priority_change = "Email su 'Cambio Priorità'";
-$s_email_bugnote_limit = 'Email Bugnotes Limit';
+$s_email_bugnote_limit = "Email su 'Nota aggiunta' fino al limite di note";
 $s_language = "Lingua";
 $s_update_prefs_button = "Aggiorna le Preferenze";
 $s_reset_prefs_button = "Resetta le Preferenze";
@@ -398,24 +419,24 @@ $s_profile_updated_msg = "Profilo Aggiornato...";
 # account_update.php
 $s_account_updated_msg = "Il tuo Account è stato aggiornato con successo...";
 $s_email_updated = "L'indirizzo email è stato aggiornato con successo";
-$s_realname_duplicated = 'Nominativo già in uso da un altro utente';
-$s_realname_updated = 'Nominativo aggiornato con successo';
+$s_realname_duplicated = "Nominativo già in uso da un altro utente";
+$s_realname_updated = "Nominativo aggiornato con successo";
 $s_password_updated = "La password è stata aggiornata correttamente";
 
 # bug_assign.php
 $s_bug_assign_msg = "L'anomalia è stato assegnato correttamente...";
 
 # bug_change_status_page.php
-$s_new_bug_title = 'Nuova anomalia';
-$s_feedback_bug_title = 'Poni in discussione anomalia';
-$s_acknowledged_bug_title = 'Riconosci anomalia';
-$s_confirmed_bug_title = 'Conferma anomalia';
-$s_assigned_bug_title = 'Assegna anomalia';
-$s_new_bug_button = 'Nuova anomalia';
-$s_feedback_bug_button = 'Poni in discussione anomalia';
-$s_acknowledged_bug_button = 'Riconosci anomalia';
-$s_confirmed_bug_button = 'Conferma anomalia';
-$s_assigned_bug_button = 'Assegna anomalia';
+$s_new_bug_title = "Nuova anomalia";
+$s_feedback_bug_title = "Poni in discussione anomalia";
+$s_acknowledged_bug_title = "Riconosci anomalia";
+$s_confirmed_bug_title = "Conferma anomalia";
+$s_assigned_bug_title = "Assegna anomalia";
+$s_new_bug_button = "Nuova";
+$s_feedback_bug_button = "Poni in discussione";
+$s_acknowledged_bug_button = "Riconosci";
+$s_confirmed_bug_button = "Conferma";
+$s_assigned_bug_button = "Assegna";
 
 # bug_close.php
 $s_bug_close_msg = "L'anomalia è stata chiusa...";
@@ -467,6 +488,9 @@ $s_bug_reminder = "Invia un memorandum";
 $s_reminder_sent_to = "Inviato memorandum a";
 $s_bug_send_button = "Invia";
 $s_reminder = "Nota";
+$s_reminder_explain = 'This note will be sent to the recipients listed requesting feedback on this issue.';
+$s_reminder_monitor = 'These recipients will also begin monitoring the issue. They can unsubscribe using the Unmonitor button.';
+$s_reminder_store = 'This note will be stored with the issue.';
 
 # bug_update.php
 $s_bug_updated_msg = "L'anomalia è stata aggiornata correttamente...";
@@ -542,7 +566,7 @@ $s_save_login = "Salva Login";
 $s_choose_project = "Seleziona Progetto";
 $s_login_button = "Login";
 $s_signup_link = "Registrati come Nuovo Utente";
-$s_lost_password_link = 'Password dimenticata?';
+$s_lost_password_link = "Password dimenticata?";
 
 # login_select_proj_page.php
 $s_select_project_button = "Seleziona Progetto";
@@ -551,6 +575,7 @@ $s_select_project_button = "Seleziona Progetto";
 $s_logged_out_title = "Esci...";
 $s_redirecting = "... redirezione in corso ...";
 $s_here = "Qui";
+
 # lost_pwd_page.php
 $s_lost_password_title = "Password Reset";
 $s_lost_password_done_title = "Password reset operazione processata";
@@ -583,6 +608,7 @@ $s_filter_button = "Applica il Filtro";
 $s_manage_users_link = "Gestione Utenti";
 $s_manage_projects_link = "Gestione Progetti";
 $s_manage_custom_field_link = "Gestione Campi Personalizzati";
+$s_permissions_summary_report = 'Report Permessi';
 $s_create_new_account_link = "Crea Nuovo Account";
 $s_projects_link = "Progetti";
 $s_documentation_link = "Documentazione";
@@ -637,6 +663,7 @@ $s_categories = "Categorie";
 $s_add_category_button = "Nuova Categoria";
 $s_versions = "Versioni";
 $s_add_version_button = "Nuova Versione";
+$s_add_and_edit_version_button = "Aggiunge o modifica versione";
 $s_edit_link = "modifica";
 $s_actions = "Azioni";
 $s_version = "Versione";
@@ -666,7 +693,7 @@ $s_delete_version_button = "Elimina Versione";
 # manage_proj_version_edit_page.php
 $s_edit_project_version_title = "Modifica la Versione del Progetto";
 $s_update_version_button = "Aggiorna la Versione";
-$s_released = 'Rilasciata';
+$s_released = "Rilasciata";
 
 # manage_proj_version_update.php
 $s_version_updated_msg = "La Versione è stata aggiornata...";
@@ -703,7 +730,7 @@ $s_manage_user_updated_msg = "Account aggiornato correttamente...";
 # menu_inc.php
 $s_main_link = "Principale";
 $s_view_bugs_link = "Visualizza anomalie";
-$s_report_bug_link = "Inserisci nuova anomalia";
+$s_report_bug_link = "Nuova anomalia";
 $s_changelog_link = "Change Log";
 $s_summary_link = "Statistiche";
 $s_account_link = "Account";
@@ -712,17 +739,17 @@ $s_manage_link = "Amministra";
 $s_edit_news_link = "Modifica Notizie";
 $s_docs_link = "Documentazione";
 $s_logout_link = "Esci";
-$s_my_view_link = 'My View';
+$s_my_view_link = "My View";
 
 # meta_inc.php
 
 # my_view_page.php
-$s_my_view_title_unassigned = 'Non assegnati';
-$s_my_view_title_recent_mod = 'Modificati recentemente';
-$s_my_view_title_reported = 'Segnalati da me';
-$s_my_view_title_assigned = 'Assegnati a me (Non risolti)';
-$s_my_view_title_resolved = 'Risolti';
-$s_my_view_title_monitored = 'Monitorati da me';
+$s_my_view_title_unassigned = "Non assegnati";
+$s_my_view_title_recent_mod = "Modificati recentemente";
+$s_my_view_title_reported = "Segnalati da me";
+$s_my_view_title_assigned = "Assegnati a me (Non risolti)";
+$s_my_view_title_resolved = "Risolti";
+$s_my_view_title_monitored = "Monitorati da me";
 
 # news_add.php
 $s_news_added_msg = "Notizia Inserita...";
@@ -795,7 +822,8 @@ $s_remove_user_sure_msg = "Sicuro di voler eliminare questo utente?";
 $s_add_user_title = "Aggiungi utente al progetto";
 $s_add_user_button = "Aggiungi Utente";
 $s_project_selection_title = "Selezione Progetto";
-$s_remove_link = "Rimuovi";
+$s_remove_link = "Rimuove";
+$s_remove_all_link = "Rimuove tutti";
 
 # proj_user_update.php
 $s_updated_user_msg = "Utente aggiornato con successo";
@@ -840,6 +868,7 @@ $s_signup_captcha_request = "Inserire il codice alfanumerico come appare nel box
 $s_signup_info = "Dopo aver completato il form di registrazione, ti verrà inviata una email di conferma per verificare che l'indirizzo email da te indicato sia corretto ed esistente.<br/>L'email conterrà le istruzioni per attivare l'account appena creato. Non rispondendo a questo messaggio entro una settimana, l'account potrebbe essere eliminato.<br/><b>Occorre indicare un indirizzo email valido ed esistente per poter ricevere l'email di conferma.</b>";
 $s_signup_title = "Registrazione";
 $s_signup_button = "Registrati";
+$s_no_password_request = "La password é gestita da un altro sistema. Contattare il proprio amministratore.";
 
 # site_settings_edit_page.php
 $s_edit_site_settings_title = "Modifica Impostazioni Sito";
@@ -857,7 +886,7 @@ $s_site_settings_updated_msg = "Impostazioni Sito aggiornate";
 $s_summary_title = "Statistiche";
 $s_summary_jpgraph_link = "Grafici";
 $s_by_project = "Per progetto";
-$s_by_status = "Per status";
+$s_by_status = "Per stato";
 $s_by_date = "Per data";
 $s_by_severity = "Per severita'";
 $s_by_resolution = "Per motivazione";
@@ -879,7 +908,7 @@ $s_average_time = "tempo medio";
 $s_total_time = "tempo totale";
 $s_developer_stats = "Statistiche per sviluppatore";
 $s_reporter_stats = "Statistiche per segnalatore";
-$s_orct = "(aperti/risolti/chiusi/totale)";
+$s_orct = "(aperte/risolte/chiuse/totale)";
 
 # view_all_bug_page.php
 $s_any = "Qualsiasi";
@@ -905,7 +934,7 @@ $s_no = "No";
 $s_open_filters = "Cambia filtro";
 $s_or_unassigned = "oppure non assegnato";
 $s_ok = "OK";
-$s_select_all = 'Select All';
+$s_select_all = "Seleziona tutti";
 
 # stored query strings
 $s_use_query = "Usa filtro";
@@ -928,7 +957,7 @@ $s_product_build = "Release del Prodotto";
 $s_system_profile = "Descrizione del Sistema";
 $s_update_bug_button = "Aggiorna";
 $s_bug_assign_to_button = "Assegna:";
-$s_bug_status_to_button = 'Cambia stato in:';
+$s_bug_status_to_button = "Cambia stato in:";
 $s_reopen_bug_button = "Riapre";
 $s_move_bug_button = "Muove";
 $s_attached_files = "File allegati";
@@ -983,7 +1012,7 @@ $s_custom_field_require_resolved = "Obbligatorio in 'Risolvi anomalia'";
 $s_custom_field_require_closed = "Obbligatorio in 'Chiudi anomalia'";
 
 $s_custom_field_sequence = "Sequenza";
-$s_custom_field_type_enum_string = '0:Stringa,1:Numerico,2:Virgola mobile,3:Valori prestabiliti,4:Email,5:Checkbox,6:List,7:Multiselection list';
+$s_custom_field_type_enum_string = "0:Stringa,1:Numerico,2:Virgola mobile,3:Valori prestabiliti,4:Email,5:Checkbox,6:Lista,7:Lista a scelta multipla";
 
 $s_confirm_used_custom_field_deletion = "Questo campo è attualmente utilizzato da almeno un progetto.  Se continui tutti i valori associati a questo campo verranno cancellati.  Si tratta di una azione non reversibile.  Se non desideri eliminare questo campo, clicca sul pulsante Indietro del tuo browser.  Per procedere, clicca sul pulsante qui sotto";
 $s_confirm_custom_field_deletion = "Sei sicuro di voler eliminare questo Campo Personalizzato e tutti i valori associati?";
@@ -997,7 +1026,7 @@ $s_hide_resolved = "Nascondi risolte";
 $s_and_above = "e sopra";
 $s_advanced_filters = "Filtro avanzato";
 $s_simple_filters = "Filtro semplice";
-$s_monitored_by = 'Monitorato da';
+$s_monitored_by = "Monitorato da";
 
 $s_attachments = "Allegati";
 $s_attachment_alt = "A";
@@ -1029,21 +1058,86 @@ $s_add_new_relationship_button = "Crea";
 $s_this_bug = "Anomalia corrente";
 $s_relationship_added = "Relazione aggiunta";
 $s_relationship_deleted = "Relazione eliminata";
+$s_no_relationship = "nessuna relazione";
+$s_relationship_replaced = "Relazione aggiornata";
+$s_replace_relationship_button = "Sostituisci";
+$s_replace_relationship_sure_msg = "Esiste già una relazione tra queste anomalie. Confermare la sostituzione?";
+$s_relationship_with_parent = "Relazione con l'anomalia padre";
 $s_delete_relationship_button = "Eliminare";
-$s_delete_relationship_sure_msg = "Sicuro di voler confermare l'eliminazione di questa relazione?";
+$s_delete_relationship_sure_msg = "Confermare l'eliminazione di questa relazione?";
 $s_relationship_warning_blocking_bugs_not_resolved = "NON ancora tutte le anomalie figlie generate da questa anomalia risultano risolte oppure chiuse.";
 $s_relationship_warning_blocking_bugs_not_resolved_2 = "<b>ATTENZIONE</b>. NON ancora tutte le anomalie figlie generate da questa anomalia risultano risolte oppure chiuse.<br>Prima di <b>risolvere/chiudere</b> una anomalia padre, tutte le anomalie figlie dovrebbero essere risolte/chiuse.";
-$s_create_child_bug_button = "Genera figlio";
+$s_create_child_bug_button = "Genera clone";
 $s_bug_cloned_to = "Anomalia clonata";
 $s_bug_created_from = "Anomalia generata da";
 
-# Source Control Integration
-$s_checkin = 'Checkin';
+# Relationship Graphs
+$s_viewing_bug_relationship_graph_title = "Grafico delle relazioni";
+$s_relation_graph = "Grafico relazioni";
+$s_dependency_graph = "Grafico dipendenze";
+$s_vertical = "Verticale";
+$s_horizontal = "Orizzontale";
+$s_view_issue = "Dettaglio anomalia";
 
-# lost password
-$s_lost_password_title = "Password reset";
-$s_lost_password_done_title = "Password reset operazione processata";
-$s_lost_password_subject = "Password reset";
-$s_lost_password_info = "Per reimpostare la password di accesso dimenticata, occorre fornire il tuo nome utente e l'indirizzo email associato con quell'account (deve essere quello correntemente in uso).<br/><br/>Se i dati indicati corrisponderanno ad un account valido e registrato, ti verrà inviato un indirizzo URL speciale via email che contiene un codice di convalida per il tuo account. Visitanto questo indirizzo potrai cambiare la tua password di accesso e accedere al sito.";
-$s_lost_password_confirm_hash_OK = "Codice di convalida valido. Ora sarà possibile cambiare la password di accesso.";
+# Source Control Integration
+$s_checkin = "Checkin";
+
+# Pemissions report
+$s_perm_rpt_capability = 'Funzionalità';
+$s_view = 'Visualizzare';
+$s_issues = 'ANOMALIE';
+$s_report_issue = 'Sottoporre una anomalia';
+$s_update_issue = 'Aggiornare una anomalia';
+$s_monitor_issue = 'Monitorare una anomalia';
+$s_handle_issue = 'Gestire una anomalia';
+$s_move_issue = 'Muovere una anomalia';
+$s_delete_issue = 'Eliminare una anomalia';
+$s_reopen_issue = 'Riaprire una anomalia chiusa';
+$s_view_private_issues = 'Vedere le anomalie private';
+$s_update_readonly_issues = 'Aggiornare anomalie in sola lettura';
+$s_update_issue_status = 'Aggiornare lo stato di una anomalia';
+$s_set_view_status = 'Impostare lo stato di visualizz. (publico o privato)';
+$s_update_view_status = 'Aggiornare lo stato di visualizz. (publico o privato)';
+$s_show_list_of_users_monitoring_issue = 'Visualizzare lista degli utenti che monitorizzano una anomalia';
+$s_notes = 'NOTE';
+$s_add_notes = 'Aggiungere nuove note';
+$s_update_notes = 'Aggiornare una note';
+$s_delete_note = 'Eliminare una note';
+$s_view_private_notes = 'Visualizzare le note private';
+$s_news = 'NEWS';
+$s_view_private_news = 'Visualizzare le news private';
+$s_manage_news = 'Gestire le news';
+$s_view_list_of_attachments = 'Visualizzare gli allegare';
+$s_download_attachments = 'Scaricare gli allegati';
+$s_delete_attachments = 'Eliminare gli allegati';
+$s_upload_issue_attachments = 'Aggiungere allegati ad una anomalia';
+$s_filters = 'filtri';
+$s_save_filters = 'Salvare nuovi filtri';
+$s_save_filters_as_shared = 'Salvare nuovi filtri come condivisi';
+$s_use_saved_filters = 'Utilizzare i filtri salvati';
+$s_create_project = 'Creare nuovi progetti';
+$s_delete_project = 'Eliminare un progetto';
+$s_manage_project = 'Gestire un progetto';
+$s_manage_user_access_to_project = 'Gestire gli accessi utente ai progetti';
+$s_automatically_included_in_private_projects = 'Utenti automaticamente aggiunti ai progetti privati';
+$s_project_documents = 'DOCUMENTAZIONE DI PROGETTO';
+$s_view_project_documents = 'Visualizzare la documentazione di progetto';
+$s_upload_project_documents = 'Aggiornare la documentazione di progetto';
+$s_link_custom_fields_to_projects = 'Aggiungere campi personalizzati ai progetti';
+$s_sponsorships = 'SPONSORIZZAZIONI';
+$s_view_sponsorship_details = 'Visualizzare i dettagli delle sponsorizzazioni';
+$s_view_sponsorship_total = 'Vedere il totale della sponsorizzazione';
+$s_sponsor_issue = 'Sponsorizzare una anomalia';
+$s_assign_sponsored_issue = 'Assegnare una anomalia sponsorizzata';
+$s_handle_sponsored_issue = 'Gestire una anomalia sponsorizzata';
+$s_others = 'ALTRI';
+$s_see_email_addresses_of_other_users = 'Visualizzare indirizzi email degli altri utenti';
+$s_send_reminders = 'Inviare memorandum';
+$s_add_profiles = 'Aggiugnere nuovi profili';
+$s_notify_of_new_user_created = 'Informati della creazione di nuovi utenti';
+$s_email_notification = 'NOTIFICHE VIA EMAIL';
+$s_status_changed_to = 'Email su stato cambiato in';
+$s_email_on_deleted = 'Email su \'Eliminazione\'';
+$s_email_on_sponsorship_changed = 'Email su variazione di sponsorizzazione';
+$s_email_on_relationship_changed = 'Email su variazione delle relazioni';
 ?>

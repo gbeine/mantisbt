@@ -12,11 +12,11 @@
 	# German: Andre Eisenbach, andre@eisenbach.com
 	# German: Dr. Jürgen Kehrel, jkehrel@kehrel.de
 	# -------------------------------------------------
-	# $Revision: 1.111 $
+	# $Revision: 1.118 $
 	# $Author: bigbadger $
-	# $Date: 2004-09-01 18:32:54 $
+	# $Date: 2004-10-20 11:25:33 $
 	#
-	# $Id: strings_german.txt,v 1.111 2004-09-01 18:32:54 bigbadger Exp $
+	# $Id: strings_german.txt,v 1.118 2004-10-20 11:25:33 bigbadger Exp $
 	###########################################################################
 ?>
 <?php
@@ -102,7 +102,7 @@ $s_login_link = 'Anmelden';
 # bug_actiongroup_page.php : mass treatment
 $s_bug_actiongroup_failed = 'Sie haben nicht die notwendigen Berechtigungen, um die gewählte Aktion mit den folgenden Problemen auszuführen: ';
 $s_bug_actiongroup_access = 'Sie haben nicht die notwendigen Berechtigungen, um die gewählte Aktion auszuführen.';
-$s_bug_actiongroup_status = 'Der gewünschte Status kann für dieses Problem nicht gewechselt werden.';
+$s_bug_actiongroup_status = 'Der gewünschte Status ist für dieses Problem nicht wählbar.';
 $s_close_bugs_conf_msg = 'Möchten Sie alle ausgewählten Probleme wirklich schließen?';
 $s_delete_bugs_conf_msg = 'Möchten Sie alle ausgewählten Probleme wirklich löschen?';
 $s_move_bugs_conf_msg = 'Probleme verschieben zu Projekt:';
@@ -142,6 +142,15 @@ $s_priority_link = 'nach Priorität';
 $s_severity_link = 'nach Schwere';
 $s_category_link = 'nach Kategorie';
 $s_resolution_link = 'nach Lösung';
+$s_legend_still_open = 'Noch offen';
+$s_legend_resolved = 'Behoben';
+$s_legend_assigned = 'Zugewiesen';
+$s_legend_total = 'Gesamt';
+$s_legend_opened = 'Geöffnet';
+$s_legend_closed = 'Geschlossen';
+$s_legend_reported = 'Gemeldet';
+$s_cumulative = 'Kumulierend';
+$s_not_enough_data = 'Nicht genug Daten für Grafik';
 
 # print_all_bug_page.php : display selected bugs
 $s_hide_button = 'Nur ausgewählte anzeigen';
@@ -151,14 +160,14 @@ $s_printing_preferences_title = 'Felder zum Drucken auswählen';
 $s_printing_options_link = 'Druckoptionen';
 
 # word and excel export
-$s_bugnote_title = 'Fehlernotiz Benutzer' ;
+$s_bugnote_title = 'Problemnotiz Bearbeiter' ;
 $s_bugnote_date = 'Datum der Problemnotiz';
 $s_bugnote_description = 'Problemnotiz Beschreibung';
 
 $s_error_no_proceed = 'Bitte benutzen Sie die "Zurück"-Taste Ihres Browsers, um auf die vorhergehende Seite zurückzukehren. Dort können Sie das hier angezeigte Problem korrigieren oder eine andere Aktion ausführen. Über das Menü können Sie auch direkt in eine neue Abteilung wechseln.';
 
 # ERROR strings
-$MANTIS_ERROR[ERROR_GENERIC] = 'Ein Fehler ist wa"hrend dieser Aktion aufgetreten. Sie ko"nnen dies dem Ihnen zugeordneten Adminstrator mitteilen.';
+$MANTIS_ERROR[ERROR_GENERIC] = 'Ein Fehler ist während dieser Aktion aufgetreten. Sie können dies dem Ihnen zugeordneten Adminstrator mitteilen.';
 $MANTIS_ERROR[ERROR_SQL] = 'SQL Fehler entdeckt. Melden Sie dieses an ';
 $MANTIS_ERROR[ERROR_REPORT] = 'Während des Reports trat ein Fehler auf.';
 $MANTIS_ERROR[ERROR_NO_FILE_SPECIFIED] = 'Keine Datei angegeben';
@@ -179,6 +188,7 @@ $MANTIS_ERROR[ERROR_BUGNOTE_NOT_FOUND] = 'Problemnotiz nicht gefunden.';
 $MANTIS_ERROR[ERROR_PROJECT_NOT_FOUND] = 'Projekt nicht gefunden.';
 $MANTIS_ERROR[ERROR_DB_FIELD_NOT_FOUND] = 'Datenbankfeld nicht gefunden.';
 $MANTIS_ERROR[ERROR_FTP_CONNECT_ERROR] = 'Keine Verbindung zum FTP-Server.';
+$MANTIS_ERROR[ERROR_HANDLER_ACCESS_TOO_LOW]	 = 'Der Problembearbeiter hat keine ausreichenden Rechte, um ein Problem mit diesem Status zu bearbeiten.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_NOT_UNIQUE] = 'Ein Projekt mit diesem Namen ist bereits vorhanden. Gehen Sie zurück und wählen Sie einen anderen Namen.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_INVALID] = 'Ungültiger Projektname.  Projektnamen können nicht leer sein.';
 $MANTIS_ERROR[ERROR_USER_NOT_FOUND]	 = 'Benutzer nicht gefunden.';
@@ -218,7 +228,7 @@ $MANTIS_ERROR[ERROR_USER_REAL_MATCH_USER] = 'Der eingegebene "Wirkliche Name" is
 $MANTIS_ERROR[ERROR_SPONSORSHIP_NOT_ENABLED] = 'Sponsor-Unterstützung nicht aktiviert.';
 $MANTIS_ERROR[ERROR_SPONSORSHIP_NOT_FOUND] = 'Sponsor %d nicht gefunden.';
 $MANTIS_ERROR[ERROR_SPONSORSHIP_AMOUNT_TOO_LOW] = 'Sponsorschaft (%s) liegt unter dem Mindestbetrag (%s).';
-$MANTIS_ERROR[ERROR_SPONSORSHIP_HANDLER_ACCESS_LEVEL_TOO_LOW] = 'Verwalter hat nicht die benötigten Zugangsrechte für gesponserte Probleme.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_HANDLER_ACCESS_LEVEL_TOO_LOW] = 'Bearbeiter hat nicht die benötigten Zugangsrechte für gesponserte Probleme.';
 $MANTIS_ERROR[ERROR_SPONSORSHIP_ASSIGNER_ACCESS_LEVEL_TOO_LOW] = 'Zugang verweigert: Zuweisung gesponserter Probleme erfordert höhere Nutzerrechte.';
 $MANTIS_ERROR[ERROR_SPONSORSHIP_SPONSOR_NO_EMAIL] = 'Sponsor hat keine Emailadresse angegeben. Bitte aktualisieren Sie Ihr Konto.';
 $MANTIS_ERROR[ERROR_CONFIG_OPT_INVALID] = 'Einstellung \'%s\' enthält ungültigen Wert \'%s\'';
@@ -229,7 +239,7 @@ $MANTIS_ERROR[ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_BUG_TOO_LOW] = "Zugang ver
 $MANTIS_ERROR[ERROR_RELATIONSHIP_SAME_BUG] = "Ein Problem kann nicht mit sich selbst in Beziehung gesetzt werden.";
 $MANTIS_ERROR[ERROR_SIGNUP_NOT_MATCHING_CAPTCHA] = 'Bestätigungsschlüssel nicht korrekt. Bitte versuchen Sie es noch einmal.';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_ENABLED] = 'Die "Passwort vergessen" Funktion ist nicht verfügbar.';
-$MANTIS_ERROR[ERROR_LOST_PASSWORD_NO_EMAIL_SPECIFIED] = 'Sie müssen eine Emailadresse angeben um Ihr Passwort zurücksetzen zu können.';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_NO_EMAIL_SPECIFIED] = 'Sie müssen eine Emailadresse angeben, um Ihr Passwort zurücksetzen zu können.';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_MATCHING_DATA] = 'Die angeforderte Information entspricht keinem registrierten Konto!';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_CONFIRM_HASH_INVALID] = 'Die Bestätigungs-URL ist ungültig oder wurde bereits verwendet. Bitte registrieren Sie sich erneut.';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_MAX_IN_PROGRESS_ATTEMPTS_REACHED] = 'Max. Anzahl der in Bearbeitung befindlichen Anfragen erreicht. Bitte setzen Sie sich mit Ihrem Systemadministrator in Verbindung.';
@@ -249,6 +259,7 @@ $s_prefix_for_deleted_users = 'Benutzer';
 
 $s_administrator = 'Administrator';
 $s_myself = 'Ich selbst';
+$s_default_access_level = 'Standard Zugangsrecht';
 
 # Enum Strings
 $s_access_levels_enum_string = '10:Betrachter,25:Reporter,40:Tester,55:Entwickler,70:Manager,90:Administrator';
@@ -272,12 +283,13 @@ $s_new_account_username = 'Benutzername: ';
 $s_new_account_message = 'Wenn Sie sich nicht registriert haben, ignorieren Sie diese Nachricht, es wird nichts passieren.' . "\n\n";
 $s_new_account_do_not_reply = 'NICHT AUF DIESE NACHRICHT ANTWORTEN';
 $s_new_account_email = 'E-Mail: ';
-$s_new_account_IP = 'Entfernte IP Adresse: ';
+$s_new_account_IP = 'Von IP Adresse: ';
 $s_new_account_signup_msg = 'Das folgende Konto wurde angelegt:';
 
-$s_reset_request_msg = 'Jemand (vermutlich Sie) hat einen Passwortwechsel durch Emailbestätigung angefordert. Wenn Sie es nicht waren, ignorieren Sie diese Nachricht, es wird nichts passieren.' . "\n\n" . 'Wenn Sie die Bestätigung angefordert haben, besuchen Sie die folgende URL um ihr Passwort zu ändern:';
-$s_reset_request_in_progress_msg = 'If you supplied the correct username and email address for your account, we will now have sent a confirmation message to that email address. Once the message has been received, follow the instructions provided to change the password on your account.';
+$s_reset_request_msg = 'Jemand (vermutlich Sie) hat einen Passwortwechsel durch Emailbestätigung angefordert. Wenn Sie es nicht waren, ignorieren Sie diese Nachricht, es wird nichts passieren.' . "\n\n" . 'Wenn Sie die Bestätigung angefordert haben, besuchen Sie die folgende URL, um ihr Passwort zu ändern:';
+$s_reset_request_in_progress_msg = 'Wenn Sie Benutzernamen und Email-Adresse für Ihr Konto richtig angegeben haben, senden wir Ihnen jetzt eine Bestätigungsmail an diese Adresse. Nach dem Erhalt der Meldung befolgen Sie bitte die Anweisungen, um das Passwort Ihres Kontos zu ändern.';
 
+$s_email_notification_title_for_status_bug_new = 'Das folgende Problem hat (erneut) den Status NEU';
 $s_email_notification_title_for_status_bug_feedback = 'Das folgende Problem benötigt Ihre Rückmeldung.';
 $s_email_notification_title_for_status_bug_acknowledged = 'Das folgende Problem wurde anerkannt.';
 $s_email_notification_title_for_status_bug_confirmed = 'Das folgende Problem wurde bestätigt.';
@@ -295,10 +307,18 @@ $s_email_notification_title_for_action_sponsorship_updated = 'Die Sponsorenschaf
 $s_email_notification_title_for_action_sponsorship_deleted = 'Die Sponsorenschaft des folgenden Problems wurde zurückgezogen.';
 
 $s_email_notification_title_for_action_bugnote_submitted = 'Eine Notiz wurde zu diesem Problem hinzugefügt.';
-$s_email_notification_title_for_action_relationship_added = "Eine neue BEZIEHUNG wurde dem folgenden Problem hinzugefügt.";
-$s_email_notification_title_for_action_relationship_deleted = "Eine BEZIEHUNG des folgenden Problems wurde gelöscht.";
-$s_email_notification_title_for_action_relationship_child_resolved = "Ein VERWANDTES Problem wurde behoben.";
-$s_email_notification_title_for_action_relationship_child_closed = "Ein VERWANDTES Problem wurde geschlossen.";
+$s_email_notification_title_for_action_duplicate_of_relationship_added = "Das folgende Problem wurde als DUPLIKAT VON Problem %s bestimmt.";
+$s_email_notification_title_for_action_has_duplicate_relationship_added = "Das Problem %s wurde als DUPLIKAT VON des folgenden Problems bestimmt.";
+$s_email_notification_title_for_action_related_to_relationship_added = "Das folgende Problem wurde als VERWANDT MIT Problem %s bestimmt.";
+$s_email_notification_title_for_action_dependant_on_relationship_added = "Das folgende Problem wurde als VORFAHRE VON Problem %s bestimmt.";
+$s_email_notification_title_for_action_blocks_relationship_added = "Das folgende Problem wurde als NACHKOMME VON Problem %s bestimmt.";
+$s_email_notification_title_for_action_duplicate_of_relationship_deleted = "Die Beziehung des folgenden Problems als DUPLIKAT VON Problem %s wurde aufgehoben.";
+$s_email_notification_title_for_action_has_duplicate_relationship_deleted = "Die Beziehung des Problems %s als DUPLIKAT VON des folgenden Problems wurde aufgehoben.";
+$s_email_notification_title_for_action_related_to_relationship_deleted = "Die Beziehung des folgenden Problems als VERWANDT MIT Problem %s wurde aufgehoben.";
+$s_email_notification_title_for_action_dependant_on_relationship_deleted = "Das folgende Problem ist nicht mehr VORFAHRE VON Problem %s.";
+$s_email_notification_title_for_action_blocks_relationship_deleted = "Das folgende Problem ist nicht mehr NACHKOMME VON Problem %s..";
+$s_email_notification_title_for_action_relationship_child_resolved = "Das VERWANDTE Problem %s wurde BEHOBEN.";
+$s_email_notification_title_for_action_relationship_child_closed = "Das VERWANDTE Problem %s wurde GESCHLOSSEN.";
 
 $s_email_reporter = 'Berichtet von';
 $s_email_handler = 'Zugewiesen an';
@@ -333,6 +353,7 @@ $s_username = 'Benutzername';
 $s_realname = 'Wirklicher Name';
 $s_email = 'E-Mail';
 $s_password = 'Passwort';
+$s_no_password_change = 'Das Passwort wird durch ein anderes System kontrolliert und kann daher hier nicht bearbeitet werden.';
 $s_confirm_password = 'Bestätige Passwort';
 $s_access_level = 'Zugangsberechtigung';
 $s_update_user_button = 'Benutzer aktualisieren';
@@ -470,6 +491,9 @@ $s_bug_reminder = 'Erinnerung senden';
 $s_reminder_sent_to = 'Erinnerung gesendet an';
 $s_bug_send_button = 'Absenden';
 $s_reminder = 'Erinnerung';
+$s_reminder_explain = 'Diese Notiz wird an die aufgeführten Empfänger gesandt, die eine Benachrichtigung zu diesem Problem wünschten.';
+$s_reminder_monitor = 'Diese Empfänger beginnen auch, das Problem zu beobachten. Sie können sich abmelden mit Klick auf den \'Beobachtung beenden\' Knopf.';
+$s_reminder_store = 'Diese Notiz wird mit dem Problem abgespeichert.';
 
 # bug_update.php
 $s_bug_updated_msg = 'Problemeintrag erfolgreich aktualisiert...';
@@ -586,6 +610,7 @@ $s_filter_button = 'Filter';
 $s_manage_users_link = 'Benutzer verwalten';
 $s_manage_projects_link = 'Projekte verwalten';
 $s_manage_custom_field_link = 'Benutzerdefinierte Felder';
+$s_permissions_summary_report = 'Rechte-Bericht';
 $s_create_new_account_link = 'Neues Konto erstellen';
 $s_projects_link = 'Projekte';
 $s_documentation_link = 'Dokumentation';
@@ -640,6 +665,7 @@ $s_categories = 'Kategorien';
 $s_add_category_button = 'Kategorie hinzufügen';
 $s_versions = 'Versionen';
 $s_add_version_button = 'Version hinzufügen';
+$s_add_and_edit_version_button = 'Add and Edit Version';
 $s_edit_link = 'Bearbeiten';
 $s_actions = 'Aktionen';
 $s_version = 'Version/Build';
@@ -799,6 +825,7 @@ $s_add_user_title = 'Benutzer zum Projekt hinzugefügt';
 $s_add_user_button = 'Benutzer hinzufügen';
 $s_project_selection_title = 'Projektauswahl';
 $s_remove_link = 'entfernen';
+$s_remove_all_link = 'Alle entfernen';
 
 # proj_user_update.php
 $s_updated_user_msg = 'Benutzer erfolgreich aktualisiert';
@@ -843,6 +870,7 @@ $s_signup_captcha_request = 'Geben Sie den Code ein, den Sie im Rahmen auf der r
 $s_signup_info = 'Nach dem Abschicken dieses Formulars und der Überprüfung Ihrer Antworten, wird Ihnen einen Bestätigungsmail an die angegebene Adresse geschickt.<br/>Benutzen Sie diese E-Mail um Ihr Konto zu aktivieren. Wenn Sie Ihr Konto nicht innerhalb von sieben Tagen freischalten wird das Konto entfernt.<br/>Sie müssen eine gültige E-Mail Adresse angeben um die Bestätigungsmail zu erhalten.';
 $s_signup_title = 'Anmeldung';
 $s_signup_button = 'Anmelden';
+$s_no_password_request = 'Ihr Passwort wird von einem anderen System verwaltet. Nehmen Sie Kontakt mit Ihrem Administrator auf.';
 
 # site_settings_edit_page.php
 $s_edit_site_settings_title = 'Eigenschaften bearbeiten';
@@ -986,7 +1014,7 @@ $s_custom_field_require_resolved = 'Erforderlich beim Beheben';
 $s_custom_field_require_closed = 'Erforderlich beim Schließen';
 
 $s_custom_field_sequence = 'Reihenfolge';
-$s_custom_field_type_enum_string = '0:Text,1:Zahlen,2:Gleitkomma Zahlen,3:Aufzählung,4:E-Mail,5:Checkbox,6:List,7:Multiselection list';
+$s_custom_field_type_enum_string = '0:Text,1:Zahlen,2:Gleitkomma Zahlen,3:Aufzählung,4:E-Mail,5:Kontrollkästchen,6:Liste,7:Mehrfachauswahl-Liste';
 
 $s_confirm_used_custom_field_deletion = 'Dieses Feld wird derzeit von mindestens einem Projekt verwendet. Wenn Sie fortfahren, werden alle Werte für dieses Feld dauerhaft   gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden. Um das Feld nicht zu löschen, klicken Sie bitten den "Zurück"-Knopf  in Ihrem Web-Browser. Um fortzufahren, klicken Sie bitten den "Feld löschen"-Knopf.';
 $s_confirm_custom_field_deletion = 'Möchten Sie dieses benutzerdefinierte Feld und alle zugehörigen Werte wirklich löschen?';
@@ -1032,14 +1060,85 @@ $s_add_new_relationship_button = "Hinzufügen";
 $s_this_bug = "Aktuelles Problem";
 $s_relationship_added = "Beziehung hinzugefügt";
 $s_relationship_deleted = "Beziehung gelöscht";
+$s_no_relationship = "no relationship";
+$s_relationship_replaced = "Beziehung ersetzt";
+$s_replace_relationship_button = "Ersetze";
+$s_replace_relationship_sure_msg = "Es besteht bereits eine Beziehung zwischen den Problemen. Wollen Sie sie ersetzen?";
+$s_relationship_with_parent = "Beziehung mit dem Vorfahren-Problem";
 $s_delete_relationship_button = "Löschen";
 $s_delete_relationship_sure_msg = "Sind Sie sicher, dass Sie diese Beziehung löschen wollen?";
 $s_relationship_warning_blocking_bugs_not_resolved = "Nicht alle Folgeprobleme sind bereits behoben oder geschlossen.";
 $s_relationship_warning_blocking_bugs_not_resolved_2 = "<b>ACHTUNG</b>. Nicht alle Folgeprobleme sind bereits behoben oder geschlossen.<br>Bevor Sie ein Grundproblem <b>beheben/schließen</b>, sollten alle seine Folgeprobleme behoben oder geschlossen werden.";
-$s_create_child_bug_button = "Nachkomme erstellen";
+$s_create_child_bug_button = "Klon erzeugen";
 $s_bug_cloned_to = "Problem dupliziert";
 $s_bug_created_from = "Problem angelegt von";
+# Relationship Graphs
+$s_viewing_bug_relationship_graph_title = "Beziehungs-Grafik";
+$s_relation_graph = "Grafik der Beziehungen";
+$s_dependency_graph = "Grafik der Abhängigkeiten";
+$s_vertical = "Vertikal";
+$s_horizontal = "Horizontal";
+$s_view_issue = "Problem ansehen";
 
 # Source Control Integration
 $s_checkin = 'Einchecken';
+
+# Pemissions report
+$s_perm_rpt_capability = 'Fähigkeiten';
+$s_view = 'Ansehen';
+$s_issues = 'PROBLEME';
+$s_report_issue = 'Problem melden';
+$s_update_issue = 'Problem aktualisieren';
+$s_monitor_issue = 'Problem beobachten';
+$s_handle_issue = 'Problem  bearbeiten';
+$s_move_issue = 'Problem verschieben';
+$s_delete_issue = 'Problem  löschen';
+$s_reopen_issue = 'Problem erneut öffnen';
+$s_view_private_issues = 'Private Probleme ansehen';
+$s_update_readonly_issues = 'Schreibgeschützte Probleme aktualisieren';
+$s_update_issue_status = 'Problemstatus aktualisieren';
+$s_set_view_status = 'Sichtbarkeit festlegen (Öffentlich oder Privat)';
+$s_update_view_status = 'Sichtbarkeit verändern (Öffentlich oder Privat)';
+$s_show_list_of_users_monitoring_issue = 'Liste der Nutzer anzeigen, die ein Problem beobachten';
+$s_notes = 'NOTIZEN';
+$s_add_notes = 'Notizen hinzufügen';
+$s_update_notes = 'Notizen aktualisieren';
+$s_delete_note = 'Notizen löschen';
+$s_view_private_notes = 'Private Notizen ansehen';
+$s_news = 'NACHRICHTEN';
+$s_view_private_news = 'Private Nachrichten ansehen';
+$s_manage_news = 'Nachrichten verwalten';
+$s_view_list_of_attachments = 'Liste der Anhänge ansehen';
+$s_download_attachments = 'Anhänge downloaden';
+$s_delete_attachments = 'Anhängelöschen';
+$s_upload_issue_attachments = 'Anhänge für Problem uploaden ';
+$s_filters = 'Filter';
+$s_save_filters = 'Filter speichern';
+$s_save_filters_as_shared = 'Filter als gemeinsame speichern';
+$s_use_saved_filters = 'Gespeicherte Filter nutzen';
+$s_create_project = 'Projekt anlegen';
+$s_delete_project = 'Projekt löschen';
+$s_manage_project = 'Projekt verwalten';
+$s_manage_user_access_to_project = 'Benutzerzugriff auf ein Projekt verwalten';
+$s_automatically_included_in_private_projects = 'Automatisch in private Projekte einbezogen';
+$s_project_documents = 'PROJEKT DOKUMENTE';
+$s_view_project_documents = 'Projekt Dokumente ansehen';
+$s_upload_project_documents = 'Projekt Dokumente uploaden';
+$s_link_custom_fields_to_projects = 'Angepaßte Felder mit Projekten verknüpfen';
+$s_sponsorships = 'SPONSORENSCHAFT';
+$s_view_sponsorship_details = 'Details der Sponsorenschaft ansehen';
+$s_view_sponsorship_total = 'Summe der Sponsorenschaft ansehen';
+$s_sponsor_issue = 'Sponsor für Problem';
+$s_assign_sponsored_issue = 'Gesponsortes Problem zuweisen';
+$s_handle_sponsored_issue = 'Gesponsortes Problem bearbeiten';
+$s_others = 'SONSTIGES';
+$s_see_email_addresses_of_other_users = 'Email-Adresse von Nutzern ansehen';
+$s_send_reminders = 'Erinnerungen versenden';
+$s_add_profiles = 'Profile hinzufügen';
+$s_notify_of_new_user_created = 'Benachrichtigung über neu angelegte Nutzer';
+$s_email_notification = 'EMAIL BENACHRICHTIGUNG';
+$s_status_changed_to = 'Statusänderungen nach';
+$s_email_on_deleted = 'Email bei Löschungen';
+$s_email_on_sponsorship_changed = 'Email bei geänderter Sponsorenschaft';
+$s_email_on_relationship_changed = 'Email bei geänderter Beziehung';
 ?>

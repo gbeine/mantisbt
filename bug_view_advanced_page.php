@@ -6,10 +6,9 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_view_advanced_page.php,v 1.61 2004-08-27 00:29:54 thraxisp Exp $
+	# $Id: bug_view_advanced_page.php,v 1.67 2004-10-25 19:59:12 marcelloscata Exp $
 	# --------------------------------------------------------
-?>
-<?php
+
 	require_once( 'core.php' );
 	
 	$t_core_path = config_get( 'core_path' );
@@ -20,8 +19,7 @@
 	require_once( $t_core_path.'compress_api.php' );
 	require_once( $t_core_path.'date_api.php' );
 	require_once( $t_core_path.'relationship_api.php' );
-?>
-<?php
+
 	$f_bug_id		= gpc_get_int( 'bug_id' );
 	$f_history		= gpc_get_bool( 'history', config_get( 'history_default_visible' ) );
 
@@ -37,6 +35,11 @@
 
 	html_page_top1( bug_format_summary( $f_bug_id, SUMMARY_CAPTION ) );
 	html_page_top2();
+
+	$t_access_level_needed = config_get( 'view_history_threshold' );
+	$t_can_view_history = access_has_bug_level( $t_access_level_needed, $f_bug_id );
+
+	$t_bugslist = gpc_get_cookie( config_get( 'bug_list_cookie' ), false );
 ?>
 
 <br />
@@ -46,7 +49,7 @@
 <tr>
 
 	<!-- Title -->
-	<td class="form-title" colspan="4">
+	<td class="form-title" colspan="<?php echo $t_bugslist ? '3' : '4' ?>">
 		<?php echo lang_get( 'viewing_bug_advanced_details_title' ) ?>
 
 		<!-- Jump to Bugnotes -->
@@ -63,8 +66,21 @@
 	<?php
 		}
 	?>
-
 	</td>
+
+	<!-- prev/next links -->
+	<?php if( $t_bugslist ) { ?>
+	<td class="center"><span class="small">
+		<?php 
+			$t_bugslist = explode( ',', $t_bugslist );
+			$t_index = array_search( $f_bug_id, $t_bugslist );
+			if( false !== $t_index ) {
+				if( isset( $t_bugslist[$t_index-1] ) ) print_bracket_link( 'bug_view_advanced_page.php?bug_id='.$t_bugslist[$t_index-1], '&lt;&lt;' ); 
+				if( isset( $t_bugslist[$t_index+1] ) ) print_bracket_link( 'bug_view_advanced_page.php?bug_id='.$t_bugslist[$t_index+1], '&gt;&gt;' ); 
+			}
+		?>
+	</span></td>
+	<?php } ?>
 
 	<!-- Links -->
 	<td class="right" colspan="2">
@@ -74,8 +90,10 @@
 			<span class="small"><?php print_bracket_link( 'bug_view_page.php?bug_id=' . $f_bug_id, lang_get( 'view_simple_link' ) ) ?></span>
 	<?php } ?>
 
+	<?php if ( $t_can_view_history ) { ?>
 		<!-- History -->
-		<span class="small"><?php print_bracket_link( 'bug_view_page.php?bug_id=' . $f_bug_id . '&amp;history=1#history', lang_get( 'bug_history' ) ) ?></span>
+		<span class="small"><?php print_bracket_link( 'bug_view_advanced_page.php?bug_id=' . $f_bug_id . '&amp;history=1#history', lang_get( 'bug_history' ) ) ?></span>
+	<?php } ?>
 
 		<!-- Print Bug -->
 		<span class="small"><?php print_bracket_link( 'print_bug_page.php?bug_id=' . $f_bug_id, lang_get( 'print' ) ) ?></span>

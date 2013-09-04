@@ -15,10 +15,12 @@
 	require_once( $t_core_dir . 'bugnote_api.php' );
 	require_once( $t_core_dir . 'user_api.php' );
 	require_once( $t_core_dir . 'project_api.php' );
+	require_once( $t_core_dir . 'file_api.php' );
 
 	# This page receives an E-Mail via POP3 and generates an Report
 
 	require_once( 'Net/POP3.php' );
+	require_once( 'Mail/mimeDecode.php' );
 
 	# --------------------
 	# Return mail account data for the specified project
@@ -161,7 +163,7 @@
 
 		foreach ($t_projects as $t_project) {
 			if ($t_project['pop3_categories']) {
-				$v_categories = mail_categories_get_all_rows( $t_project['pop3_categories'] );
+				$v_categories = mail_categories_get_all_rows( $t_project['id'] );
 				$v_accounts = array_merge($v_accounts, $v_categories);
 			} else {
 				array_push($v_accounts, $t_project);
@@ -213,14 +215,11 @@
 		$t_pop3_host = $p_account['pop3_host'];
 		$t_pop3_user = $p_account['pop3_user'];
 		$t_pop3_password = $p_account['pop3_pass'];
-
 		$t_pop3->connect($t_pop3_host, 110);
 		$t_pop3->login($t_pop3_user, $t_pop3_password);
 
 		for ($i = 1; $i <= $t_pop3->numMsg(); $i++) {
-			$t_mail = $t_pop3->getParsedHeaders($i);
-			$t_mail['X-Mantis-Body'] = $t_pop3->getBody($i);
-			$t_mail['X-Mantis-Complete'] = $t_pop3->getMsg($i);
+                        $t_mail = mail_parse_content( $t_pop3->getMsg($i) );
 			array_push($v_mails, $t_mail);
 			$t_pop3->deleteMsg($i);
 		}
@@ -228,6 +227,62 @@
 		$t_pop3->disconnect();
 		return $v_mails;
 	}
+
+	# --------------------
+	# return the mail parsed for Mantis
+	function mail_parse_content ( $p_mail ) {
+                $t_mail = array ();
+		$t_decoder = new Mail_mimeDecode($p_mail);
+                $t_params['include_bodies'] = true;
+                $t_params['decode_bodies']  = true;
+                $t_params['decode_headers'] = true;
+		$t_structure = $t_decoder->decode($t_params);
+                $t_mail['To'] = $t_structure->headers['to'];
+                $t_mail['From'] = $t_structure->headers['from'];
+                $t_mail['Subject'] = $t_structure->headers['subject'];
+                if (is_array($t_structure->parts))
+                {
+                    $t_parts = mail_parse_parts( $t_structure->parts );
+                }
+                else
+                {
+                    $t_parts = array ( mail_parse_part( $t_structure ) );
+                }
+                if ($t_parts[0]['Content-Type'] == 'text/plain') {
+                    $t_body = array_shift($t_parts);
+                }
+                else
+                {
+                    $t_body['Body'] = "It seems, there is no text... :-o";
+                }
+                $t_mail['X-Mantis-Parts'] = $t_parts;
+                $t_mail['X-Mantis-Body'] = $t_body['Body'];
+		$t_mail['X-Mantis-Complete'] = $p_mail;
+		
+		return $t_mail;
+	}
+
+	# --------------------
+	# return the mail parsed for Mantis
+	function mail_parse_parts ( $p_parts ) {
+                $t_parts = array ();
+                foreach ( $p_parts as $t_part ) {
+                    array_push($t_parts, mail_parse_part( $t_part ));
+                }
+                
+                return $t_parts;
+        }
+
+	# --------------------
+	# return the mail parsed for Mantis
+	function mail_parse_part ( $p_part ) {
+                $t_part = array ();
+                $t_part['Content-Type'] = $p_part->ctype_primary."/".$p_part->ctype_secondary;
+                $t_part['Name'] = $p_part->ctype_parameters['name'];
+                $t_part['Body'] = $p_part->body;
+
+                return $t_part;
+        }
 
 	# --------------------
 	# return the mailadress from the mail's 'From'
@@ -242,7 +297,6 @@
 	# --------------------
 	# return the a valid username from an email address
 	function mail_user_name_from_address ( $p_mailaddress ) {
-
 		return preg_replace("/[@\.-]/", '_', $p_mailaddress);
 	}
 
@@ -288,7 +342,17 @@
 
 		return $t_reporter_id;
 	}
-    
+
+	# --------------------
+	# Adds a file to a bug. Very dirty
+	function mail_add_file( $p_bug_id, $p_part ) {
+            $GLOBALS['_mail_file_'] = $p_part['Name'];
+            $t_file_name = '/tmp/'.$p_part['Name'];
+            file_put_contents($t_file_name, $p_part['Body']);
+            file_add($p_bug_id, $t_file_name,  $p_part['Name'], $p_part['Content-Type'], 'bug');
+            unlink($t_file_name);
+        }
+
 	# --------------------
 	# Adds a bug which is reported via email
 	# Taken from bug_report.php and 
@@ -320,7 +384,7 @@
 
 		$t_bug_data->reporter_id		= mail_get_user( $p_mail['From'] );
 
-		if (mail_is_a_bugnote($p_mail['Subject']))
+                if (mail_is_a_bugnote($p_mail['Subject']))
 		{
 			# Add a bug note
 			$t_bug_id = mail_get_bug_id_from_subject( $p_mail['Subject'] );
@@ -335,6 +399,10 @@
 			$t_bug_id = bug_create( $t_bug_data );
 			email_new_bug( $t_bug_id );
 		}
+                # Add files
+                foreach ($p_mail['X-Mantis-Parts'] as $part) {
+                    mail_add_file ( $t_bug_id, $part );
+                }
 
 	}
 

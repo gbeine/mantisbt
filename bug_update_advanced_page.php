@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_update_advanced_page.php,v 1.77 2004-08-27 00:29:54 thraxisp Exp $
+	# $Id: bug_update_advanced_page.php,v 1.83 2004-10-13 23:35:07 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -172,10 +172,17 @@
 		<?php echo lang_get( 'assigned_to' ) ?>
 	</td>
 	<td colspan="5">
+	<?php if ( access_has_project_level( config_get( 'update_bug_assign_threshold', config_get( 'update_bug_threshold' ) ) ) ) {
+	?>
 		<select name="handler_id">
 			<option value="0"></option>
 			<?php print_assign_to_option_list( $t_bug->handler_id, $t_bug->project_id ) ?>
 		</select>
+	<?php
+		} else {
+			echo user_get_name( $t_bug->handler_id );
+		}
+	?>
 	</td>
 
 </tr>
@@ -221,7 +228,9 @@
 		<?php echo lang_get( 'status' ) ?>
 	</td>
 	<td bgcolor="<?php echo get_status_color( $t_bug->status ) ?>">
-		<?php print_status_option_list( 'status', $t_bug->status ) ?>
+		<?php print_status_option_list( 'status', $t_bug->status, 
+						( $t_bug->reporter_id == auth_get_current_user_id() && 
+								( ON == config_get( 'allow_reporter_close' ) ) ), $t_bug->project_id ) ?>
 	</td>
 
 	<?php
@@ -376,7 +385,7 @@
 		<?php echo lang_get( 'summary' ) ?>
 	</td>
 	<td colspan="5">
-		<input type="text" name="summary" size="80" maxlength="128" value="<?php echo $t_bug->summary ?>" />
+		<input type="text" name="summary" size="105" maxlength="128" value="<?php echo $t_bug->summary ?>" />
 	</td>
 </tr>
 
@@ -387,7 +396,7 @@
 		<?php echo lang_get( 'description' ) ?>
 	</td>
 	<td colspan="5">
-		<textarea cols="60" rows="5" name="description" wrap="virtual"><?php echo $t_bug->description ?></textarea>
+		<textarea cols="80" rows="10" name="description" wrap="virtual"><?php echo $t_bug->description ?></textarea>
 	</td>
 </tr>
 
@@ -398,7 +407,7 @@
 		<?php echo lang_get( 'steps_to_reproduce' ) ?>
 	</td>
 	<td colspan="5">
-		<textarea cols="60" rows="5" name="steps_to_reproduce" wrap="virtual"><?php echo $t_bug->steps_to_reproduce ?></textarea>
+		<textarea cols="80" rows="10" name="steps_to_reproduce" wrap="virtual"><?php echo $t_bug->steps_to_reproduce ?></textarea>
 	</td>
 </tr>
 
@@ -409,7 +418,7 @@
 		<?php echo lang_get( 'additional_information' ) ?>
 	</td>
 	<td colspan="5">
-		<textarea cols="60" rows="5" name="additional_information" wrap="virtual"><?php echo $t_bug->additional_information ?></textarea>
+		<textarea cols="80" rows="10" name="additional_information" wrap="virtual"><?php echo $t_bug->additional_information ?></textarea>
 	</td>
 </tr>
 

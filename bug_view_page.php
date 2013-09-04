@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_view_page.php,v 1.65 2004-08-27 00:29:54 thraxisp Exp $
+	# $Id: bug_view_page.php,v 1.70 2004-10-17 00:14:27 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -34,7 +34,12 @@
 
 	$t_bug = bug_prepare_display( bug_get( $f_bug_id, true ) );
 
+	$t_access_level_needed = config_get( 'view_history_threshold' );
+	$t_can_view_history = access_has_bug_level( $t_access_level_needed, $f_bug_id );
+
 	compress_enable();
+
+	$t_bugslist = gpc_get_cookie( config_get( 'bug_list_cookie' ), false );
 ?>
 <?php html_page_top1( bug_format_summary( $f_bug_id, SUMMARY_CAPTION ) ) ?>
 <?php html_page_top2() ?>
@@ -46,7 +51,7 @@
 <tr>
 
 	<!-- Title -->
-	<td class="form-title" colspan="4">
+	<td class="form-title" colspan="<?php echo $t_bugslist ? '3' : '4' ?>">
 		<?php echo lang_get( 'viewing_bug_simple_details_title' ) ?>
 
 		<!-- Jump to Bugnotes -->
@@ -63,8 +68,21 @@
 	<?php
 		}
 	?>
-
 	</td>
+
+	<!-- prev/next links -->
+	<?php if( $t_bugslist ) { ?>
+	<td class="center"><span class="small"> 			
+		<?php 
+			$t_bugslist = explode( ',', $t_bugslist );
+			$t_index = array_search( $f_bug_id, $t_bugslist );
+			if( false !== $t_index ) {
+				if( isset( $t_bugslist[$t_index-1] ) ) print_bracket_link( 'bug_view_page.php?bug_id='.$t_bugslist[$t_index-1], '&lt;&lt;' ); 
+				if( isset( $t_bugslist[$t_index+1] ) ) print_bracket_link( 'bug_view_page.php?bug_id='.$t_bugslist[$t_index+1], '&gt;&gt;' ); 
+			}
+		?>
+	</span></td>
+	<?php } ?>
 
 	<!-- Links -->
 	<td class="right" colspan="2">
@@ -74,8 +92,10 @@
 		<span class="small"><?php print_bracket_link( 'bug_view_advanced_page.php?bug_id=' . $f_bug_id, lang_get( 'view_advanced_link' ) )?></span>
 	<?php }?>
 
+	<?php if ( $t_can_view_history ) { ?>
 		<!-- History -->
 		<span class="small"><?php print_bracket_link( 'bug_view_page.php?bug_id=' . $f_bug_id . '&amp;history=1#history', lang_get( 'bug_history' ) ) ?></span>
+	<?php } ?>
 
 		<!-- Print Bug -->
 		<span class="small"><?php print_bracket_link( 'print_bug_page.php?bug_id=' . $f_bug_id, lang_get( 'print' ) ) ?></span>

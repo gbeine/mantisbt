@@ -9,11 +9,11 @@
 	# Japanese: Seiji Sogabe, sogabe@alles.or.jp
 	# Japanese: Tadashi Jokagi, elf2000@users.sourceforge.net
 	# -------------------------------------------------
-	# $Revision: 1.60 $
+	# $Revision: 1.65 $
 	# $Author: bigbadger $
-	# $Date: 2004-08-26 17:40:57 $
+	# $Date: 2004-11-03 22:04:57 $
 	#
-	# $Id: strings_japanese_euc.txt,v 1.60 2004-08-26 17:40:57 bigbadger Exp $
+	# $Id: strings_japanese_euc.txt,v 1.65 2004-11-03 22:04:57 bigbadger Exp $
 	###########################################################################
 ?>
 <?php
@@ -41,7 +41,7 @@ $s_print_all_bug_page_link = '░ь═ў░ї║■';
 $s_csv_export = 'CSV еиепе╣е▌б╝е╚';
 $s_login_anonymously = 'е▓е╣е╚еэе░едеє';
 $s_anonymous = '╞┐╠╛';
-$s_jump_to_bugnotes = 'е│есеєе╚─╔▓├';
+$s_jump_to_bugnotes = 'е│есеєе╚';
 $s_public_project_msg = '╕°│ле╫еэе╕езепе╚д╟д╣бг┴┤ецб╝е╢б╝д╬евепе╗е╣дм▓─╟╜д╟д╣бг';
 $s_private_project_msg = '╚є╕°│ле╫еэе╕езепе╚д╟д╣бг┤╔═¤╝╘бже╫еэе╕езепе╚╗▓▓├╝╘д╬евепе╗е╣дм▓─╟╜д╟д╣бг';
 $s_access_level_project = 'евепе╗е╣╕в(е╫еэе╕езепе╚)';
@@ -71,11 +71,11 @@ $s_bug_relationships = '┤╪╧в';
 $s_empty_password_sure_msg = 'ецб╝е╢б╝д╬е╤е╣еяб╝е╔дм╢їд╟д╣дмдшдэд╖ддд╟д╣длбг';
 $s_empty_password_button = '╢їд╬е╤е╣еяб╝е╔д╬╗╚═╤';
 
-$s_duplicate_of = "╩г└╜";
-$s_has_duplicate = "╩г└╜╜ъ╗¤";
-$s_related_to = "┤╪╧в╚╓╣ц";
-$s_dependant_on = "┐╞╚╓╣ц";
-$s_blocks = "╗╥╚╓╣ц";
+$s_duplicate_of = "╜┼╩г";
+$s_has_duplicate = "╜┼╩г╜ъ╗¤";
+$s_related_to = "┤╪╧в";
+$s_dependant_on = "╗╥╚╓╣ц";
+$s_blocks = "┐╞╚╓╣ц";
 
 $s_new_bug = '┐╖╡м▓■┴▒═╫╡с';
 $s_bugnote_added = 'е│есеєе╚─╔▓├';
@@ -84,7 +84,7 @@ $s_bugnote_deleted = 'е│есеєе╚║я╜№';
 $s_summary_updated = '░ь═ў╣╣┐╖';
 $s_description_updated = '╛▄║┘╣╣┐╖';
 $s_additional_information_updated = '─╔▓├╛Ё╩є╣╣┐╖';
-$s_steps_to_reproduce_updated = '╩г└╜д╬╝ъ├╩дЄ╣╣┐╖д╖д▐д╖д┐бг';
+$s_steps_to_reproduce_updated = '╜┼╩гд╬╝ъ├╩дЄ╣╣┐╖д╖д▐д╖д┐бг';
 $s_file_added = 'е╒ебедеы─╔▓├: ';
 $s_file_deleted = 'е╒ебедеы║я╜№: ';
 $s_bug_deleted = '▓■┴▒═╫╡с║я╜№';
@@ -139,6 +139,15 @@ $s_priority_link = '═е└ш┼┘╩╠';
 $s_severity_link = '╜┼═╫┼┘╩╠';
 $s_category_link = 'еле╞е┤еъ╩╠';
 $s_resolution_link = '╩м└╧╛ї╢╖╩╠';
+$s_legend_still_open = 'Still Open';
+$s_legend_resolved = 'Resolved';
+$s_legend_assigned = 'Assigned';
+$s_legend_total = 'Total';
+$s_legend_opened = 'Opened';
+$s_legend_closed = 'Closed';
+$s_legend_reported = 'Reported';
+$s_cumulative = 'Cumulative';
+$s_not_enough_data = '╜╜╩мд╩е╟б╝е┐дмд╩ддд╬д╟бве░еще╒дЄ║ю└од╟днд▐д╗дєбг';
 
 # print_all_bug_page.php : display selected bugs
 $s_hide_button = '┴к┬Є╣р╠▄д╬д▀╔╜╝ид╣ды';
@@ -176,6 +185,7 @@ $MANTIS_ERROR[ERROR_BUGNOTE_NOT_FOUND] = 'е│есеєе╚дмдвдъд▐д╗дєбг';
 $MANTIS_ERROR[ERROR_PROJECT_NOT_FOUND] = 'е╫еэе╕езепе╚дмдвдъд▐д╗дєбг';
 $MANTIS_ERROR[ERROR_DB_FIELD_NOT_FOUND] = 'е╟б╝е┐е┘б╝е╣д╬╣р╠▄б╓%sб╫дмдвдъд▐д╗дєбг';
 $MANTIS_ERROR[ERROR_FTP_CONNECT_ERROR] = 'FTP е╡б╝е╨д╦└▄┬│д╟днд▐д╗дєбг';
+$MANTIS_ERROR[ERROR_HANDLER_ACCESS_TOO_LOW]	 = 'Issue handler does not have sufficient access rights to handle issue at this status.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_NOT_UNIQUE] = 'е╫еэе╕езепе╚╠╛д╧┤√д╦╗╚═╤д╡дьд╞ддд▐д╣бг╠сд├д╞░удже╫еэе╕езепе╚╠╛дЄ╞■╬╧д╖д╞▓╝д╡ддбг';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_INVALID] = 'е╫еэе╕езепе╚╠╛дм╠╡╕·д╟д╣бге╫еэе╕езепе╚╠╛д╧е╓ещеєепд╟д╧ддд▒д▐д╗дєбг';
 $MANTIS_ERROR[ERROR_USER_NOT_FOUND]	 = 'ецб╝е╢б╝дмдвдъд▐д╗дєбг';
@@ -246,6 +256,7 @@ $s_prefix_for_deleted_users = 'user';
 
 $s_administrator = '┤╔═¤╝╘';
 $s_myself = '╝л┐╚';
+$s_default_access_level = 'е╟е╒ейеые╚д╬евепе╗е╣╕в';
 
 # Enum Strings
 $s_access_levels_enum_string = '10:╗▓╛╚,25:┼╨╧┐,40:╩╘╜╕,55:│л╚п╝╘,70:е▐е═б╝е╕еу,90:┤╔═¤╝╘';
@@ -275,6 +286,7 @@ $s_new_account_signup_msg = '╝бд╬евележеєе╚дм║ю└од╡дьд▐д╖д┐:';
 $s_reset_request_msg = '├пдл(┐ф┬м╛хдвд╩д┐)дм┼┼╗╥есб╝еы╬й╛┌дЄ─╠д╕д╞е╤е╣еяб╝е╔╩╤╣╣дЄ═╫╡сд╖д▐д╖д┐бгд│дьдмдвд╩д┐д╟д╩длд├д┐╛ь╣чд╧бвд│д╬есе├е╗б╝е╕дЄ╠╡╗ыд╖д╞дпд└д╡ддбгд╜джд╣дьд╨бв▓┐дт╡пд│дъд▐д╗дєбг' . "\n\n" . 'д│д╬═╫╡сдЄ│╬╟зд╖бвдвд╩д┐д╬е╤е╣еяб╝е╔дЄ╩╤╣╣д╣дыд┐дсд╦╝бд╬URLдЄ╦мд╞дпд└д╡дд:';
 $s_reset_request_in_progress_msg = 'дтд╖двд╩д┐дм└╡│╬д╩ецб╝е╢б╝╠╛д╚┼┼╗╥есб╝еыеве╔еье╣дЄ╞■╬╧д╖д┐╛ь╣чбв╗фд┐д┴д╧║гд╣д░бвд╜д╬┼┼╗╥есб╝еыеве╔еье╣д╪│╬╟зесе├е╗б╝е╕дЄ┴ўдыд╟д╖дчджбг░ь─╠д╬есе├е╗б╝е╕дм╝їд▒╝шдщдьд┐д╩дщд╨бвдвд╩д┐д╬евележеєе╚╛хд╬е╤е╣еяб╝е╔дЄ╩╤╣╣д╣дыд┐дсд╬─є╢бд╡дьд┐еъеєепд╦╜╛д├д╞дпд└д╡ддбг';
 
+$s_email_notification_title_for_status_bug_new = 'The following issue is now in status NEW (again)';
 $s_email_notification_title_for_status_bug_feedback = '╝бд╬▓■┴▒═╫╡сд╦д─ддд╞бвдтд├д╚╛Ё╩єдм╔м═╫д╟д╣бг';
 $s_email_notification_title_for_status_bug_acknowledged = '╝бд╬▓■┴▒═╫╡сд╬╞т═╞дм│╬╟зд╡дьд▐д╖д┐бг';
 $s_email_notification_title_for_status_bug_confirmed = '╝бд╬▓■┴▒═╫╡сд╬║╞╕╜дЄ│╬╟зд╖д▐д╖д┐бг';
@@ -288,19 +300,27 @@ $s_email_notification_title_for_action_bug_reopened = '╝бд╬▓■┴▒═╫╡сдм║╣╠сд╡дьд▐д
 $s_email_notification_title_for_action_bug_deleted = '╝бд╬▓■┴▒═╫╡сдм║я╜№д╡дьд▐д╖д┐бг';
 $s_email_notification_title_for_action_bug_updated = '╝бд╬▓■┴▒═╫╡сдм╣╣┐╖д╡дьд▐д╖д┐бг';
 $s_email_notification_title_for_action_sponsorship_added = '╝бд╬▓■┴▒═╫╡сдм╕х▒чд╡дьд▐д╖д┐бг';
-$s_email_notification_title_for_action_sponsorship_updated = '▓╝╡н▓■┴▒═╫╡сд╬╕х▒чдм╜д└╡д╡дьд▐д╖д┐бг';
-$s_email_notification_title_for_action_sponsorship_deleted = '▓╝╡н▓■┴▒═╫╡сд╬╕х▒чд╧└д┤╓╬едьд╖д╞ддд▐д╣бг';
+$s_email_notification_title_for_action_sponsorship_updated = '╝бд╬▓■┴▒═╫╡сд╬╕х▒чдм╜д└╡д╡дьд▐д╖д┐бг';
+$s_email_notification_title_for_action_sponsorship_deleted = '╝бд╬▓■┴▒═╫╡сд╬╕х▒чд╧└д┤╓╬едьд╖д╞ддд▐д╣бг';
 
 $s_email_notification_title_for_action_bugnote_submitted = 'е│есеєе╚дм─╔▓├д╡дьд▐д╖д┐бг';
-$s_email_notification_title_for_action_relationship_added = "┐╖д╖дд┤╪╧вд╧▓╝╡н▓■┴▒═╫╡сд╦▓├дидщдьд▐д╖д┐бг";
-$s_email_notification_title_for_action_relationship_deleted = "┤╪╧вд╧▓╝╡н▓■┴▒═╫╡сдлдщ║я╜№д╡дьд▐д╖д┐бг";
-$s_email_notification_title_for_action_relationship_child_resolved = "┤╪╧в▓■┴▒═╫╡сд╧▓Є╖шд╖д▐д╖д┐бг";
-$s_email_notification_title_for_action_relationship_child_closed = "┤╪╧в▓■┴▒═╫╡сд╧╩─д╕д▐д╖д┐бг";
+$s_email_notification_title_for_action_duplicate_of_relationship_added = "╝бд╬▓■┴▒═╫╡сдмбв▓■┴▒═╫╡с%sд╬╜┼╩г▓■┴▒═╫╡сд╦└▀─ъд╡дьд▐д╖д┐бг";
+$s_email_notification_title_for_action_has_duplicate_relationship_added = "▓■┴▒═╫╡с%sдмбв╝бд╬▓■┴▒═╫╡сд╬╜┼╩г▓■┴▒═╫╡сд╦└▀─ъд╡дьд▐д╖д┐бг";
+$s_email_notification_title_for_action_related_to_relationship_added = "╝бд╬▓■┴▒═╫╡сдмбв▓■┴▒═╫╡с%sд╚┤╪╧в╔╒д▒дщдьд▐д╖д┐бг";
+$s_email_notification_title_for_action_dependant_on_relationship_added = "╝бд╬▓■┴▒═╫╡сдмбв▓■┴▒═╫╡с%sд╬┐╞д╦└▀─ъд╡дьд▐д╖д┐бг";
+$s_email_notification_title_for_action_blocks_relationship_added = "╝бд╬▓■┴▒═╫╡сдмбв▓■┴▒═╫╡с%sд╬╗╥д╦└▀─ъд╡дьд▐д╖д┐бг";
+$s_email_notification_title_for_action_duplicate_of_relationship_deleted = "╝бд╬▓■┴▒═╫╡сдмбв▓■┴▒═╫╡с%sд╬╜┼╩г▓■┴▒═╫╡сдлдщ│░д╡дьд▐д╖д┐бг";
+$s_email_notification_title_for_action_has_duplicate_relationship_deleted = "▓■┴▒═╫╡с%sд╧бв╝бд╬▓■┴▒═╫╡сд╬╜┼╩г▓■┴▒═╫╡сдлдщ│░д╡дьд▐д╖д┐бг";
+$s_email_notification_title_for_action_related_to_relationship_deleted = "╝бд╬▓■┴▒═╫╡сдмбв▓■┴▒═╫╡с%sд╬┤╪╧вдлдщ│░д╡дьд▐д╖д┐бг";
+$s_email_notification_title_for_action_dependant_on_relationship_deleted = "╝бд╬▓■┴▒═╫╡сдмбв▓■┴▒═╫╡с%sд╬┐╞длдщ│░д╡дьд▐д╖д┐бг";
+$s_email_notification_title_for_action_blocks_relationship_deleted = "╝бд╬▓■┴▒═╫╡сдмбв▓■┴▒═╫╡с%sд╬╗╥длдщ│░д╡дьд▐д╖д┐бг";
+$s_email_notification_title_for_action_relationship_child_resolved = "┤╪╧в╔╒д▒дщдьд┐▓■┴▒═╫╡с%sдм▓Є╖шд╡дьд▐д╖д┐бг";
+$s_email_notification_title_for_action_relationship_child_closed = "┤╪╧в╔╒д▒дщдьд┐▓■┴▒═╫╡с%sдм┤░╬╗д╖д▐д╖д┐бг";
 
 $s_email_reporter = '┼╨╧┐╝╘';
 $s_email_handler = '├┤┼Ў╝╘';
 $s_email_project = 'е╫еэе╕езепе╚';
-$s_email_bug = '═╫╦╛╚╓╣ц(ID)';
+$s_email_bug = '╚╓╣ц(ID)';
 $s_email_category = 'еле╞е┤еъ';
 $s_email_reproducibility = '║╞╕╜└н';
 $s_email_severity = '╜┼═╫┼┘';
@@ -330,6 +350,7 @@ $s_username = 'ецб╝е╢б╝╠╛';
 $s_realname = '╦▄╠╛';
 $s_email = '┼┼╗╥есб╝еы';
 $s_password = 'е╤е╣еяб╝е╔';
+$s_no_password_change = 'е╤е╣еяб╝е╔д╧┬╛д╬е╖е╣е╞ерд╟┤╔═¤д╡дьд╞ддд▐д╣д╬д╟бвд│д│д╟д╧╩╘╜╕д╟днд▐д╗дєбг';
 $s_confirm_password  = 'е╤е╣еяб╝е╔(│╬╟з)';
 $s_access_level = 'евепе╗е╣╕в';
 $s_update_user_button = '╣╣┐╖';
@@ -346,7 +367,7 @@ $s_with_minimum_severity = '┬╨╛▌д╬║╟╛о╜┼═╫┼┘';
 $s_bugnote_order = 'е│есеєе╚е╜б╝е╚╜ч╜°';
 $s_bugnote_order_asc = '╛║╜ч';
 $s_bugnote_order_desc = '╣▀╜ч';
-$s_email_on_new = '┐╖╡м═╫╦╛─╠├╬есб╝еы';
+$s_email_on_new = '┐╖╡м▓■┴▒═╫╡с─╠├╬есб╝еы';
 $s_email_on_assigned = '├┤┼Ў╝╘╖ш─ъ─╠├╬есб╝еы';
 $s_email_on_feedback = 'е╒егб╝е╔е╨е├еп─╠├╬есб╝еы';
 $s_email_on_resolved = '╝┬┴ї─╠├╬есб╝еы';
@@ -467,6 +488,9 @@ $s_bug_reminder = 'еъе▐едеєе└б╝дЄ┴ўды';
 $s_reminder_sent_to = 'еъе▐едеєе└б╝д╬┴ў┐о';
 $s_bug_send_button = '┴ў┐о';
 $s_reminder = '┴ў┐о╞т═╞';
+$s_reminder_explain = '┴ў┐о╞т═╞д╧бвд│д╬▓■┴▒═╫╡сд╬е╒егб╝е╔е╨е├епдЄ═╫╡сд╣ды╝ї╝ш┐═д╦┴ўдщдьд▐д╣бг';
+$s_reminder_monitor = '╝ї╝ш┐═д╧бвд│д╬▓■┴▒═╫╡сд╬┤╞╗ыецб╝е╢д╦─╔▓├д╡дьд▐д╣бг┤╞╗ыдЄ╗▀дсды╛ь╣чд╧бвб╓┤╞╗ы╜к╬╗б╫е▄е┐еєдЄ▓бд╖д▐д╣бг';
+$s_reminder_store = '┴ў┐о╞т═╞д╧бвд│д╬▓■┴▒═╫╡сд╦─╔▓├д╡дьд▐д╣бг';
 
 # bug_update.php
 $s_bug_updated_msg = '▓■┴▒═╫╡сдм└╡╛яд╦╣╣┐╖д╡дьд▐д╖д┐бг';
@@ -556,7 +580,7 @@ $s_here = 'Here';
 $s_lost_password_title = "е╤е╣еяб╝е╔еъе╗е├е╚";
 $s_lost_password_done_title = "е╤е╣еяб╝е╔д╬есе├е╗б╝е╕дЄ┴ў┐од╖д▐д╖д┐бг";
 $s_lost_password_subject = "е╤е╣еяб╝е╔еъе╗е├е╚";
-$s_lost_password_info = "двд╩д┐д╬╝║дядьд┐е╤е╣еяб╝е╔дЄ▓є╔№д╡д╗дыд┐дсд╦бвевележеєе╚д╬╠╛┴░дкдшд╙┼┼╗╥есб╝еыеве╔еье╣дЄ╢б╡ыд╖д╞дпд└д╡ддбг<br /><br />е╟б╝е┐дм═н╕·д╩евележеєе╚д╦┴ъ┼Ўд╣дьд╨бвевележеєе╚д╬д┐дсд╬│╬╟зе│б╝е╔дЄ┤▐др┼┼╗╥есб╝еыд╦дшд├д╞╞├╩╠д╬ URL дЄ┴ўдщдьдыд╟д╖дчджбгдвд╩д┐д╬е╤е╣еяб╝е╔дЄ╩╤╣╣д╣дыд┐дсд╦д│д╬еъеєепд╦╜╛д├д╞дпд└д╡ддбг";
+$s_lost_password_info = "д╩дпд╖д┐е╤е╣еяб╝е╔дЄ╕╡д╦╠сд╣д┐дсд╦бвевележеєе╚д╬╠╛┴░дкдшд╙┼┼╗╥есб╝еыеве╔еье╣дЄ╞■╬╧д╖д╞дпд└д╡ддбг<br /><br />е╟б╝е┐дм═н╕·д╩евележеєе╚д╦┴ъ┼Ўд╣дьд╨бв╞├╩╠д╩URLдЄбвевележеєе╚д╬д┐дсд╬│╬╟зе│б╝е╔дЄ┤▐др┼┼╗╥есб╝еыд╟┴ўдъд▐д╣бгд╜д╬еъеєепд╦╜╛д├д╞бвдвд╩д┐д╬е╤е╣еяб╝е╔дЄ╩╤╣╣д╖д╞дпд└д╡ддбг";
 $s_lost_password_confirm_hash_OK = "двд╩д┐д╬│╬╟зд╧╝ї═¤д╡дьд▐д╖д┐бге╤е╣еяб╝е╔дЄ╣╣┐╖д╖д╞дпд└д╡ддбг";
 
 # main_page.php
@@ -584,6 +608,7 @@ $s_filter_button = '╔╜╝и';
 $s_manage_users_link = 'ецб╝е╢б╝┤╔═¤';
 $s_manage_projects_link = 'е╫еэе╕езепе╚┤╔═¤';
 $s_manage_custom_field_link = 'еле╣е┐ер╣р╠▄┤╔═¤';
+$s_permissions_summary_report = '╕в╕┬░ь═ў';
 $s_create_new_account_link = 'евележеєе╚║ю└о';
 $s_projects_link = 'е╫еэе╕езепе╚';
 $s_documentation_link = 'е╔енехесеєе╚';
@@ -638,6 +663,7 @@ $s_categories = 'еле╞е┤еъ';
 $s_add_category_button = 'еле╞е┤еъд╬─╔▓├';
 $s_versions = 'е╨б╝е╕ечеє';
 $s_add_version_button = 'е╨б╝е╕ечеєд╬─╔▓├';
+$s_add_and_edit_version_button = 'е╨б╝е╕ечеєдЄ─╔▓├д╖д╞╩╘╜╕';
 $s_edit_link = '╩╘╜╕';
 $s_actions = '┴р║ю';
 $s_version = 'е╨б╝е╕ечеє/е╙еые╔';
@@ -797,6 +823,7 @@ $s_add_user_title = 'е╫еэе╕езепе╚д╪д╬ецб╝е╢б╝дЄ─╔▓├';
 $s_add_user_button = '─╔▓├';
 $s_project_selection_title = 'е╫еэе╕езепе╚дЄ┴к┬Є';
 $s_remove_link = 'е╫еэе╕езепе╚длдщ║я╜№';
+$s_remove_all_link = '┴┤░ў║я╜№';
 
 # proj_user_update.php
 $s_updated_user_msg = 'ецб╝е╢б╝дм╣╣┐╖д╡дьд▐д╖д┐бг';
@@ -841,6 +868,7 @@ $s_signup_captcha_request = '▒ж┬ж╛хд╬╚вд╬├цд╟╔╜╝ид╡дьд┐е│б╝е╔дЄ╞■╬╧д╖д▐д╣бг';
 $s_signup_info = 'д│д╬е╒ейб╝ерд╬┤░└одкдшд╙▓є┼·д╬│╬╟зд╧бв╗╪─ъд╖д┐┼┼╗╥есб╝еыеве╔еье╣д╪│╬╟з┼┼╗╥есб╝еыдм┴ўдщдьдыд╟д╖дчджбг<br />│╬╟зесб╝еыдЄ═╤дддыд│д╚д╟двд╩д┐д╬евележеєе╚д╧═н╕·д╦д╩дъд▐д╣бгдтд╖двд╩д┐дм 7 ╞№░╩╞тд╦│╬╟здЄ╣╘дяд╩д▒дьд╨бвд│д╬┐╖д╖дд┼╨╧┐евележеєе╚д╧╜№╡юд╡дьдыдлдтд╖дьд▐д╗дєбг<br />евележеєе╚│╬╟з┼┼╗╥есб╝еыдЄ╝їд▒╝шдыд┐дсд╦═н╕·д╩┼┼╗╥есб╝еыеве╔еье╣дЄ╗╪─ъд╖д╩д▒дьд╨д╩дъд▐д╗дєбг';
 $s_signup_title = 'ецб╝е╢б╝┼╨╧┐';
 $s_signup_button = '┼╨╧┐';
+$s_no_password_request = 'е╤е╣еяб╝е╔д╧┬╛д╬е╖е╣е╞ерд╟┤╔═¤д╡дьд╞ддд▐д╣бге╖е╣е╞ер┤╔═¤╝╘д╦│╬╟зд╖д╞дпд└д╡ддбг';
 
 # site_settings_edit_page.php
 $s_edit_site_settings_title = 'е╡еде╚└▀─ъд╬╩╘╜╕';
@@ -915,12 +943,12 @@ $s_query_deleted = 'е╒егеые┐б╝дЄ║я╜№д╖д▐д╖д┐бг';
 $s_save_query = '╕╜║▀д╬е╒егеые┐б╝дЄ╩▌┬╕';
 $s_reset_query = 'е╒егеые┐б╝еъе╗е├е╚';
 $s_query_name = 'е╒егеые┐б╝╠╛';
-$s_query_exists = 'д│д╬╛▄║┘╛╚▓ёд╧┤√д╦┬╕║▀д╣дыдшджд╦╕лдид▐д╣бг';
-$s_query_dupe_name = '╩╠д╬╛╚▓ёдм┤√д╦д│д╬╠╛┴░дЄ╗¤д├д╞ддд▐д╣бгд│д╬╛╚▓ёд╦╩╠д╬╠╛┴░дЄ┴кдєд╟дпд└д╡ддбг';
-$s_query_blank_name = '╠╛┴░д╬д╩дде╒егеые┐б╝дЄ╩▌┤╔д╣дыд│д╚дмд╟днд▐д╗дєбгд╜дьдЄ╩▌┬╕д╣ды┴░д╦д│д╬е╒егеые┐б╝д╦╠╛┴░дЄ═┐дид╞дпд└д╡ддбг';
-$s_query_store_error = 'д│д╬╛╥▓Ёд╬╩▌┬╕д╦╝║╟╘д╖д▐д╖д┐бг';
+$s_query_exists = 'д│д╬е╒егеые┐б╝д╧┤√д╦┬╕║▀д╣дыдшджд╦╕лдид▐д╣бг';
+$s_query_dupe_name = '╩╠д╬е╒егеые┐б╝дм┤√д╦д│д╬╠╛┴░дЄ╗¤д├д╞ддд▐д╣бг╩╠д╬╠╛┴░дЄ┴кдєд╟дпд└д╡ддбг';
+$s_query_blank_name = '╠╛┴░д╬д╩дде╒егеые┐б╝дЄ╩▌┤╔д╣дыд│д╚дмд╟днд▐д╗дєбг╩▌┬╕д╣ды┴░д╦д│д╬е╒егеые┐б╝д╦╠╛┴░дЄд─д▒д╞дпд└д╡ддбг';
+$s_query_store_error = 'д│д╬е╒егеые┐б╝д╬╩▌┬╕д╦╝║╟╘д╖д▐д╖д┐бг';
 $s_open_queries = 'е╒егеые┐б╝┤╔═¤';
-$s_query_delete_msg = 'д│д╬╛╚▓ёдЄ╦▄┼Ўд╦║я╜№д╖д▐д╣дл?';
+$s_query_delete_msg = 'д│д╬е╒егеые┐б╝дЄ╦▄┼Ўд╦║я╜№д╖д▐д╣дл?';
 
 # view_bug_advanced_page.php
 $s_view_simple_link = '┤╩├▒д╩╔╜╝и';
@@ -993,9 +1021,9 @@ $s_field_delete_button = '╣р╠▄д╬║я╜№';
 $s_hide_status = '╚є╔╜╝ид╦д╣дые╣е╞б╝е┐е╣';
 $s_filter_closed = '┤░╬╗';
 $s_filter_resolved = '▓Є╖ш║╤';
-$s_hide_closed = '╩─д╕д┐дтд╬дЄ▒гд╣';
-$s_hide_resolved = '▓Є╖шдЄ▒гд╣';
-$s_and_above = 'And Above';
+$s_hide_closed = '┤░╬╗дЄ▒гд╣';
+$s_hide_resolved = '▓Є╖ш║╤дЄ▒гд╣';
+$s_and_above = 'д╚д╜дь░╩╛х';
 $s_advanced_filters = '╣т┼┘д╩е╒егеые┐б╝';
 $s_simple_filters = '┤╩├▒д╩е╒егеые┐б╝';
 $s_monitored_by = '┤╞╗ы╝╘';
@@ -1027,17 +1055,87 @@ $s_http_auth_realm = "Mantis еэе░едеє";
 $s_bug = "▓■┴▒═╫╡с";
 $s_add_new_relationship = "┐╖╡м┤╪╧в";
 $s_add_new_relationship_button = "─╔▓├";
-$s_this_bug = "╕╜║▀д╬▓■┴▒═╫╡с";
+$s_this_bug = "╕╜║▀д╬▓■┴▒═╫╡сд╬";
 $s_relationship_added = "┤╪╧вдЄ─╔▓├д╖д▐д╖д┐бг";
 $s_relationship_deleted = "┤╪╧вдЄ║я╜№д╖д▐д╖д┐бг";
+$s_no_relationship = "┤╪╧в╠╡д╖";
+$s_relationship_replaced = "┤╪╧вдЄ║╣┬╪дид▐д╖д┐бг";
+$s_replace_relationship_button = "║╣┬╪ди";
+$s_replace_relationship_sure_msg = "┤√д╦┼Ў│║▓■┴▒═╫╡с┤╓д╦┤╪╧вдм└▀─ъд╡дьд╞ддд▐д╣бг║╣д╖┬╪дид╞дтдшдэд╖ддд╟д╣длбг?";
+$s_relationship_with_parent = "╩г└╜╕╡д╧";
 $s_delete_relationship_button = "║я╜№";
 $s_delete_relationship_sure_msg = "╦▄┼Ўд╦д│д╬┤╪╧вдЄ║я╜№д╖д▐д╣дл?";
-$s_relationship_warning_blocking_bugs_not_resolved = "д│д╬▓■┴▒═╫╡сд╬д╣д┘д╞д╬╗╥д╧д▐д└▓Є╖шдл╩─д╕дщдьд╞дддыд╚д╧╕┬дъд▐д╗дєбг";
-$s_relationship_warning_blocking_bugs_not_resolved_2 = "<b>├э░╒</b> д│д╬▓■┴▒═╫╡сд╬д╣д┘д╞д╬╗╥д╧д▐д└▓Є╖шдл╩─д╕дщдьд╞дддыд╚д╧╕┬дъд▐д╗дєбг<br>┐╞▓■┴▒═╫╡сдЄ<b>▓Є╖ш/╩─д╕ды</b>┴░д╦бв╗╥д╚д╖д╞┤╪╧вд╖д┐▓■┴▒═╫╡сд╧д╣д┘д╞▓Є╖шд╡дьдыдл╩─д╕дщдьдыд┘днд╟д╣бг";
-$s_create_child_bug_button = "╗╥д╬║ю└о";
+$s_relationship_warning_blocking_bugs_not_resolved = "д│д╬▓■┴▒═╫╡сд╬╗╥╚╓╣цд╦бв▓Є╖ш║╤дл┤░╬╗д╟д╧д╩дд▓■┴▒═╫╡сдмдвдъд▐д╣бг";
+$s_relationship_warning_blocking_bugs_not_resolved_2 = "<b>├э░╒</b> д│д╬▓■┴▒═╫╡сд╬╗╥╚╓╣цд╦бвд▐д└▓Є╖ш║╤дл┤░╬╗д╟д╧д╩дд▓■┴▒═╫╡сдмдвдъд▐д╣бг<br>д│д╬▓■┴▒═╫╡сдЄ<b>▓Є╖ш║╤/┤░╬╗</b>д╦д╣ды┴░д╦бв╗╥д╚д╖д╞┤╪╧вд╖д┐▓■┴▒═╫╡сдЄд╣д┘д╞▓Є╖шд╣дыдл┤░╬╗д╣дыд┘днд╟д╣бг";
+$s_create_child_bug_button = "╩г└╜д╣ды";
 $s_bug_cloned_to = "▓■┴▒═╫╡сдЄ╩г└╜д╖д▐д╖д┐";
 $s_bug_created_from = "▓■┴▒═╫╡сдЄ└╕└од╖д▐д╖д┐бг ┬╨╛▌";
+# Relationship Graphs
+$s_viewing_bug_relationship_graph_title = "┤╪╧в/░═┬╕е░еще╒";
+$s_relation_graph = "┤╪╧ве░еще╒";
+$s_dependency_graph = "░═┬╕е░еще╒";
+$s_vertical = "╜─";
+$s_horizontal = "▓г";
+$s_view_issue = "▓■┴▒═╫╡сдЄ╕лды";
 
 # Source Control Integration
 $s_checkin = 'е┴езе├епедеє';
+# Pemissions report
+$s_perm_rpt_capability = '╡б╟╜';
+$s_view = '╗▓╛╚';
+$s_issues = '▓■┴▒═╫╡с';
+$s_report_issue = '▓■┴▒═╫╡сд╬╩є╣Ё';
+$s_update_issue = '▓■┴▒═╫╡сд╬╣╣┐╖';
+$s_monitor_issue = '▓■┴▒═╫╡сд╬┤╞╗ы';
+$s_handle_issue = '▓■┴▒═╫╡сд╬┴р║ю';
+$s_move_issue = '▓■┴▒═╫╡сд╬░▄╞░';
+$s_delete_issue = '▓■┴▒═╫╡сд╬║я╜№';
+$s_reopen_issue = '▓■┴▒═╫╡сд╬║╣╠сд╖';
+$s_view_private_issues = '╚є╕°│л▓■┴▒═╫╡сд╬╗▓╛╚';
+$s_update_readonly_issues = '▓■┴▒═╫╡с(еъб╝е╔екеєеъб╝)д╬╣╣┐╖';
+$s_update_issue_status = '▓■┴▒═╫╡сд╬е╣е╞б╝е┐е╣╩╤╣╣';
+$s_set_view_status = '│░╔Їдлдщд╬╗▓╛╚дЄ└▀─ъ (╕°│л vs ╚є╕°│л)';
+$s_update_view_status = '│░╔Їдлдщд╬╗▓╛╚дЄ╣╣┐╖ (╕°│л vs ╚є╕°│л)';
+$s_show_list_of_users_monitoring_issue = '▓■┴▒═╫╡сдЄ┤╞╗ыд╖д╞дддыецб╝е╢░ь═ўд╬╔╜╝и';
+$s_notes = 'е│есеєе╚';
+$s_add_notes = 'е│есеєе╚д╬─╔▓├';
+$s_update_notes = 'е│есеєе╚д╬╣╣┐╖';
+$s_delete_note = 'е│есеєе╚д╬║я╜№';
+$s_view_private_notes = '╚є╕°│ле│есеєе╚д╬╗▓╛╚';
+$s_news = 'е╦ехб╝е╣';
+$s_view_private_news = '╚є╕°│ле╦ехб╝е╣д╬╗▓╛╚';
+$s_manage_news = 'е╦ехб╝е╣д╬┤╔═¤';
+$s_view_list_of_attachments = '┼║╔╒░ь═ўд╬╗▓╛╚';
+$s_download_attachments = '┼║╔╒д╬е└ежеєеэб╝е╔';
+$s_delete_attachments = '┼║╔╒д╬║я╜№';
+$s_upload_issue_attachments = '┼║╔╒д╬еве├е╫еэб╝е╔';
+$s_filters = 'е╒егеые┐б╝';
+$s_save_filters = 'е╒егеые┐б╝д╬╩▌┬╕';
+$s_save_filters_as_shared = 'е╒егеые┐б╝дЄ┴┤е╫еэе╕езепе╚д╟╩▌┬╕';
+$s_use_saved_filters = '╩▌┬╕д╖д┐е╒егеые┐б╝д╬╗╚═╤';
+$s_create_project = 'е╫еэе╕езепе╚д╬║ю└о';
+$s_delete_project = 'е╫еэе╕езепе╚д╬║я╜№';
+$s_manage_project = 'е╫еэе╕езепе╚д╬┤╔═¤';
+$s_manage_user_access_to_project = 'е╫еэе╕езепе╚д╦евепе╗е╣д╣дыецб╝е╢д╬┤╔═¤';
+$s_automatically_included_in_private_projects = '╝л╞░┼кд╦╚є╕°│ле╫еэе╕езепе╚д╦╗▓▓├';
+$s_project_documents = 'е╫еэе╕езепе╚е╔енехесеєе╚';
+$s_view_project_documents = 'е╫еэе╕езепе╚е╔енехесеєе╚д╬╗▓╛╚';
+$s_upload_project_documents = 'е╫еэе╕езепе╚е╔енехесеєе╚д╬еве├е╫еэб╝е╔';
+$s_link_custom_fields_to_projects = 'еле╣е┐ер╣р╠▄дЄе╫еэе╕езепе╚д╦еъеєеп';
+$s_sponsorships = '╕х▒ч';
+$s_view_sponsorship_details = '╕х▒ч░ь═ўд╬╗▓╛╚';
+$s_view_sponsorship_total = '┴э╕х▒ч┐Їд╬╗▓╛╚';
+$s_sponsor_issue = '▓■┴▒═╫╡сд╬╕х▒ч';
+$s_assign_sponsored_issue = '╕х▒чд╡дьд┐▓■┴▒═╫╡сд╬еве╡едеє';
+$s_handle_sponsored_issue = '╕х▒чд╡дьд┐▓■┴▒═╫╡сд╬┴р║ю';
+$s_others = 'д╜д╬┬╛';
+$s_see_email_addresses_of_other_users = '┬╛ецб╝е╢д╬есб╝еыеве╔еье╣дЄ╗▓╛╚';
+$s_send_reminders = 'еъе▐едеєе└б╝д╬┴ў┐о';
+$s_add_profiles = 'е╫еэе╒егб╝еыд╬─╔▓├';
+$s_notify_of_new_user_created = '┐╖╡мецб╝е╢║ю└од╬─╠├╬';
+$s_email_notification = '─╠├╬есб╝еы';
+$s_status_changed_to = 'е╣е╞б╝е┐е╣╩╤╣╣';
+$s_email_on_deleted = '║я╜№─╠├╬есб╝еы';
+$s_email_on_sponsorship_changed = '╕х▒чд╬╩╤╣╣─╠├╬есб╝еы';
+$s_email_on_relationship_changed = '┤╪╧вд╬╩╤╣╣─╠├╬есб╝еы';
 ?>

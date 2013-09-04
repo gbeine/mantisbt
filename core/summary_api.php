@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: summary_api.php,v 1.31 2004-07-10 23:38:02 vboctor Exp $
+	# $Id: summary_api.php,v 1.33 2004-10-20 01:11:01 narcissus Exp $
 	# --------------------------------------------------------
 
 	### Summary printing API ###
@@ -33,10 +33,17 @@
 		$enum_count = count( $t_arr );
 
 		$t_project_id = helper_get_current_project();
+		$t_user_id = auth_get_current_user_id();
 
 		#checking if it's a per project statistic or all projects
 		if ( ALL_PROJECTS == $t_project_id ) {
-			$t_project_filter = ' 1=1';
+			# Only projects to which the user have access
+			$t_accessible_projects_array = user_get_accessible_projects( $t_user_id );
+			if ( count( $t_accessible_projects_array ) > 0 ) {
+				$t_project_filter = ' (project_id='. implode( ' OR project_id=', $t_accessible_projects_array ).')';
+			} else {
+				$t_project_filter = '1=1';
+			}
 		} else {
 			$t_project_filter = " project_id='$t_project_id'";
 		}
@@ -161,10 +168,17 @@
 		$c_time_length = (int)$p_time_length;
 
 		$t_project_id = helper_get_current_project();
+		$t_user_id = auth_get_current_user_id();
 
 		#checking if it's a per project statistic or all projects
 		if ( ALL_PROJECTS == $t_project_id ) {
-			$specific_where = ' 1=1';
+			# Only projects to which the user have access
+			$t_accessible_projects_array = user_get_accessible_projects( $t_user_id );
+			if ( count( $t_accessible_projects_array ) > 0 ) {
+				$specific_where = ' (project_id='. implode( ' OR project_id=', $t_accessible_projects_array ).')';
+			} else {
+				$specific_where = '1=1';
+			}
 		} else {
 			$specific_where = " project_id='$t_project_id'";
 		}
@@ -202,9 +216,16 @@
 		$t_mantis_bug_table = config_get( 'mantis_bug_table' );
 		$t_mantis_user_table = config_get( 'mantis_user_table' );
 		$t_project_id = helper_get_current_project();
+		$t_user_id = auth_get_current_user_id();
 
 		if ( ALL_PROJECTS == $t_project_id ) {
-			$specific_where = ' 1=1';
+			# Only projects to which the user have access
+			$t_accessible_projects_array = user_get_accessible_projects( $t_user_id );
+			if ( count( $t_accessible_projects_array ) > 0 ) {
+				$specific_where = ' (project_id='. implode( ' OR project_id=', $t_accessible_projects_array ).')';
+			} else {
+				$specific_where = '1=1';
+			}
 		} else {
 			$specific_where = " project_id='$t_project_id'";
 		}
@@ -294,9 +315,16 @@
 		$t_reporter_summary_limit = config_get( 'reporter_summary_limit' );
 
 		$t_project_id = helper_get_current_project();
+		$t_user_id = auth_get_current_user_id();
 
 		if ( ALL_PROJECTS == $t_project_id ) {
-			$specific_where = ' 1=1';
+			# Only projects to which the user have access
+			$t_accessible_projects_array = user_get_accessible_projects( $t_user_id );
+			if ( count( $t_accessible_projects_array ) > 0 ) {
+				$specific_where = ' (project_id='. implode( ' OR project_id=', $t_accessible_projects_array ).')';
+			} else {
+				$specific_where = '1=1';
+			}
 		} else {
 			$specific_where = " project_id='$t_project_id'";
 		}
@@ -369,9 +397,16 @@
 		$t_summary_category_include_project = config_get( 'summary_category_include_project' );
 
 		$t_project_id = helper_get_current_project();
+		$t_user_id = auth_get_current_user_id();
 
 		if ( ALL_PROJECTS == $t_project_id ) {
-			$specific_where = ' 1=1';
+			# Only projects to which the user have access
+			$t_accessible_projects_array = user_get_accessible_projects( $t_user_id );
+			if ( count( $t_accessible_projects_array ) > 0 ) {
+				$specific_where = ' (project_id='. implode( ' OR project_id=', $t_accessible_projects_array ).')';
+			} else {
+				$specific_where = '1=1';
+			}
 		} else {
 			$specific_where = " project_id='$t_project_id'";
 		}
@@ -486,14 +521,24 @@
 		$t_mantis_project_table = config_get( 'mantis_project_table' );
 
 		$t_project_id = helper_get_current_project();
+		$t_user_id = auth_get_current_user_id();
 
 		# This function only works when "all projects" is selected
 		if ( ALL_PROJECTS != $t_project_id ) {
 			return;
 		}
+		
+		# Only projects to which the user have access
+		$t_accessible_projects_array = user_get_accessible_projects( $t_user_id );
+		if ( count( $t_accessible_projects_array ) > 0 ) {
+			$specific_where = ' (project_id='. implode( ' OR project_id=', $t_accessible_projects_array ).')';
+		} else {
+			$specific_where = '1=1';
+		}
 
 		$query = "SELECT project_id, status
 				FROM $t_mantis_bug_table
+				WHERE $specific_where
 				ORDER BY project_id";
 		$result = db_query( $query );
 
@@ -556,6 +601,7 @@
 		$t_mantis_user_table = config_get( 'mantis_user_table' );
 
 		$t_project_id = helper_get_current_project();
+		$t_user_id = auth_get_current_user_id();
 
 		# Organise an array of resolution values to be used later
 		$t_res_arr = explode_enum_string( $p_resolution_enum_string );
@@ -568,7 +614,13 @@
 
 		# Checking if it's a per project statistic or all projects
 		if ( 0 == $t_project_id ) {
-			$specific_where = ' 1=1';
+			# Only projects to which the user have access
+			$t_accessible_projects_array = user_get_accessible_projects( $t_user_id );
+			if ( count( $t_accessible_projects_array ) > 0 ) {
+				$specific_where = ' (project_id='. implode( ' OR project_id=', $t_accessible_projects_array ).')';
+			} else {
+				$specific_where = '1=1';
+			}
 		} else {
 			$specific_where = " project_id='$t_project_id'";
 		}
@@ -662,6 +714,7 @@
 		$t_reporter_summary_limit = config_get( 'reporter_summary_limit' );
 
 		$t_project_id = helper_get_current_project();
+		$t_user_id = auth_get_current_user_id();
 
 		# Organise an array of resolution values to be used later
 		$t_res_arr = explode_enum_string( $p_resolution_enum_string );
@@ -674,7 +727,13 @@
 
 		# Checking if it's a per project statistic or all projects
 		if ( 0 == $t_project_id ) {
-			$specific_where = ' 1=1';
+			# Only projects to which the user have access
+			$t_accessible_projects_array = user_get_accessible_projects( $t_user_id );
+			if ( count( $t_accessible_projects_array ) > 0 ) {
+				$specific_where = ' (project_id='. implode( ' OR project_id=', $t_accessible_projects_array ).')';
+			} else {
+				$specific_where = '1=1';
+			}
 		} else {
 			$specific_where = " project_id='$t_project_id'";
 		}
@@ -775,6 +834,7 @@
 		$t_reporter_summary_limit = config_get( 'reporter_summary_limit' );
 
 		$t_project_id = helper_get_current_project();
+		$t_user_id = auth_get_current_user_id();
 
 		# These are our overall "values" for severities and non-bug results
 		$t_severity_multiplier[FEATURE] = 1;
@@ -809,7 +869,13 @@
 
 		# Checking if it's a per project statistic or all projects
 		if ( 0 == $t_project_id ) {
-			$specific_where = ' 1=1';
+			# Only projects to which the user have access
+			$t_accessible_projects_array = user_get_accessible_projects( $t_user_id );
+			if ( count( $t_accessible_projects_array ) > 0 ) {
+				$specific_where = ' (project_id='. implode( ' OR project_id=', $t_accessible_projects_array ).')';
+			} else {
+				$specific_where = '1=1';
+			}
 		} else {
 			$specific_where = " project_id='$t_project_id'";
 		}

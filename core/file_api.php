@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: file_api.php,v 1.55 2004-08-31 13:11:51 thraxisp Exp $
+	# $Id: file_api.php,v 1.60 2004-10-17 01:58:57 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -23,15 +23,25 @@
 	function file_get_display_name( $p_filename ) {
 		$t_array = explode( '-', $p_filename, 2 );
 
-		# Check if it's a project document filename (doc-000-filename)
-		# or a bug attachment filename (000-filename)
+		# Check if it's a project document filename (doc-0000000-filename)
+		# or a bug attachment filename (0000000-filename)
+		# for newer filenames, the filename in schema is correct.
 		# This is important to handle filenames with '-'s properly
-		if ( $t_array[0] == config_get( 'document_files_prefix' ) ) {
-			$t_array = explode( '-', $p_filename, 3 );
+		$t_doc_match = '/^' . config_get( 'document_files_prefix' ) . '-\d{7}-/';
+		$t_name = preg_split($t_doc_match, $p_filename);
+		if ( isset( $t_name[1] ) ) {
+			return $t_name[1];
+		}else{
+			$t_bug_match = '/^\d{7}-/';
+			$t_name = preg_split($t_bug_match, $p_filename);
+			if ( isset( $t_name[1] ) ) {
+				return $t_name[1];
+			}else{
+				return $p_filename;
+			}
 		}
-		$count = count( $t_array );
-		return $t_array[$count-1];
 	}
+	
 	# --------------------
 	# Check the number of attachments a bug has (if any)
 	function file_bug_attachment_count( $p_bug_id ) {
@@ -149,7 +159,7 @@
 			$row = db_fetch_array( $result );
 			extract( $row, EXTR_PREFIX_ALL, 'v' );
 
-			$t_file_display_name = $v_filename;
+			$t_file_display_name = file_get_display_name( $v_filename );
 			$t_filesize		= number_format( $v_filesize );
 			$t_date_added	= date( config_get( 'normal_date_format' ), db_unixtimestamp( $v_date_added ) );
 
@@ -230,7 +240,7 @@
 				file_delete_local ( $row['diskfile'] );
 
 				if ( FTP == $t_method ) {
-					file_ftp_delete ( $ftp, $row['filename'] );
+					file_ftp_delete ( $ftp, $row['diskfile'] );
 				}
 			}
 
@@ -273,7 +283,7 @@
 				file_delete_local ( $row['diskfile'] );
 
 				if ( FTP == $t_method ) {
-					file_ftp_delete ( $ftp, $row['filename'] );
+					file_ftp_delete ( $ftp, $row['diskfile'] );
 				}
 			}
 
@@ -307,13 +317,13 @@
 	# --------------------
 	# Put a file to the ftp server.
 	function file_ftp_put ( $p_conn_id, $p_remote_filename, $p_local_filename ) {
-		set_time_limit( 0 );
+		helper_begin_long_process();
 		$upload = ftp_put( $p_conn_id, $p_remote_filename, $p_local_filename, FTP_BINARY);
 	}
 	# --------------------
 	# Get a file from the ftp server.
 	function file_ftp_get ( $p_conn_id, $p_local_filename, $p_remote_filename ) {
-		set_time_limit( 0 );
+		helper_begin_long_process();
 		$download = ftp_get( $p_conn_id, $p_local_filename, $p_remote_filename, FTP_BINARY);
 	}
 	# --------------------
@@ -329,7 +339,6 @@
 	# --------------------
 	# Delete a local file even if it is read-only.
 	function file_delete_local( $p_filename ) {
-		# in windows replace with system("del $t_diskfile");
 		if ( file_exists( $p_filename ) ) {
 			chmod( $p_filename, 0775 );
 			unlink( $p_filename );
@@ -337,10 +346,10 @@
 	}
 	# --------------------
 	# Return the specified field value
-	function file_get_field( $p_file_id, $p_field_name ) {
+	function file_get_field( $p_file_id, $p_field_name, $p_table = 'bug' ) {
 		$c_file_id			= db_prepare_int( $p_file_id );
 		$c_field_name		= db_prepare_string( $p_field_name );
-		$t_bug_file_table	= config_get( 'mantis_bug_file_table' );
+		$t_bug_file_table	= config_get( 'mantis_' . $p_table . '_file_table' );
 
 		# get info
 		$query = "SELECT $c_field_name
@@ -351,19 +360,17 @@
 		return db_result( $result );
 	}
 	# --------------------
-	function file_delete( $p_file_id ) {
+	function file_delete( $p_file_id, $p_table = 'bug' ) {
 		$c_file_id			= db_prepare_int( $p_file_id );
-		$t_bug_file_table	= config_get( 'mantis_bug_file_table' );
 		$t_upload_method	= config_get( 'file_upload_method' );
 		$t_filename			= file_get_field( $p_file_id, 'filename' );
-		$t_bug_id			= file_get_field( $p_file_id, 'bug_id' );
 
 		if ( ( DISK == $t_upload_method ) || ( FTP == $t_upload_method ) ) {
 			$t_diskfile = file_get_field( $p_file_id, 'diskfile' );
 
 			if ( FTP == $t_upload_method ) {
 				$ftp = file_ftp_connect();
-				file_ftp_delete ( $ftp, $t_filename );
+				file_ftp_delete ( $ftp, $t_diskfile );
 				file_ftp_disconnect( $ftp );
 			}
 
@@ -372,14 +379,16 @@
 			}
 		}
 
-		$query = "DELETE FROM $t_bug_file_table
+		if ( 'bug' == $p_table ) {
+			$t_bug_id			= file_get_field( $p_file_id, 'bug_id', 'bug' );
+			# log file deletion
+			history_log_event_special( $t_bug_id, FILE_DELETED, file_get_display_name ( $t_filename ) );
+		}
+
+		$t_file_table	= config_get( 'mantis_' . $p_table . '_file_table' );
+		$query = "DELETE FROM $t_file_table
 				WHERE id='$c_file_id'";
 		db_query( $query );
-
-		# log file deletion
-		history_log_event_special( $t_bug_id, FILE_DELETED, file_get_display_name ( $t_filename ) );
-
-		# db_query() errors on failure so:
 		return true;
 	}
 	# --------------------
@@ -439,14 +448,14 @@
 	function file_generate_unique_name( $p_seed , $p_filepath ) {
 		do {
 			$t_string = file_generate_name( $p_seed );
-		} while ( !file_is_name_unique( $t_string , $p_filepath ) );
+		} while ( !diskfile_is_name_unique( $t_string , $p_filepath ) );
 
 		return $t_string;
 	}
 
 	# --------------------
-	# Return true if the file name identifier is unique, false otherwise
-	function file_is_name_unique( $p_name , $p_filepath ) {
+	# Return true if the diskfile name identifier is unique, false otherwise
+	function diskfile_is_name_unique( $p_name , $p_filepath ) {
 		$t_file_table = config_get( 'mantis_bug_file_table' );
 
 		$c_name = db_prepare_string( $p_filepath . $p_name );
@@ -465,9 +474,28 @@
 	}
 
 	# --------------------
-	function file_add( $p_bug_id, $p_tmp_file, $p_file_name, $p_file_type='' ) {
-		$c_bug_id		= db_prepare_int( $p_bug_id );
-		$c_file_type	= db_prepare_string( $p_file_type );
+	# Return true if the file name identifier is unique, false otherwise
+	function file_is_name_unique( $p_name, $p_bug_id ) {
+		$t_file_table = config_get( 'mantis_bug_file_table' );
+
+		$c_name = db_prepare_string( $p_name );
+		$c_bug = db_prepare_string( $p_bug_id );
+
+		$query = "SELECT COUNT(*)
+				  FROM $t_file_table
+				  WHERE filename='$c_name' and bug_id=$c_bug";
+		$result = db_query( $query );
+		$t_count = db_result( $result );
+
+		if ( $t_count > 0 ) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
+	# --------------------
+	function file_add( $p_bug_id, $p_tmp_file, $p_file_name, $p_file_type='', $p_table = 'bug', $p_title = '', $p_desc = '' ) {
 
 		if ( !is_readable( $p_tmp_file ) && DISK != config_get( 'file_upload_method' ) ) {
 			trigger_error( ERROR_UPLOAD_FAILURE, ERROR );
@@ -475,16 +503,33 @@
 
 		if ( !file_type_check( $p_file_name ) ) {
 			trigger_error( ERROR_FILE_NOT_ALLOWED, ERROR );
-		} else if ( is_uploaded_file( $p_tmp_file ) ) {
-			$t_project_id	= bug_get_field( $p_bug_id, 'project_id' );
-			$t_bug_id		= bug_format_id( $p_bug_id );
+		}  
+
+		if ( !file_is_name_unique( $p_file_name, $p_bug_id ) ) {
+			trigger_error( ERROR_DUPLICATE_FILE, ERROR );
+		}  
+
+		if ( is_uploaded_file( $p_tmp_file ) ) {
+			if ( 'bug' == $p_table ) {
+				$t_project_id	= bug_get_field( $p_bug_id, 'project_id' );
+				$t_bug_id		= bug_format_id( $p_bug_id );
+			}else{
+				$t_project_id	= helper_get_current_project();
+				$t_bug_id		= 0;
+			}
 
 			# prepare variables for insertion
+			$c_bug_id		= db_prepare_int( $p_bug_id );
+			$c_project_id		= db_prepare_int( $t_project_id );
+			$c_file_type	= db_prepare_string( $p_file_type );
+			$c_title = db_prepare_string( $p_title );
+			$c_desc = db_prepare_string( $p_desc );
 			$t_file_path = project_get_field( $t_project_id, 'file_path' );
 			$c_file_path = db_prepare_string( $t_file_path );
 			$c_new_file_name = db_prepare_string( $p_file_name );
 
-			$t_disk_file_name = $t_file_path . file_generate_unique_name( $t_bug_id . '-' . $p_file_name, $t_file_path );
+			$t_file_hash = ( 'bug' == $p_table ) ? $t_bug_id : config_get( 'document_files_prefix' ) . '-' . $t_project_id;
+			$t_disk_file_name = $t_file_path . file_generate_unique_name( $t_file_hash . '-' . $p_file_name, $t_file_path );
 			$c_disk_file_name = db_prepare_string( $t_disk_file_name );
 
 			if ( is_readable ( $p_tmp_file ) ) { 
@@ -498,7 +543,6 @@
 			$c_file_size = db_prepare_int( $t_file_size );
 
 			$t_method			= config_get( 'file_upload_method' );
-			$t_bug_file_table	= config_get( 'mantis_bug_file_table' );
 
 			switch ( $t_method ) {
 				case FTP:
@@ -512,8 +556,8 @@
 							file_ftp_disconnect ( $conn_id );
 						}
 
-						umask( 0333 );  # make read only
 						move_uploaded_file( $p_tmp_file, $t_disk_file_name );
+						chmod( $t_disk_file_name, 0400 );
 
 						$c_content = '';
 					} else {
@@ -527,17 +571,21 @@
 					trigger_error( ERROR_GENERIC, ERROR );
 			}
 
-			$query = "INSERT INTO $t_bug_file_table
-						(bug_id, title, description, diskfile, filename, folder, filesize, file_type, date_added, content)
+			$t_file_table	= config_get( 'mantis_' . $p_table . '_file_table' );
+			$c_id = ( 'bug' == $p_table ) ? $c_bug_id : $c_project_id;
+			$query = "INSERT INTO $t_file_table
+						(" . $p_table . "_id, title, description, diskfile, filename, folder, filesize, file_type, date_added, content)
 					  VALUES
-						($c_bug_id, '', '', '$c_disk_file_name', '$c_new_file_name', '$c_file_path', $c_file_size, '$c_file_type', " . db_now() .", '$c_content')";
+						($c_id, '$c_title', '$c_desc', '$c_disk_file_name', '$c_new_file_name', '$c_file_path', $c_file_size, '$c_file_type', " . db_now() .", '$c_content')";
 			db_query( $query );
 
-			# updated the last_updated date
-			$result = bug_update_date( $p_bug_id );
+			if ( 'bug' == $p_table ) {
+				# updated the last_updated date
+				$result = bug_update_date( $p_bug_id );
 
-			# log new bug
-			history_log_event_special( $p_bug_id, FILE_ADDED, $p_file_name );
+				# log new bug
+				history_log_event_special( $p_bug_id, FILE_ADDED, $p_file_name );
+			}
 		}
 
 	}

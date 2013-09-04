@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: config_defaults_inc.php,v 1.206 2004-09-12 12:12:30 vboctor Exp $
+	# $Id: config_defaults_inc.php,v 1.220 2004-11-06 10:54:15 vboctor Exp $
 	# --------------------------------------------------------
 
 
@@ -32,8 +32,12 @@
 	# --- database variables ---------
 
 	# set these values to match your setup
+	
+	# hostname should be either a hostname or connection string to supply to adodb.
+	# For example, if you would like to connect to a mysql server on the local machine,
+	# set hostname to 'localhost', and db_type to 'mysql'.
+	# If you need to supply a port to connect to, set hostname as 'localhost:3306'.
 	$g_hostname				= 'localhost';
-	$g_port					= 3306;		 # 3306 is default
 	$g_db_username			= 'root';
 	$g_db_password			= '';
 	$g_database_name		= 'bugtracker';
@@ -294,7 +298,7 @@
 	#############################
 
 	# --- version variables -----------
-	$g_mantis_version		= '0.19.0';
+	$g_mantis_version		= '0.19.1';
 	$g_show_version			= ON;
 
 	################################
@@ -310,12 +314,41 @@
 
 	# list the choices that the users are allowed to choose
 	$g_language_choices_arr	= array(
-		'auto', 'english', 'chinese_simplified', 'chinese_traditional', 'czech',
-		'danish', 'dutch', 'estonian', 'french', 'german', 'hungarian',
-		'italian', 'japanese_euc', 'japanese_sjis', 'japanese_utf8', 'korean', 
-		'lithuanian', 'norwegian', 'polish', 'portuguese_brazil', 'portuguese_standard',
-		'romanian', 'russian', 'russian_koi8', 'serbian', 'slovak', 'slovene', 
-		'spanish', 'swedish', 'turkish' );
+		'auto', 
+		'chinese_simplified', 
+		'chinese_traditional', 
+		'croatian',
+		'czech',
+		'danish', 
+		'dutch', 
+		'english', 
+		'estonian', 
+		'finnish',
+		'french', 
+		'german', 
+		'hungarian',
+		'italian', 
+		'japanese_euc', 
+		'japanese_sjis', 
+		'japanese_utf8', 
+		'korean', 
+		'latvian',
+		'lithuanian', 
+		'norwegian', 
+		'polish', 
+		'portuguese_brazil', 
+		'portuguese_standard',
+		'romanian', 
+		'russian', 
+		'russian_koi8', 
+		'serbian', 
+		'slovak', 
+		'slovene', 
+		'spanish', 
+		'swedish', 
+		'turkish',
+		'ukrainian'
+	);
 
 	# Browser language mapping for 'auto' language selection
 	$g_language_auto_map = array(
@@ -326,6 +359,7 @@
 		'da' => 'danish',
 		'nl-be, nl' => 'dutch',
 		'et' => 'estonian',
+		'fi' => 'finnish',
 		'fr-be, fr-ca, fr-ch, fr' => 'french',
 		'de-de, de-at, de-ch, de' => 'german',
 		'hu' => 'hungarian',
@@ -780,6 +814,8 @@
 	$g_report_bug_threshold			= REPORTER;
 
 	# access level needed to update bugs (i.e., the update_bug_page)
+	#  This controls whether the user sees the "Update Bug" button in bug_view*_page
+	#  and the pencil icon in view_all_bug_page
 	$g_update_bug_threshold			= UPDATER;
 
 	# access level needed to monitor bugs
@@ -792,6 +828,11 @@
 
 	# access level needed to be able to be listed in the assign to field.
 	$g_handle_bug_threshold			= DEVELOPER;
+	# access level needed to show the Assign To: button bug_view*_page or 
+	#  the Assigned list in bug_update*_page.
+	#  This allows control over who can route bugs
+	# This defaults to $g_handle_bug_threshold
+	# $g_update_bug_assign_threshold			= DEVELOPER;
 
 	# access level needed to view private bugnotes
 	# Look in the constant_inc.php file if you want to set a different value
@@ -896,6 +937,9 @@
 
 	# status change thresholds
 	$g_update_bug_status_threshold = DEVELOPER;
+	
+	# access level needed to re-open bugs
+	$g_reopen_bug_threshold			= DEVELOPER;
 
 	# this array sets the access thresholds needed to enter each status listed.
 	# if a status is not listed, it falls back to $g_update_bug_status_threshold
@@ -966,6 +1010,12 @@
 	# eg. for # a link would be #45
 	# eg. for bug: a link would be bug:98
 	$g_bug_link_tag			= '#';
+
+	# --- Bugnote Linking ---------------
+	# if a number follows this tag it will create a link to a bugnote.
+	# eg. for ~ a link would be ~45
+	# eg. for bugnote: a link would be bugnote:98
+	$g_bugnote_link_tag			= '~';
 
 	# --- Bug Count Linking ----------
 	# this is the prefix to use when creating links to bug views from bug counts (eg. on the main
@@ -1038,6 +1088,7 @@
 	$g_view_all_cookie		= $g_cookie_prefix.'_VIEW_ALL_COOKIE';
 	$g_manage_cookie		= $g_cookie_prefix.'_MANAGE_COOKIE';
 	$g_logout_cookie		= $g_cookie_prefix.'_LOGOUT_COOKIE';
+	$g_bug_list_cookie		= $g_cookie_prefix.'_BUG_LIST_COOKIE';
 
 	#######################################
 	# Mantis Filter Variables
@@ -1197,6 +1248,31 @@
 	# need it for debugging
 	$g_show_detailed_errors	= OFF;
 
+	# --- error display ---
+	# what errors are displayed and how?
+	# The options for display are:
+	#  'halt' - stop and display traceback
+	#  'inline' - display 1 line error and continue
+	#  'none' - no error displayed
+	# obsoletes $g_show_notices (E_NOTICE and E_USER_NOTICE) and 
+	#   $g_show_warnings (E_WARNING and E_USER_WARNING)
+	# A developer might set this in config_inc.php as:
+	#	$g_display_errors = array(
+	#		E_WARNING => 'halt',
+	#		E_NOTICE => 'halt',
+	#		E_USER_ERROR => 'halt',
+	#		E_USER_WARNING => 'none',
+	#		E_USER_NOTICE => 'none'
+	#	);
+
+	$g_display_errors = array(
+		E_WARNING => 'none',
+		E_NOTICE => 'none',
+		E_USER_ERROR => 'halt',
+		E_USER_WARNING => 'none',
+		E_USER_NOTICE => 'none'
+	);
+
 	# --- notice display ---
 	# Control whether errors of level NOTICE, the lowest level of error,
 	#  are displayed to the user.  Default is OFF, but turning it ON may
@@ -1335,6 +1411,65 @@
 	# Enable support for bug relationships where a bug can be a related, dependent on, or duplicate of another.
 	# See relationship_api.php for more details.
 	$g_enable_relationship = ON;
+
+	# --- Relationship Graphs -----------
+	# Show issue relationships using graphs.
+	#
+	# In order to use this feature, you must first install either GraphViz
+	# (all OSs except Windows) or WinGraphviz (only Windows).
+	#
+	# Graphviz homepage:    http://www.research.att.com/sw/tools/graphviz/
+	# WinGraphviz homepage: http://home.so-net.net.tw/oodtsen/wingraphviz/
+	#
+	# Refer to the notes near the top of core/graphviz_api.php and
+	# core/relationship_graph_api.php for more information.
+
+	# Enable relationship graphs support.
+	$g_relationship_graph_enable		= OFF;
+
+	# Font name and size, as required by Graphviz. If Graphviz fails to run
+	# for you, you are probably using a font name that gd can't find. On
+	# Linux, try the name of the font file without the extension.
+	$g_relationship_graph_fontname		= 'Arial';
+	$g_relationship_graph_fontsize		= 8;
+
+	# Local path where the above font is found on your system.
+	# 
+	# You shouldn't care about this on Windows since there is only one system
+	# folder where fonts are installed and Graphviz already knows where it
+	# is. On Linux and other unices, the default font search path is defined
+	# during Graphviz compilation. If you are using a pre-compiled Graphviz
+	# package provided by your distribution, probably the font search path was
+	# already configured by the packager.
+	#
+	# If for any reason, the font file you want to use is not in any directory
+	# listed on the default font search path list, you can either: (1) export
+	# the DOTFONTPATH environment variable in your webserver startup script
+	# or (2) use this config option conveniently available here. If you need
+	# to list more than one directory, use colons to separate them.
+	$g_relationship_graph_fontpath		= '';
+
+	# Default dependency orientation. If you have issues with lots of childs
+	# or parents, leave as 'horizontal', otherwise, if you have lots of
+	# "chained" issue dependencies, change to 'vertical'.
+	$g_relationship_graph_orientation	= 'horizontal';
+
+	# Max depth for relation graphs. This only affects relation graphs,
+	# dependency graphs are drawn to the full depth. A value of 3 is already
+	# enough to show issues really unrelated to the one you are currently
+	# viewing.
+	$g_relationship_graph_max_depth		= 2;
+
+	# If set to ON, clicking on an issue on the relationship graph will open
+	# the bug view page for that issue, otherwise, will navigate to the
+	# relationship graph for that issue.
+	$g_relationship_graph_view_on_click	= OFF;
+
+	# Complete path to dot and neato tools. Your webserver must have execute
+	# permission to these programs in order to generate relationship graphs.
+	# NOTE: These are meaningless under Windows! Just ignore them!
+	$g_dot_tool							= '/usr/bin/dot';
+	$g_neato_tool						= '/usr/bin/neato';
 
 	######################
 	# Mail Reporting

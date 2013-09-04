@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: project_api.php,v 1.59 2004-08-14 15:26:21 thraxisp Exp $
+	# $Id: project_api.php,v 1.62 2004-09-28 00:56:14 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -330,6 +330,23 @@
 	#===================================
 
 	# --------------------
+	# Get the id of the project with the specified name
+	function project_get_id_by_name( $p_project_name ) {
+		$c_project_name = db_prepare_string( $p_project_name );
+	
+		$t_project_table = config_get( 'mantis_project_table' );
+
+		$query = "SELECT id FROM $t_project_table WHERE name = '$c_project_name'";
+		$t_result = db_query( $query, 1 );
+
+		if ( db_num_rows( $t_result ) == 0 ) {
+			return 0;
+		} else {
+			return db_result( $t_result );
+		}
+	}
+
+	# --------------------
 	# Return the row describing the given project
 	function project_get_row( $p_project_id ) {
 		return project_cache_row( $p_project_id );
@@ -509,6 +526,11 @@
 		$c_user_id		= db_prepare_int( $p_user_id );
 		$c_access_level	= db_prepare_int( $p_access_level );
 
+		if ( DEFAULT_ACCESS_LEVEL == $p_access_level ) {
+			# Default access level for this user
+			$c_access_level = db_prepare_int( user_get_access_level ( $p_user_id ) );
+		}
+		
 		$query = "INSERT
 				  INTO $t_project_user_list_table
 				    ( project_id, user_id, access_level )
@@ -625,4 +647,26 @@
 		$t_padding = config_get( 'display_project_padding' );
 		return( str_pad( $p_project_id, $t_padding, '0', STR_PAD_LEFT ) );
 	}
+
+		# --------------------
+	# Return true if the file name identifier is unique, false otherwise
+	function project_file_is_name_unique( $p_name ) {
+		$t_file_table = config_get( 'mantis_project_file_table' );
+
+		$c_name = db_prepare_string( $p_name );
+
+		$query = "SELECT COUNT(*)
+				  FROM $t_file_table
+				  WHERE filename='$c_name'";
+		$result = db_query( $query );
+		$t_count = db_result( $result );
+
+		if ( $t_count > 0 ) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
+
 ?>

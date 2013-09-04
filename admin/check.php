@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: check.php,v 1.13 2004-09-06 00:33:38 thraxisp Exp $
+	# $Id: check.php,v 1.16 2004-10-24 19:04:37 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -151,10 +151,10 @@
 <!-- Test DATABASE part 1 -->
 <tr>
 	<td bgcolor="#ffffff">
-		Opening connection to database on host [<?php echo config_get( 'hostname' ) . ':' . config_get( 'port' ) ?>] with username [<?php echo config_get( 'db_username' ) ?>]
+		Opening connection to database on host [<?php echo config_get( 'hostname' ) ?>] with username [<?php echo config_get( 'db_username' ) ?>]
 	</td>
 	<?php
-		$result = @db_connect( config_get( 'hostname' ), config_get( 'db_username' ), config_get( 'db_password' ), config_get( 'port' ) );
+		$result = @db_connect( config_get( 'hostname' ), config_get( 'db_username' ), config_get( 'db_password' ) );
 		if ( false == $result ) {
 			print_test_result( BAD );
 		} else {
@@ -289,6 +289,18 @@ if ( substr( php_uname(), 0, 7 ) == 'Windows' ) {
 		}
 	?>
 </tr>
+<tr>
+	<td bgcolor="#ffffff">
+		check language configuration: fallback_language &lt;&gt; 'auto' </>
+	</td>
+	<?php
+		if ( 'auto' == config_get( 'fallback_language' ) ) {
+			print_test_result( BAD );
+		} else {
+			print_test_result( GOOD );
+		}
+	?>
+</tr>
 
 </table>
 
@@ -362,18 +374,40 @@ if ( substr( php_uname(), 0, 7 ) == 'Windows' ) {
 		<?php
 			if ( ini_get_bool( 'file_uploads' ) && config_get( 'allow_file_upload' ) ) {
 		?>
-				<p>File uploads are ENABLED</p>
+				<p>File uploads are ENABLED.</p>
+				<p>File uploads will be stored <?php
+								switch ( config_get( 'file_upload_method' ) ) {
+									case DATABASE:
+										echo 'in the DATABASE.';
+										break;
+									case DISK:
+										echo 'on DISK in the directory specified by the project.';
+										break;
+									case FTP:
+										echo 'on an FTP server (' . config_get( 'file_upload_ftp_server' ) . '), and cached locally.';
+										break;
+									default:
+										echo 'in an illegal place.';
+								} ?>	</p>
 
 				<p>The following size settings are in effect.  Maximum upload size will be whichever of these is SMALLEST. </p>
-				<p>PHP variable 'upload_max_filesize': <?php echo ini_get( 'upload_max_filesize' ) ?><br />
-				PHP variable 'post_max_size': <?php echo ini_get( 'post_max_size' ) ?><br />
+				<p>PHP variable 'upload_max_filesize': <?php echo ini_get_number( 'upload_max_filesize' ) ?> bytes<br />
+				PHP variable 'post_max_size': <?php echo ini_get_number( 'post_max_size' ) ?> bytes<br />
 				Mantis variable 'max_file_size': <?php echo config_get( 'max_file_size' ) ?> bytes</p>
 
-				<p>There may also be settings in Apache (or MySQL if using the SQL upload method) that prevent you from  uploading files or limit the maximum file size.  See the documentation for those packages if you need more information.</p>
 		<?php
+				if ( DATABASE == config_get( 'file_upload_method' ) ) {
+					echo '<p>There may also be settings in your web server and database that prevent you from  uploading files or limit the maximum file size.  See the documentation for those packages if you need more information. ';
+					if ( 500 < min( ini_get_number( 'upload_max_filesize' ), ini_get_number( 'post_max_size' ), config_get( 'max_file_size' ) ) ) {
+						echo '<span class="error">Your current settings will most likely need adjustments to the PHP max_execution_time or memory_limit settings, the MySQL max_allowed_packet setting, or equivalent.</span>';
+					}
+				} else {
+					echo '<p>There may also be settings in your web server that prevent you from  uploading files or limit the maximum file size.  See the documentation for those packages if you need more information.';
+				}
+				echo '</p>';
 			} else {
 		?>
-				<p>File uploads are DISABLED.  To enable them, make sure <tt>file_uploads = on</tt> is in your php.ini file and <tt>allow_file_upload = ON</tt> is in your mantis config file.</p>
+				<p>File uploads are DISABLED.  To enable them, make sure <tt>$g_file_uploads = on</tt> is in your php.ini file and <tt>allow_file_upload = ON</tt> is in your mantis config file.</p>
 		<?php
 			}
 		?>

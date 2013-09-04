@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_report_advanced_page.php,v 1.42 2004-08-17 18:01:18 thraxisp Exp $
+	# $Id: bug_report_advanced_page.php,v 1.45 2004-10-24 19:04:36 thraxisp Exp $
 	# --------------------------------------------------------
 
 	# This file POSTs data to report_bug.php
@@ -310,7 +310,7 @@
 		<span class="required">*</span><?php echo lang_get( 'summary' ) ?> <?php print_documentation_link( 'summary' ) ?>
 	</td>
 	<td>
-		<input tabindex="12" type="text" name="summary" size="80" maxlength="128" value="<?php echo $f_summary ?>" />
+		<input tabindex="12" type="text" name="summary" size="105" maxlength="128" value="<?php echo $f_summary ?>" />
 	</td>
 </tr>
 
@@ -321,7 +321,7 @@
 		<span class="required">*</span><?php echo lang_get( 'description' ) ?> <?php print_documentation_link( 'description' ) ?>
 	</td>
 	<td>
-		<textarea tabindex="13" name="description" cols="60" rows="5" wrap="virtual"><?php echo $f_description ?></textarea>
+		<textarea tabindex="13" name="description" cols="80" rows="10" wrap="virtual"><?php echo $f_description ?></textarea>
 	</td>
 </tr>
 
@@ -332,7 +332,7 @@
 		<?php echo lang_get( 'steps_to_reproduce' ) ?> <?php print_documentation_link( 'steps_to_reproduce' ) ?>
 	</td>
 	<td>
-		<textarea tabindex="14" name="steps_to_reproduce" cols="60" rows="5" wrap="virtual"><?php echo $f_steps_to_reproduce ?></textarea>
+		<textarea tabindex="14" name="steps_to_reproduce" cols="80" rows="10" wrap="virtual"><?php echo $f_steps_to_reproduce ?></textarea>
 	</td>
 </tr>
 
@@ -343,7 +343,7 @@
 		<?php echo lang_get( 'additional_information' ) ?> <?php print_documentation_link( 'additional_information' ) ?>
 	</td>
 	<td>
-		<textarea tabindex="15" name="additional_info" cols="60" rows="5" wrap="virtual"><?php echo $f_additional_info ?></textarea>
+		<textarea tabindex="15" name="additional_info" cols="80" rows="10" wrap="virtual"><?php echo $f_additional_info ?></textarea>
 	</td>
 </tr>
 
@@ -386,13 +386,16 @@
 
 
 <!-- File Upload (if enabled) -->
-<?php if ( file_allow_bug_upload() ) { ?>
+<?php if ( file_allow_bug_upload() ) { 
+	$t_max_file_size = (int)min( ini_get_number( 'upload_max_filesize' ), ini_get_number( 'post_max_size' ), config_get( 'max_file_size' ) );
+?>
 <tr <?php echo helper_alternate_class() ?>>
 	<td class="category">
 		<?php echo lang_get( 'upload_file' ) ?>
+		<?php echo '<span class="small">(' . lang_get( 'max_file_size' ) . ': ' . number_format( $t_max_file_size/1000 ) . 'k)</span>'?>
 	</td>
 	<td>
-		<input type="hidden" name="max_file_size" value="<?php echo config_get( 'max_file_size' ) ?>" />
+		<input type="hidden" name="max_file_size" value="<?php echo $t_max_file_size ?>" />
 		<input tabindex="16" name="file" type="file" size="60" />
 	</td>
 </tr>
@@ -417,6 +420,23 @@
 ?>
 	</td>
 </tr>
+
+<!-- Relationship (in case of cloned bug creation...) -->
+<?php
+	if( $f_master_bug_id > 0 ) {
+?>
+<tr <?php echo helper_alternate_class() ?>>
+	<td class="category">
+		<?php echo lang_get( 'relationship_with_parent' ) ?>
+	</td>
+	<td>
+		<?php relationship_list_box_for_cloned_bug( BUG_BLOCKS ) ?>
+		<?php PRINT '<b>' . lang_get( 'bug' ) . ' ' . bug_format_id( $f_master_bug_id ) . '</b>' ?>
+	</td>
+</tr>
+<?php
+	}
+?>
 
 <!-- Report Stay (report more bugs) -->
 <tr <?php echo helper_alternate_class() ?>>

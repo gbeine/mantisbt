@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: constant_inc.php,v 1.29 2004-08-27 00:29:55 thraxisp Exp $
+	# $Id: constant_inc.php,v 1.33 2004-10-05 21:10:14 prichards Exp $
 	# --------------------------------------------------------
 
 	### CONSTANTS  ###
@@ -34,6 +34,9 @@
 	define( 'ADMINISTRATOR',	90 );
 	define( 'NOBODY',			100 );
 
+	define( 'DEFAULT_ACCESS_LEVEL', -1); # This is used in add user to project
+	
+	
 	# status
 	define( 'NEW_',				10 );   # NEW seems to be a reserved keyword
 	define( 'FEEDBACK',			20 );
@@ -138,6 +141,7 @@
 	define( 'BUG_CLONED_TO', 				20 );
 	define( 'BUG_CREATED_FROM', 			21 );
 	define( 'CHECKIN',				22 );
+	define( 'BUG_REPLACE_RELATIONSHIP', 		23 );
 
 	# bug relationship constants
 	define( 'BUG_DUPLICATE',	0 );
@@ -160,6 +164,7 @@
 	define( 'ERROR_ACCESS_DENIED',					13 );
 	define( 'ERROR_UPLOAD_FAILURE',					15 );
 	define( 'ERROR_FTP_CONNECT_ERROR',				16 );
+	define( 'ERROR_HANDLER_ACCESS_TOO_LOW',				17 );
 
 	# ERROR_CONFIG_*
 	define( 'ERROR_CONFIG_OPT_NOT_FOUND',			100 );
@@ -293,5 +298,9 @@
 	define( 'SUMMARY_CAPTION', 1 );
 	define( 'SUMMARY_FIELD', 2 );
 	define( 'SUMMARY_EMAIL', 3 );
+
+	# bugnote types
+	define( 'BUGNOTE', 0 );
+	define( 'REMINDER', 1 );
 	
 ?>

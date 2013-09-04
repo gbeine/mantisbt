@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: manage_proj_edit_page.php,v 1.79 2004-07-14 22:16:34 vboctor Exp $
+	# $Id: manage_proj_edit_page.php,v 1.81 2004-09-22 10:15:33 bpfennigschmidt Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -27,7 +27,6 @@
 
 	$row = project_get_row( $f_project_id );
 	$mail = mail_get_account_data( $f_project_id );
-
 ?>
 <?php html_page_top1() ?>
 <?php html_page_top2() ?>
@@ -302,7 +301,8 @@ if ( access_has_global_level ( config_get( 'delete_project_threshold' ) ) ) { ?>
 		<form method="post" action="manage_proj_ver_add.php">
 			<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
 			<input type="text" name="version" size="32" maxlength="64" />
-			<input type="submit" class="button" value="<?php echo lang_get( 'add_version_button' ) ?>" />
+			<input type="submit" name="add_version" class="button" value="<?php echo lang_get( 'add_version_button' ) ?>" />
+			<input type="submit" name="add_and_edit_version" class="button" value="<?php echo lang_get( 'add_and_edit_version_button' ) ?>" />
 		</form>
 	</td>
 </tr>
@@ -534,6 +534,22 @@ if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_projec
 <?php
 	}  # end for
 ?>
+	<tr>
+	<td> &nbsp; </td>
+	<td> &nbsp; </td>
+	<td> &nbsp; </td>
+	<td class="center">
+	<?php
+		# You need global or project-specific permissions to remove users
+		#  from this project
+		if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_project_id ) ) {
+			if ( project_includes_user( $f_project_id, $t_user['id'] )  ) {
+				print_bracket_link( 'manage_proj_user_remove.php?project_id=' . $f_project_id, lang_get( 'remove_all_link' ) );
+			}
+		}
+	?>
+	</td>
+	</tr>
 	</table>
 </div>
 

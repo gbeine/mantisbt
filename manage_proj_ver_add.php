@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: manage_proj_ver_add.php,v 1.27 2004-01-11 07:16:07 vboctor Exp $
+	# $Id: manage_proj_ver_add.php,v 1.29 2004-10-24 14:09:39 vboctor Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -19,6 +19,7 @@
 <?php
 	$f_project_id	= gpc_get_int( 'project_id' );
 	$f_version		= gpc_get_string( 'version' );
+	$f_add_and_edit = gpc_get_bool( 'add_and_edit_version' );
 
 	access_ensure_project_level( config_get( 'manage_project_threshold' ), $f_project_id );
 
@@ -40,7 +41,7 @@
 		}
 
 		$t_version = trim( $t_version );
-		if ( version_is_unique( $f_project_id, $t_version ) ) {
+		if ( version_is_unique( $t_version, $f_project_id ) ) {
 			version_add( $f_project_id, $t_version );
 		} else if ( 1 == $t_version_count ) {
 			# We only error out on duplicates when a single value was
@@ -52,7 +53,13 @@
 		}
 	}
 
-	$t_redirect_url = 'manage_proj_edit_page.php?project_id='  .$f_project_id;
+	if ( true == $f_add_and_edit ) {
+		$t_version_id = version_get_id( $t_version, $f_project_id );
+		$t_redirect_url = 'manage_proj_ver_edit_page.php?version_id='.$t_version_id;
+	}
+	else {
+		$t_redirect_url = 'manage_proj_edit_page.php?project_id='  .$f_project_id;
+	}
 ?>
 <?php
 	html_page_top1();

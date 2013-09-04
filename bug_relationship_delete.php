@@ -6,20 +6,18 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_relationship_delete.php,v 1.3 2004-09-12 00:17:56 thraxisp Exp $
+	# $Id: bug_relationship_delete.php,v 1.7 2004-11-02 19:51:54 marcelloscata Exp $
 	# --------------------------------------------------------
 
-	# --------------------------------------------------------
-	# 2004 by Marcello Scata' (marcello@marcelloscata.com) - ITALY
-	# --------------------------------------------------------
+	# ======================================================================
+	# Author: Marcello Scata' <marcelloscata at users.sourceforge.net> ITALY
+	# ======================================================================
 	# To delete a relationship we need to ensure that:
 	# - User not anomymous
 	# - Source bug exists and is not in read-only state (peer bug could not exist...)
 	# - User that update the source bug and at least view the destination bug
 	# - Relationship must exist
-	# --------------------------------------------------------
-
-	# MASC RELATIONSHIP
+	# ----------------------------------------------------------------------
 
 	require_once( 'core.php' );
 
@@ -64,64 +62,25 @@
 	# update bug last updated (just for the src bug)
 	bug_update_date( $f_bug_id );
 
-	# Add log lines to both the histories
-	switch ( $t_rel_type ) {
-		case BUG_BLOCKS:
-			history_log_event_special( $f_bug_id, BUG_DEL_RELATIONSHIP, BUG_BLOCKS, $t_dest_bug_id );
-			email_relationship_deleted( $f_bug_id );
+	# set the rel_type for both bug and dest_bug based on $t_rel_type and on who is the dest bug
+	if ($f_bug_id == $t_bug_relationship_data->src_bug_id) {
+		$t_bug_rel_type = $t_rel_type;
+		$t_dest_bug_rel_type = relationship_get_complementary_type( $t_rel_type );
+	}
+	else {
+		$t_bug_rel_type = relationship_get_complementary_type( $t_rel_type );
+		$t_dest_bug_rel_type = $t_rel_type;
+	}
+
+	# send email and update the history for the src issue
+	history_log_event_special( $f_bug_id, BUG_DEL_RELATIONSHIP, $t_bug_rel_type, $t_dest_bug_id );
+	email_relationship_deleted( $f_bug_id, $t_dest_bug_id, $t_bug_rel_type );
 
 	if ( bug_exists( $t_dest_bug_id )) {
-				history_log_event_special( $t_dest_bug_id, BUG_DEL_RELATIONSHIP, BUG_DEPENDANT, $f_bug_id );
-				email_relationship_deleted( $t_dest_bug_id );
-			}
-			break;
-
-		case BUG_DEPENDANT:
-			history_log_event_special( $f_bug_id, BUG_DEL_RELATIONSHIP, BUG_DEPENDANT, $t_dest_bug_id );
-			email_relationship_deleted( $f_bug_id );
-
-			if ( bug_exists( $t_dest_bug_id )) {
-				history_log_event_special( $t_dest_bug_id, BUG_DEL_RELATIONSHIP, BUG_BLOCKS, $f_bug_id );
-				email_relationship_deleted( $t_dest_bug_id );
-			}
-			break;
-
-		case BUG_HAS_DUPLICATE:
-			history_log_event_special( $f_bug_id, BUG_DEL_RELATIONSHIP, BUG_HAS_DUPLICATE, $t_dest_bug_id );
-			email_relationship_deleted( $f_bug_id );
-
-			if ( bug_exists( $t_dest_bug_id )) {
-				history_log_event_special( $t_dest_bug_id, BUG_DEL_RELATIONSHIP, BUG_DUPLICATE, $f_bug_id );
-				email_relationship_deleted( $t_dest_bug_id );
-			}
-			break;
-
-		case BUG_DUPLICATE:
-			history_log_event_special( $f_bug_id, BUG_DEL_RELATIONSHIP, BUG_DUPLICATE, $t_dest_bug_id );
-			email_relationship_deleted( $f_bug_id );
-
-			if ( bug_exists( $t_dest_bug_id )) {
-				history_log_event_special( $t_dest_bug_id, BUG_DEL_RELATIONSHIP, BUG_HAS_DUPLICATE, $f_bug_id );
-				email_relationship_deleted( $t_dest_bug_id );
-			}
-			break;
-
-		case BUG_RELATED:
-			history_log_event_special( $f_bug_id, BUG_DEL_RELATIONSHIP, BUG_RELATED, $t_dest_bug_id );
-			email_relationship_deleted( $f_bug_id );
-
-			if ( bug_exists( $t_dest_bug_id )) {
-				history_log_event_special( $t_dest_bug_id, BUG_DEL_RELATIONSHIP, BUG_RELATED, $f_bug_id );
-				email_relationship_deleted( $t_dest_bug_id );
-			}
-			break;
-
-		default:
-			trigger_error( ERROR_GENERIC, ERROR );
-			break;
+		# send email and update the history for the dest issue
+		history_log_event_special( $t_dest_bug_id, BUG_DEL_RELATIONSHIP, $t_dest_bug_rel_type, $f_bug_id );
+		email_relationship_deleted( $t_dest_bug_id, $f_bug_id, $t_dest_bug_rel_type );
 	}
 
 	print_header_redirect_view( $f_bug_id );
-
-	# MASC RELATIONSHIP
 ?>

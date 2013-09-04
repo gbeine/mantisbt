@@ -9,11 +9,11 @@
 	# Lithuanian: Virginija Baliukiene, tygra@one.lt (for Mantis 0.18.2)
 	# Lithuanian: Vilius Ðumskas, vilius@lnk.lt (for Mantis 0.19.0-RC1)
 	# -------------------------------------------------
-	# $Revision: 1.14 $
+	# $Revision: 1.18 $
 	# $Author: bigbadger $
-	# $Date: 2004-09-09 02:05:30 $
+	# $Date: 2004-10-15 07:07:08 $
 	#
-	# $Id: strings_lithuanian.txt,v 1.14 2004-09-09 02:05:30 bigbadger Exp $
+	# $Id: strings_lithuanian.txt,v 1.18 2004-10-15 07:07:08 bigbadger Exp $
 	###########################################################################
 	# Problematiðki vertimai
 	# Angliðki terminai - jø vertimas (vertimas pagal kompiuteriniø terminø anglø - lietuviø þodynà, URL http://www.likit.lt/frames/turinys/turinys.htm)
@@ -150,6 +150,15 @@ $s_priority_link = 'Pagal prioritetà';
 $s_severity_link = 'Pagal svarbà';
 $s_category_link = 'Pagal kategorijà';
 $s_resolution_link = 'Pagal sprendimà';
+$s_legend_still_open = 'Still Open';
+$s_legend_resolved = 'Resolved';
+$s_legend_assigned = 'Assigned';
+$s_legend_total = 'Total';
+$s_legend_opened = 'Opened';
+$s_legend_closed = 'Closed';
+$s_legend_reported = 'Reported';
+$s_cumulative = 'Cumulative';
+$s_not_enough_data = 'Not enough data to create graph';
 
 # print_all_bug_page.php : display selected bugs
 $s_hide_button = 'Rodyti tik pasirinktas';
@@ -187,6 +196,7 @@ $MANTIS_ERROR[ERROR_BUGNOTE_NOT_FOUND]  = 'Komantaras nerastas.';
 $MANTIS_ERROR[ERROR_PROJECT_NOT_FOUND]  = 'Projektas nerastas.';
 $MANTIS_ERROR[ERROR_DB_FIELD_NOT_FOUND] = 'Duomenø bazës laukas \'%s\' nerastas.';
 $MANTIS_ERROR[ERROR_FTP_CONNECT_ERROR]	= 'Prisijungti prie FTP serverio nepavyko.';
+$MANTIS_ERROR[ERROR_HANDLER_ACCESS_TOO_LOW]	 = 'Issue handler does not have sufficient access rights to handle issue at this status.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_NOT_UNIQUE] = 'Projektas tokiu pavadinimu jau egzistuoja. Gráþkite atgal ir pasirinkite kitoká pavadinimà.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_INVALID] = 'Klaidingas projekto pavadinimas.  Projekto pavadinimas negali bûti tuðèias.';
 $MANTIS_ERROR[ERROR_USER_NOT_FOUND]	= 'Vartotojas nerastas.';
@@ -257,6 +267,7 @@ $s_prefix_for_deleted_users = 'vartotojas';
 
 $s_administrator = 'administratorius';
 $s_myself = "Að pats";
+$s_default_access_level = 'Default access level';
 
 # Enum Strings
 $s_access_levels_enum_string      = '10:stebëtojas,25:praneðëjas,40:atnaujintojas,55:sprendëjas,70:vadovas,90:administratorius';
@@ -286,6 +297,7 @@ $s_new_account_signup_msg = 'Vartotojo vardas sukurtas su þemiau esanèiais param
 $s_reset_request_msg = 'Kaþkas (greièiausiai jûs pats) papraðëte slaptaþodþio pakeitimo. Jeigu tai buvote ne jûs, nekreipkite dëmesio á ðá laiðkà.' . "\n\n" . 'Prieðingu atveju aplankykite puslapá ðiuo adresu:';
 $s_reset_request_in_progress_msg = 'Jeigu ávedëte teisingà vartotojo vardà ir el. paðto adresà, mes jums iðsiuntëme patvirtinimo laiðkà. Kai tik gausite minëtà laiðkà, sekite instrukcijas ekrane.';
 
+$s_email_notification_title_for_status_bug_new = 'The following issue is now in status NEW (again)';
 $s_email_notification_title_for_status_bug_feedback = 'Ðiai klaidai reikia Jûsø ATSAKYMO.';
 $s_email_notification_title_for_status_bug_acknowledged = 'Ði klaida buvo UÞREGISTRUOTA.';
 $s_email_notification_title_for_status_bug_confirmed = 'Ði klaida buvo PATVIRTINTA.';
@@ -303,10 +315,18 @@ $s_email_notification_title_for_action_sponsorship_updated = 'Pasikeitë ðios kla
 $s_email_notification_title_for_action_sponsorship_deleted = 'Rëmëjas atsisakë remti ðià klaidà.';
 
 $s_email_notification_title_for_action_bugnote_submitted = 'Prie klaidos pridëtas KOMENTARAS.';
-$s_email_notification_title_for_action_relationship_added = "Ðiais klaidai sukurti nauji tarpusavio RYÐIAI.";
-$s_email_notification_title_for_action_relationship_deleted = "RYÐIAI ðiai klaidai iðtrinti.";
-$s_email_notification_title_for_action_relationship_child_resolved = "SUSIJUSI klaida buvo IÐSPRÆSTA.";
-$s_email_notification_title_for_action_relationship_child_closed = "SUSIJUSI klaida buvo UÞDARYTA.";
+$s_email_notification_title_for_action_duplicate_of_relationship_added = "The following issue has been set as DUPLICATE OF issue %s.";
+$s_email_notification_title_for_action_has_duplicate_relationship_added = "The issue %s has been set as DUPLICATE OF the following issue.";
+$s_email_notification_title_for_action_related_to_relationship_added = "The following issue has been set as RELATED TO issue %s.";
+$s_email_notification_title_for_action_dependant_on_relationship_added = "The following issue has been set PARENT OF issue %s.";
+$s_email_notification_title_for_action_blocks_relationship_added = "The following issue has been set CHILD OF issue %s.";
+$s_email_notification_title_for_action_duplicate_of_relationship_deleted = "The following issue has been UNset as DUPLICATE OF issue %s.";
+$s_email_notification_title_for_action_has_duplicate_relationship_deleted = "The issue %s has been UNset as DUPLICATE OF the following issue.";
+$s_email_notification_title_for_action_related_to_relationship_deleted = "The following issue has been UNset as RELATED TO issue %s.";
+$s_email_notification_title_for_action_dependant_on_relationship_deleted = "The following issue has been UNset PARENT OF issue %s.";
+$s_email_notification_title_for_action_blocks_relationship_deleted = "The following issue has been UNset CHILD OF issue %s.";
+$s_email_notification_title_for_action_relationship_child_resolved = "The RELATED issue %s has been RESOLVED.";
+$s_email_notification_title_for_action_relationship_child_closed = "The RELATED issue %s has been CLOSED.";
 
 $s_email_reporter = 'Praneðëjas';
 $s_email_handler = 'Priskirta';
@@ -341,6 +361,7 @@ $s_username = 'Vartotojo vardas';
 $s_realname = 'Tikras vardas';
 $s_email = 'El. paðto adresas';
 $s_password = 'Slaptaþodis';
+$s_no_password_change = 'The password is controlled by another system, hence cannot be edited here.';
 $s_confirm_password  = 'Slaptaþodis (dar kartà)';
 $s_access_level = 'Priëjimo lygis';
 $s_update_user_button = 'Atnaujinti vartotojo vardà';
@@ -478,6 +499,9 @@ $s_bug_reminder = 'Siøsti priminimà';
 $s_reminder_sent_to = 'Siøsti priminimà';
 $s_bug_send_button = 'Siøsti';
 $s_reminder = 'Priminimas';
+$s_reminder_explain = 'This note will be sent to the recipients listed requesting feedback on this issue.';
+$s_reminder_monitor = 'These recipients will also begin monitoring the issue. They can unsubscribe using the Unmonitor button.';
+$s_reminder_store = 'This note will be stored with the issue.';
 
 # bug_update.php
 $s_bug_updated_msg = 'Klaida sëkmingai atnaujinta...';
@@ -594,6 +618,7 @@ $s_filter_button = 'Pritaikyti filtrà';
 $s_manage_users_link = 'Tvarkyti vartotojus';
 $s_manage_projects_link = 'Tvarkyti projektus';
 $s_manage_custom_field_link = 'Tvarkyti papildomus laukus';
+$s_permissions_summary_report = 'Permissions Report';
 $s_create_new_account_link = 'Sukurti naujà vartotojà';
 $s_projects_link = 'Projektai';
 $s_documentation_link = 'Dokumentacija';
@@ -648,6 +673,7 @@ $s_categories = 'Kategorijos';
 $s_add_category_button = 'Pridëti kategorijà';
 $s_versions = 'Versijos';
 $s_add_version_button = 'Pridëti versijà';
+$s_add_and_edit_version_button = 'Add and Edit Version';
 $s_edit_link = 'Redaguoti';
 $s_actions = 'Veiksmai';
 $s_version = 'Versija';
@@ -807,6 +833,7 @@ $s_add_user_title = 'Vartotojo átraukimas á projektà';
 $s_add_user_button = 'Átraukti vartotojà';
 $s_project_selection_title = 'Projekto pasirinkimas';
 $s_remove_link = 'Paðalinti';
+$s_remove_all_link = 'Remove all';
 
 # proj_user_update.php
 $s_updated_user_msg = 'Vartotojo duomenys sëkmingai atnaujinti';
@@ -851,6 +878,7 @@ $s_signup_captcha_request = 'Áraðykite kodà, kuris rodomas deþinëje';
 $s_signup_info = 'Uþpildæ ðià formà gausite patvirtinimo laiðkà.<br/>Pasinaudodami minëtu laiðku galësite aktyvuoti savo vartotojo vardà. Jeigu per septynias dienas nespësite to padaryti, jûsø vartotojo vardas bus iðtrintas.<br/>Norëdami gauti patvirtinimo laiðkà, turi ávesti tikrà el. paðto adresà.';
 $s_signup_title = 'Registracija';
 $s_signup_button = 'Pegistruotis';
+$s_no_password_request = 'Your password is managed by another system. Please contact your system administrator.';
 
 # site_settings_edit_page.php
 $s_edit_site_settings_title = 'Tinklapio nustatymø redagavimas';
@@ -1040,14 +1068,84 @@ $s_add_new_relationship_button = "Sukurti";
 $s_this_bug = "Dabartinë klaida";
 $s_relationship_added = "Ryðys sukurtas";
 $s_relationship_deleted = "Ryðys iðtrintas";
+$s_no_relationship = "no relationship";
+$s_relationship_replaced = "Relationship replaced";
+$s_replace_relationship_button = "Replace";
+$s_replace_relationship_sure_msg = "There is already a relationship between the two issues. Are you sure you want to replace it?";
+$s_relationship_with_parent = "Relationship with the parent issue";
 $s_delete_relationship_button = "Iðtrinti";
 $s_delete_relationship_sure_msg = "Ar tikrai norite iðtrinti ðá ryðá?";
 $s_relationship_warning_blocking_bugs_not_resolved = "Ne visos su ðia klaida susijusios klaidos buvo iðspræstos arba uþdarytos.";
 $s_relationship_warning_blocking_bugs_not_resolved_2 = "<b>DËMESIO</b>. Ne visos su ðia klaida susijusios klaidos buvo iðspræstos arba uþdarytos.<br>Prieð <b>iðsprændþiant/uþdarant</b> ðià klaidà, turite iðspræsti arba uþdaryti visas susijusias klaidas.";
 $s_create_child_bug_button = "Sukurti sàryðá";
-$s_bug_cloned_to = "Klaida klonuota";
+$s_bug_cloned_to = "Issue cloned";
 $s_bug_created_from = "Klaida sukurta ið";
+# Relationship Graphs
+$s_viewing_bug_relationship_graph_title = "Relationship Graph";
+$s_relation_graph = "Relation Graph";
+$s_dependency_graph = "Dependency Graph";
+$s_vertical = "Vertical";
+$s_horizontal = "Horizontal";
+$s_view_issue = "View Issue";
 
 # Source Control Integration
 $s_checkin = 'Patikrinimas';
+# Pemissions report
+$s_perm_rpt_capability = 'Capability';
+$s_view = 'View';
+$s_issues = 'ISSUES';
+$s_report_issue = 'Report an issue';
+$s_update_issue = 'Update an issue';
+$s_monitor_issue = 'Monitor an issue';
+$s_handle_issue = 'Handle an issue';
+$s_move_issue = 'Move an issue';
+$s_delete_issue = 'Delete an issue';
+$s_reopen_issue = 'Reopen an issue';
+$s_view_private_issues = 'View private issues';
+$s_update_readonly_issues = 'Update readonly issues';
+$s_update_issue_status = 'Update issue status';
+$s_set_view_status = 'Set view status (public vs private)';
+$s_update_view_status = 'Update view status (public vs private)';
+$s_show_list_of_users_monitoring_issue = 'Show list of users monitoring issue';
+$s_notes = 'NOTES';
+$s_add_notes = 'Add notes';
+$s_update_notes = 'Update notes';
+$s_delete_note = 'Delete note';
+$s_view_private_notes = 'View private notes';
+$s_news = 'NEWS';
+$s_view_private_news = 'View private news';
+$s_manage_news = 'Manage news';
+$s_view_list_of_attachments = 'View list of attachments';
+$s_download_attachments = 'Download attachments';
+$s_delete_attachments = 'Delete attachments';
+$s_upload_issue_attachments = 'Upload issue attachments';
+$s_filters = 'filters';
+$s_save_filters = 'Save filters';
+$s_save_filters_as_shared = 'Save filters as shared';
+$s_use_saved_filters = 'Use saved filters';
+$s_create_project = 'Create project';
+$s_delete_project = 'Delete project';
+$s_manage_project = 'Manage project';
+$s_manage_user_access_to_project = 'Manage user access to a project';
+$s_automatically_included_in_private_projects = 'Automatically included in private projects';
+$s_project_documents = 'PROJECT DOCUMENTS';
+$s_view_project_documents = 'View project documents';
+$s_upload_project_documents = 'Upload project documents';
+$s_link_custom_fields_to_projects = 'Link custom fields to projects';
+$s_sponsorships = 'SPONSORSHIPS';
+$s_view_sponsorship_details = 'View sponsorship details';
+$s_view_sponsorship_total = 'View sponsorship total';
+$s_sponsor_issue = 'Sponsor issue';
+$s_assign_sponsored_issue = 'Assign sponsored issue';
+$s_handle_sponsored_issue = 'Handle sponsored issue';
+$s_others = 'OTHERS';
+$s_see_email_addresses_of_other_users = 'See email addresses of other users';
+$s_send_reminders = 'Send reminders';
+$s_add_profiles = 'Add profiles';
+$s_notify_of_new_user_created = 'Notify of new user created';
+$s_email_notification = 'EMAIL NOTIFICATION';
+$s_status_changed_to = 'Status changes to';
+$s_email_on_deleted = 'Email on Deleted';
+$s_email_on_sponsorship_changed = 'Email on Sponsorship changed';
+$s_email_on_relationship_changed = 'Email on Relationship changed';
 ?>

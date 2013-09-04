@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_api.php,v 1.82 2004-08-27 00:29:55 thraxisp Exp $
+	# $Id: bug_api.php,v 1.87 2004-10-17 01:58:56 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -348,7 +348,7 @@
 
 		# check to see if we want to assign this right off
 		$t_status = config_get( 'bug_submit_status' );
-
+		
 		# if not assigned, check if it should auto-assigned.
 		if ( 0 == $c_handler_id ) {
 			# if a default user is associated with the category and we know at this point
@@ -539,12 +539,12 @@
 				$t_bug_file = db_fetch_array( $result );
 
 				# prepare the new diskfile name and then copy the file
+				$t_file_path = dirname( $t_bug_file['folder'] );
+				$t_new_diskfile_name = $t_file_path . file_generate_unique_name( 'bug-' . $p_file_name, $t_file_path );
 				$t_new_file_name = file_get_display_name( $t_bug_file['filename'] );
-				$t_new_file_name = bug_format_id( $t_new_bug_id ) . '-' . $t_new_file_name;
-				$t_new_diskfile_name = $t_bug_file['folder'] . $t_new_file_name;
 				if ( ( config_get( 'file_upload_method' ) == DISK ) ) {
-					umask( 0333 );  # make read only
 					copy( $t_bug_file['diskfile'], $t_new_diskfile_name );
+					chmod( $t_new_diskfile_name, 0400 ); # make file read only in the file system
 				}
 
 				$query = "INSERT INTO $t_mantis_bug_file_table
@@ -693,7 +693,7 @@
 	# --------------------
 	# Update a bug from the given data structure
 	#  If the third parameter is true, also update the longer strings table
-	function bug_update( $p_bug_id, $p_bug_data, $p_update_extended = false ) {
+	function bug_update( $p_bug_id, $p_bug_data, $p_update_extended = false, $p_bypass_mail = false ) {
 		$c_bug_id		= db_prepare_int( $p_bug_id );
 		$c_bug_data		= bug_prepare_db( $p_bug_data );
 
@@ -799,27 +799,29 @@
 		# Update the last update date
 		bug_update_date( $p_bug_id );
 
-		$t_action_prefix = 'email_notification_title_for_action_bug_';
-		$t_status_prefix = 'email_notification_title_for_status_bug_';
+		if ( false == $p_bypass_mail ) {		# allow bypass if user is sending mail separately
+			$t_action_prefix = 'email_notification_title_for_action_bug_';
+			$t_status_prefix = 'email_notification_title_for_status_bug_';
 
-		# bug assigned
-		if ( $t_old_data->handler_id != $p_bug_data->handler_id ) {
-			email_generic( $p_bug_id, 'owner', $t_action_prefix . 'assigned' );
-			return true;
+			# bug assigned
+			if ( $t_old_data->handler_id != $p_bug_data->handler_id ) {
+				email_generic( $p_bug_id, 'owner', $t_action_prefix . 'assigned' );
+				return true;
+			}
+
+			# status changed
+			if ( $t_old_data->status != $p_bug_data->status ) {
+				$t_status = get_enum_to_string( config_get( 'status_enum_string' ), $p_bug_data->status );
+				$t_status = str_replace( ' ', '_', $t_status );
+				email_generic( $p_bug_id, $t_status, $t_status_prefix . $t_status );
+				return true;
+			}
+
+			# @@@ handle priority change if it requires special handling
+
+			# generic update notification
+			email_generic( $p_bug_id, 'updated', $t_action_prefix . 'updated' );
 		}
-
-		# status changed
-		if ( $t_old_data->status != $p_bug_data->status ) {
-			$t_status = get_enum_to_string( config_get( 'status_enum_string' ), $p_bug_data->status );
-			$t_status = str_replace( ' ', '_', $t_status );
-			email_generic( $p_bug_id, $t_status, $t_status_prefix . $t_status );
-			return true;
-		}
-
-		# @@@ handle priority change if it requires special handling
-
-		# generic update notification
-		email_generic( $p_bug_id, 'updated', $t_action_prefix . 'updated' );
 
 		return true;
 	}
@@ -1106,34 +1108,33 @@
 			bug_ensure_exists( $p_duplicate_id );
 
 			if( ON == config_get( 'enable_relationship' ) ) {
-				$t_relationship_id = relationship_exists( $p_bug_id, $p_duplicate_id );
-				if( $t_relationship_id > 0 ) {
-					# there is already a relationship between the bugs... we check if it's of the right type (otherwise error)
+				# check if there is other relationship between the bugs...
+				$t_id_relationship = relationship_same_type_exists( $p_bug_id, $p_duplicate_id, BUG_DUPLICATE );
 
-					$t_relationship = relationship_get( $t_relationship_id );
-					if( $t_relationship != null ) {
-						if( ( $t_relationship->type != BUG_DUPLICATE ) && ( $t_relationship->type != BUG_HAS_DUPLICATE )) {
-							# the relationship is not duplicates/has duplicated -> error
-							trigger_error( ERROR_RELATIONSHIP_ALREADY_EXISTS, ERROR );
-						}
-					}
+				if ( $t_id_relationship == -1 ) {
+					# the relationship type is already set. Nothing to do
+				}
+				else if ( $t_id_relationship > 0 ) {
+					# there is already a relationship between them -> we have to update it and not to add a new one
+					helper_ensure_confirmed( lang_get( 'replace_relationship_sure_msg' ), lang_get( 'replace_relationship_button' ) );
 
+					# Update the relationship
+					relationship_update( $t_id_relationship, $p_bug_id, $p_duplicate_id, BUG_DUPLICATE );
+
+					# Add log line to the history (both bugs)
+					history_log_event_special( $p_bug_id, BUG_REPLACE_RELATIONSHIP, BUG_DUPLICATE, $p_duplicate_id );
+					history_log_event_special( $p_duplicate_id, BUG_REPLACE_RELATIONSHIP, BUG_HAS_DUPLICATE, $p_bug_id );
 				}
 				else {
-					# no relationship found... we add the duplicate relationship
-
-					# user can access to the related bug at least as viewer...
-					if( !access_has_bug_level( VIEWER, $p_duplicate_id ) ) {
-						error_parameters( $p_duplicate_id );
-						trigger_error( ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_BUG_TOO_LOW, ERROR );
-					}
-
-					# Relationship feature active
+					# Add the new relationship
 					relationship_add( $p_bug_id, $p_duplicate_id, BUG_DUPLICATE );
+
+					# Add log line to the history (both bugs)
 					history_log_event_special( $p_bug_id, BUG_ADD_RELATIONSHIP, BUG_DUPLICATE, $p_duplicate_id );
 					history_log_event_special( $p_duplicate_id, BUG_ADD_RELATIONSHIP, BUG_HAS_DUPLICATE, $p_bug_id );
 				}
 			}
+
 			bug_set_field( $p_bug_id, 'duplicate_id', (int)$p_duplicate_id );
 			# MASC RELATIONSHIP
 		}

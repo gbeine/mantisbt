@@ -9,13 +9,13 @@
 	# Brazilian Portuguese: Fernando Machado, fm-nospam@fmachado.com
 	# Brazilian Portuguese: Juliano Ravasi Ferraz, jferraz at users sourceforge net
 	# -------------------------------------------------
-	# $Revision: 1.72 $
+	# $Revision: 1.78 $
 	# $Author: bigbadger $
-	# $Date: 2004-09-11 02:55:16 $
+	# $Date: 2004-10-15 07:07:09 $
 	#
-	# $Id: strings_portuguese_brazil.txt,v 1.72 2004-09-11 02:55:16 bigbadger Exp $
+	# $Id: strings_portuguese_brazil.txt,v 1.78 2004-10-15 07:07:09 bigbadger Exp $
 	# -------------------------------------------------
-	# Up-to-date with strings_english.txt revision 1.206 -- jferraz 2004/08/23
+	# Up-to-date with strings_english.txt revision 1.217 -- jferraz 2004/08/23
 	###########################################################################
 ?>
 <?php
@@ -141,6 +141,15 @@ $s_priority_link = 'Por prioridade';
 $s_severity_link = 'Por gravidade';
 $s_category_link = 'Por categoria';
 $s_resolution_link = 'Por resolução';
+$s_legend_still_open = 'Ainda aberto';
+$s_legend_resolved = 'Resolvido';
+$s_legend_assigned = 'Atribuído';
+$s_legend_total = 'Total';
+$s_legend_opened = 'Aberto';
+$s_legend_closed = 'Fechado';
+$s_legend_reported = 'Reportado';
+$s_cumulative = 'Cumulativo';
+$s_not_enough_data = 'Não há dados suficientes para criar o gráfico';
 
 # print_all_bug_page.php : display selected bugs
 $s_hide_button = 'Mostrar apenas os selecionados';
@@ -178,6 +187,7 @@ $MANTIS_ERROR[ERROR_BUGNOTE_NOT_FOUND] = 'Anotação não encontrada.';
 $MANTIS_ERROR[ERROR_PROJECT_NOT_FOUND] = 'Projeto não encontrado.';
 $MANTIS_ERROR[ERROR_DB_FIELD_NOT_FOUND] = 'Campo \'%s\' do banco-de-dados não encontrado.';
 $MANTIS_ERROR[ERROR_FTP_CONNECT_ERROR]	 = 'Incapaz de conectar ao servidor FTP.';
+$MANTIS_ERROR[ERROR_HANDLER_ACCESS_TOO_LOW]	 = 'A pessoa atribuída ao caso não possui direitos de acesso suficientes para tratar o caso neste status.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_NOT_UNIQUE] = 'Um projeto com este nome já existe.  Por favor, volte e entre um nome diferente.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_INVALID] = 'Nome inválido de projeto especificado.  Nomes de projeto não pode ser em branco.';
 $MANTIS_ERROR[ERROR_USER_NOT_FOUND]	 = 'Usuário não encontrado.';
@@ -248,6 +258,7 @@ $s_prefix_for_deleted_users = 'usuário';
 
 $s_administrator = 'administrador';
 $s_myself = "Eu mesmo";
+$s_default_access_level = 'Nível de acesso padrão';
 
 # Enum Strings
 $s_access_levels_enum_string = '10:visualizador,25:relator,40:atualizador,55:desenvolvedor,70:gerente,90:administrador';
@@ -277,6 +288,7 @@ $s_new_account_signup_msg = 'A seguinte conta foi criada:';
 $s_reset_request_msg = 'Alguém (presumidamente você) solicitou uma troca de senha através da verificação de e-mail. Se este não foi você, ignore esta mensagem e nada irá acontecer.' . "\n\n" . 'Se você solicitou esta verificação, visite o seguinte endereço para alterar a sua senha:';
 $s_reset_request_in_progress_msg = 'Se você forneceu o nome de usuário e endereço de e-mail corretos para a sua conta, nós teremos enviado agora uma mensagem de confirmação para este endereço de e-mail. Assim que a mensagem for recebida, siga as instruções fornecidas para mudar a senha da sua conta.';
 
+$s_email_notification_title_for_status_bug_new = 'O seguinte caso está agora com status NOVO (novamente).';
 $s_email_notification_title_for_status_bug_feedback = 'O seguinte caso requer o seu RETORNO.';
 $s_email_notification_title_for_status_bug_acknowledged = 'O seguinte caso foi ADMITIDO.';
 $s_email_notification_title_for_status_bug_confirmed = 'O seguinte caso foi CONFIRMADO.';
@@ -294,10 +306,18 @@ $s_email_notification_title_for_action_sponsorship_updated = 'O patrocínio do se
 $s_email_notification_title_for_action_sponsorship_deleted = 'O patrocínio do seguinte caso foi retirado.';
 
 $s_email_notification_title_for_action_bugnote_submitted = 'Uma ANOTAÇÃO foi adicionada a este caso.';
-$s_email_notification_title_for_action_relationship_added = "Uma nova RELAÇÃO foi adicionada ao seguinte caso.";
-$s_email_notification_title_for_action_relationship_deleted = "Uma RELAÇÃO foi apagada do seguinte caso.";
-$s_email_notification_title_for_action_relationship_child_resolved = "Um caso RELACIONADO foi RESOLVIDO.";
-$s_email_notification_title_for_action_relationship_child_closed = "Um caso RELACIONADO foi FECHADO.";
+$s_email_notification_title_for_action_duplicate_of_relationship_added = "O seguinte caso foi marcado como DUPLICADO do caso %s.";
+$s_email_notification_title_for_action_has_duplicate_relationship_added = "O caso %s foi marcado como DUPLICADO do seguinte caso.";
+$s_email_notification_title_for_action_related_to_relationship_added = "O seguinte caso foi marcado como RELACIONADO ao caso %s.";
+$s_email_notification_title_for_action_dependant_on_relationship_added = "O seguinte caso foi marcado como PAI do caso %s.";
+$s_email_notification_title_for_action_blocks_relationship_added = "O seguinte caso foi marcado como FILHO do caso %s.";
+$s_email_notification_title_for_action_duplicate_of_relationship_deleted = "O seguinte caso foi DESmarcado como DUPLICADO do caso %s.";
+$s_email_notification_title_for_action_has_duplicate_relationship_deleted = "O caso %s foi DESmarcado como DUPLICADO do seguinte caso.";
+$s_email_notification_title_for_action_related_to_relationship_deleted = "O seguinte caso foi DESmarcado como RELACIONADO ao caso %s.";
+$s_email_notification_title_for_action_dependant_on_relationship_deleted = "O seguinte caso foi DESmarcado como PAI do caso %s.";
+$s_email_notification_title_for_action_blocks_relationship_deleted = "O seguinte caso foi DESmarcado como FILHO do caso %s.";
+$s_email_notification_title_for_action_relationship_child_resolved = "O caso RELACIONADO %s foi RESOLVIDO.";
+$s_email_notification_title_for_action_relationship_child_closed = "O caso RELACIONADO %s foi FECHADO.";
 
 $s_email_reporter = 'Relatado por';
 $s_email_handler = 'Atribuído a';
@@ -332,6 +352,7 @@ $s_username = 'Nome do Usuário';
 $s_realname = 'Nome Verdadeiro';
 $s_email = 'E-Mail';
 $s_password = 'Senha';
+$s_no_password_change = 'A senha é controlada por outro sistema, e por este motivo, não pode ser alterada aqui.';
 $s_confirm_password = 'Confirmar Senha';
 $s_access_level = 'Nível de Acesso';
 $s_update_user_button = 'Atualizar Usuário';
@@ -469,6 +490,9 @@ $s_bug_reminder = 'Enviar um lembrete';
 $s_reminder_sent_to = 'Lembrete enviado para';
 $s_bug_send_button = 'Enviar';
 $s_reminder = 'Lembrete';
+$s_reminder_explain = 'Esta anotação será enviada aos destinatários listados, solicitando retorno sobre este caso.';
+$s_reminder_monitor = 'Estes usuários também começarão a monitorar o caso. Eles podem se desinscrever usando o botão "Parar de Monitorar".';
+$s_reminder_store = 'Esta anotação será registrada no caso.';
 
 # bug_update.php
 $s_bug_updated_msg = 'O caso foi atualizado com sucesso...';
@@ -586,6 +610,7 @@ $s_filter_button = 'Aplicar Filtro';
 $s_manage_users_link = 'Gerenciar Usuários';
 $s_manage_projects_link = 'Gerenciar Projetos';
 $s_manage_custom_field_link = 'Gerenciar Campos Personalizados';
+$s_permissions_summary_report = 'Permissions Report';
 $s_create_new_account_link = 'Criar Nova Conta';
 $s_projects_link = 'Projetos';
 $s_documentation_link = 'Documentação';
@@ -640,6 +665,7 @@ $s_categories = 'Categorias';
 $s_add_category_button = 'Adicionar Categoria';
 $s_versions = 'Versões';
 $s_add_version_button = 'Adicionar Versão';
+$s_add_and_edit_version_button = 'Adicionar e Alterar Versão';
 $s_edit_link = 'Alterar';
 $s_actions = 'Ações';
 $s_version = 'Versão';
@@ -799,6 +825,7 @@ $s_add_user_title = 'Adicionar usuário ao projeto';
 $s_add_user_button = 'Adicionar Usuário';
 $s_project_selection_title = 'Seleção de Projeto';
 $s_remove_link = 'Remover';
+$s_remove_all_link = 'Remover todos';
 
 # proj_user_update.php
 $s_updated_user_msg = 'Usuário atualizado com sucesso';
@@ -843,6 +870,7 @@ $s_signup_captcha_request = 'Digite o código que é mostrado no quadro à direita.
 $s_signup_info = 'Ao completar este formulário e verificar suas respostas, um e-mail de confirmação lhe será enviado para o endereço de e-mail que você especificou.<br/>Usando o e-mail de confirmação, você será capaz de ativar sua conta. Se você falhar em ativar sua conta dentro de sete dias, ela será apagada.<br/>Você deve especificar um endereço de e-mail válido para poder receber o e-mail de confirmação de conta.';
 $s_signup_title = 'Criar Conta';
 $s_signup_button = 'Criar Conta';
+$s_no_password_request = 'Sua senha é gerenciada por outro sistema. Por favor, contate o administrador de sistemas.';
 
 # site_settings_edit_page.php
 $s_edit_site_settings_title = 'Altera Configurações do Sítio';
@@ -1032,14 +1060,85 @@ $s_add_new_relationship_button = "Adicionar";
 $s_this_bug = "Este caso";
 $s_relationship_added = "Relação adicionada";
 $s_relationship_deleted = "Relação apagada";
+$s_no_relationship = "sem relações";
+$s_relationship_replaced = "Relação substituída";
+$s_replace_relationship_button = "Substituir";
+$s_replace_relationship_sure_msg = "Já existe uma relação entre os dois casos. Você tem certeza que deseja substituir?";
+$s_relationship_with_parent = "Relação com o caso pai";
 $s_delete_relationship_button = "Apagar";
 $s_delete_relationship_sure_msg = "Você tem certeza que deseja apagar esta relação?";
 $s_relationship_warning_blocking_bugs_not_resolved = "Nem todos os casos filhos foram resolvidos ou fechados.";
 $s_relationship_warning_blocking_bugs_not_resolved_2 = "<b>ATENÇÃO</b>. Nem todos os casos filhos já foram resolvidos ou fechados.<br>Antes de <b>resolver/fechar</b> um caso pai, todos os casos relacionados como filhos deste devem ser resolvidos ou fechados.";
-$s_create_child_bug_button = "Criar Filho";
+$s_create_child_bug_button = "Criar Clone";
 $s_bug_cloned_to = "Caso clonado";
 $s_bug_created_from = "Caso gerado à partir de";
 
+# Relationship Graphs
+$s_viewing_bug_relationship_graph_title = "Gráfico de Relacionamentos";
+$s_relation_graph = "Gráfico de Relações";
+$s_dependency_graph = "Gráfico de Dependências";
+$s_vertical = "Vertical";
+$s_horizontal = "Horizontal";
+$s_view_issue = "Ver Caso";
+
 # Source Control Integration
 $s_checkin = 'Checkin';
+# Pemissions report
+$s_perm_rpt_capability = 'Capability';
+$s_view = 'View';
+$s_issues = 'ISSUES';
+$s_report_issue = 'Report an issue';
+$s_update_issue = 'Update an issue';
+$s_monitor_issue = 'Monitor an issue';
+$s_handle_issue = 'Handle an issue';
+$s_move_issue = 'Move an issue';
+$s_delete_issue = 'Delete an issue';
+$s_reopen_issue = 'Reopen an issue';
+$s_view_private_issues = 'View private issues';
+$s_update_readonly_issues = 'Update readonly issues';
+$s_update_issue_status = 'Update issue status';
+$s_set_view_status = 'Set view status (public vs private)';
+$s_update_view_status = 'Update view status (public vs private)';
+$s_show_list_of_users_monitoring_issue = 'Show list of users monitoring issue';
+$s_notes = 'NOTES';
+$s_add_notes = 'Add notes';
+$s_update_notes = 'Update notes';
+$s_delete_note = 'Delete note';
+$s_view_private_notes = 'View private notes';
+$s_news = 'NEWS';
+$s_view_private_news = 'View private news';
+$s_manage_news = 'Manage news';
+$s_view_list_of_attachments = 'View list of attachments';
+$s_download_attachments = 'Download attachments';
+$s_delete_attachments = 'Delete attachments';
+$s_upload_issue_attachments = 'Upload issue attachments';
+$s_filters = 'filters';
+$s_save_filters = 'Save filters';
+$s_save_filters_as_shared = 'Save filters as shared';
+$s_use_saved_filters = 'Use saved filters';
+$s_create_project = 'Create project';
+$s_delete_project = 'Delete project';
+$s_manage_project = 'Manage project';
+$s_manage_user_access_to_project = 'Manage user access to a project';
+$s_automatically_included_in_private_projects = 'Automatically included in private projects';
+$s_project_documents = 'PROJECT DOCUMENTS';
+$s_view_project_documents = 'View project documents';
+$s_upload_project_documents = 'Upload project documents';
+$s_link_custom_fields_to_projects = 'Link custom fields to projects';
+$s_sponsorships = 'SPONSORSHIPS';
+$s_view_sponsorship_details = 'View sponsorship details';
+$s_view_sponsorship_total = 'View sponsorship total';
+$s_sponsor_issue = 'Sponsor issue';
+$s_assign_sponsored_issue = 'Assign sponsored issue';
+$s_handle_sponsored_issue = 'Handle sponsored issue';
+$s_others = 'OTHERS';
+$s_see_email_addresses_of_other_users = 'See email addresses of other users';
+$s_send_reminders = 'Send reminders';
+$s_add_profiles = 'Add profiles';
+$s_notify_of_new_user_created = 'Notify of new user created';
+$s_email_notification = 'EMAIL NOTIFICATION';
+$s_status_changed_to = 'Status changes to';
+$s_email_on_deleted = 'Email on Deleted';
+$s_email_on_sponsorship_changed = 'Email on Sponsorship changed';
+$s_email_on_relationship_changed = 'Email on Relationship changed';
 ?>

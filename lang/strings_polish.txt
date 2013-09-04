@@ -9,11 +9,11 @@
 	# Polish: Jaroslaw Lewandowski <jotel@jotel.net>
 	# Polish: Kacper Kruszewski <kacper@netcetera.pl>
 	# -------------------------------------------------
-	# $Revision: 1.73 $
+	# $Revision: 1.77 $
 	# $Author: bigbadger $
-	# $Date: 2004-08-26 17:40:58 $
+	# $Date: 2004-10-15 07:07:09 $
 	#
-	# $Id: strings_polish.txt,v 1.73 2004-08-26 17:40:58 bigbadger Exp $
+	# $Id: strings_polish.txt,v 1.77 2004-10-15 07:07:09 bigbadger Exp $
 	###########################################################################
 ?>
 <?php
@@ -139,6 +139,15 @@ $s_priority_link = 'Wg priorytetu';
 $s_severity_link = 'Wg wa¿no¶ci';
 $s_category_link = 'Wg kategorii';
 $s_resolution_link = 'Wg rozwi±zania';
+$s_legend_still_open = 'Still Open';
+$s_legend_resolved = 'Resolved';
+$s_legend_assigned = 'Assigned';
+$s_legend_total = 'Total';
+$s_legend_opened = 'Opened';
+$s_legend_closed = 'Closed';
+$s_legend_reported = 'Reported';
+$s_cumulative = 'Cumulative';
+$s_not_enough_data = 'Not enough data to create graph';
 
 # print_all_bug_page.php : display selected bugs
 $s_hide_button = 'Wy¶wietl tylko zaznaczone';
@@ -176,6 +185,7 @@ $MANTIS_ERROR[ERROR_BUGNOTE_NOT_FOUND]  = 'B£¡D: Nie znaleziono komentarza.';
 $MANTIS_ERROR[ERROR_PROJECT_NOT_FOUND]  = 'B£¡D: Nie znaleziono projektu.';
 $MANTIS_ERROR[ERROR_DB_FIELD_NOT_FOUND] = 'B£¡D: Nie znaleziono pola \'%s\' w bazie danych.';
 $MANTIS_ERROR[ERROR_FTP_CONNECT_ERROR]	= 'B£¡D: Nie mo¿na nawi±zaæ po³±czenia z serwerem FTP.';
+$MANTIS_ERROR[ERROR_HANDLER_ACCESS_TOO_LOW]	 = 'Issue handler does not have sufficient access rights to handle issue at this status.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_NOT_UNIQUE] = 'B£¡D: Projekt o tej nazwie ju¿ istnieje.  Proszê wróciæ i podaæ inn± nazwê.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_INVALID] = 'Invalid project name specified.  Project names cannot be blank.';
 $MANTIS_ERROR[ERROR_USER_NOT_FOUND]	= 'B£¡D: Nie znaleziono u¿ytkownika.';
@@ -246,6 +256,7 @@ $s_prefix_for_deleted_users = 'user';
 
 $s_administrator = 'administrator';
 $s_myself = "Ja";
+$s_default_access_level = 'Default access level';
 
 # Enum Strings
 $s_access_levels_enum_string      = '10:obserwator,25:zg³aszaj±cy,40:aktualizuj±cy,55:wykonawca,70:zarz±dca,90:administrator';
@@ -275,6 +286,7 @@ $s_new_account_signup_msg = 'The following account has been created:';
 $s_reset_request_msg = 'Someone (presumably you) requested a password change through email verification. If this was not you, ignore this message and nothing will happen.' . "\n\n" . 'If you requested this verification, visit the following URL to change your password:';
 $s_reset_request_in_progress_msg = 'If you supplied the correct username and email address for your account, we will now have sent a confirmation message to that email address. Once the message has been received, follow the instructions provided to change the password on your account.';
 
+$s_email_notification_title_for_status_bug_new = 'The following issue is now in status NEW (again)';
 $s_email_notification_title_for_status_bug_feedback = 'Nastêpuj±ce Zagadnienie zosta³o ZWRÓCONE.';
 $s_email_notification_title_for_status_bug_acknowledged = 'Nastêpuj±ce Zagadnienie zosta³o UZNANE.';
 $s_email_notification_title_for_status_bug_confirmed = 'Nastêpuj±ce Zagadnienie zosta³o POTWIERDZONE.';
@@ -292,10 +304,18 @@ $s_email_notification_title_for_action_sponsorship_updated = 'A sponsorship of t
 $s_email_notification_title_for_action_sponsorship_deleted = 'A sponsorship of the following issue was withdrawn.';
 
 $s_email_notification_title_for_action_bugnote_submitted = 'Do nastêpuj±cego Zagadnienia DODANO KOMENTARZ.';
-$s_email_notification_title_for_action_relationship_added = "A new RELATIONSHIP has been added to the following issue.";
-$s_email_notification_title_for_action_relationship_deleted = "A RELATIONSHIP has been deleted from the following issue.";
-$s_email_notification_title_for_action_relationship_child_resolved = "A RELATED issue has been RESOLVED.";
-$s_email_notification_title_for_action_relationship_child_closed = "A RELATED issue has been CLOSED.";
+$s_email_notification_title_for_action_duplicate_of_relationship_added = "The following issue has been set as DUPLICATE OF issue %s.";
+$s_email_notification_title_for_action_has_duplicate_relationship_added = "The issue %s has been set as DUPLICATE OF the following issue.";
+$s_email_notification_title_for_action_related_to_relationship_added = "The following issue has been set as RELATED TO issue %s.";
+$s_email_notification_title_for_action_dependant_on_relationship_added = "The following issue has been set PARENT OF issue %s.";
+$s_email_notification_title_for_action_blocks_relationship_added = "The following issue has been set CHILD OF issue %s.";
+$s_email_notification_title_for_action_duplicate_of_relationship_deleted = "The following issue has been UNset as DUPLICATE OF issue %s.";
+$s_email_notification_title_for_action_has_duplicate_relationship_deleted = "The issue %s has been UNset as DUPLICATE OF the following issue.";
+$s_email_notification_title_for_action_related_to_relationship_deleted = "The following issue has been UNset as RELATED TO issue %s.";
+$s_email_notification_title_for_action_dependant_on_relationship_deleted = "The following issue has been UNset PARENT OF issue %s.";
+$s_email_notification_title_for_action_blocks_relationship_deleted = "The following issue has been UNset CHILD OF issue %s.";
+$s_email_notification_title_for_action_relationship_child_resolved = "The RELATED issue %s has been RESOLVED.";
+$s_email_notification_title_for_action_relationship_child_closed = "The RELATED issue %s has been CLOSED.";
 
 $s_email_reporter = 'Zg³aszaj±cy';
 $s_email_handler = 'Operator';
@@ -330,6 +350,7 @@ $s_username = 'Nazwa u¿ytkownika';
 $s_realname = 'Real Name';
 $s_email = 'Email';
 $s_password = 'Has³o';
+$s_no_password_change = 'The password is controlled by another system, hence cannot be edited here.';
 $s_confirm_password  = 'Potwierd¼ has³o';
 $s_access_level = 'Poziom dostêpu';
 $s_update_user_button = 'Aktualizuj';
@@ -467,6 +488,9 @@ $s_bug_reminder = 'Wy¶lij przypomnienie';
 $s_reminder_sent_to = 'Przypomnienie wys³ane do';
 $s_bug_send_button = 'Wy¶lij';
 $s_reminder = 'Przypomnienie';
+$s_reminder_explain = 'This note will be sent to the recipients listed requesting feedback on this issue.';
+$s_reminder_monitor = 'These recipients will also begin monitoring the issue. They can unsubscribe using the Unmonitor button.';
+$s_reminder_store = 'This note will be stored with the issue.';
 
 # bug_update.php
 $s_bug_updated_msg = 'Zagadnienie zosta³o pomy¶lnie zaktualizowane...';
@@ -583,6 +607,7 @@ $s_filter_button = 'Filtruj';
 $s_manage_users_link = 'Zarz±dzanie U¿ytkownikami';
 $s_manage_projects_link = 'Zarz±dzanie Projektami';
 $s_manage_custom_field_link = 'Zarz±dzanie Polami Dodatkowymi';
+$s_permissions_summary_report = 'Permissions Report';
 $s_create_new_account_link = 'Stwórz konto';
 $s_projects_link = 'Projekty';
 $s_documentation_link = 'Dokumentacja';
@@ -637,6 +662,7 @@ $s_categories = 'Kategorie';
 $s_add_category_button = 'Dodaj kategoriê';
 $s_versions = 'Wersje';
 $s_add_version_button = 'Dodaj wersjê';
+$s_add_and_edit_version_button = 'Add and Edit Version';
 $s_edit_link = 'edytuj';
 $s_actions = 'Akcje';
 $s_version = 'Wersja/Kompilacja';
@@ -796,6 +822,7 @@ $s_add_user_title = 'Dodawanie u¿ytkownika do projektu';
 $s_add_user_button = 'Dodaj u¿ytkownika';
 $s_project_selection_title = 'Wybór projektu';
 $s_remove_link = 'Usuñ';
+$s_remove_all_link = 'Remove all';
 
 # proj_user_update.php
 $s_updated_user_msg = 'U¿ytkownik zosta³ pomy¶lnie zaktualizowany';
@@ -840,6 +867,7 @@ $s_signup_captcha_request = 'Enter the code as it is shown in the box on the rig
 $s_signup_info = 'On completion of this form and verification of your answers, you will be sent a confirmation email to the email address you specified.<br/>Using the confirmation email, you will be able activate your account. If you fail to activate your account within seven days, it will be purged.<br/>You must specify a valid email address in order to receive the account confirmation email.';
 $s_signup_title = 'Zapisywanie siê';
 $s_signup_button = 'Zapisz siê';
+$s_no_password_request = 'Your password is managed by another system. Please contact your system administrator.';
 
 # site_settings_edit_page.php
 $s_edit_site_settings_title = 'Edycja ustawieñ strony';
@@ -1029,14 +1057,84 @@ $s_add_new_relationship_button = "Add";
 $s_this_bug = "Current issue";
 $s_relationship_added = "Relationship added";
 $s_relationship_deleted = "Relationship deleted";
+$s_no_relationship = "no relationship";
+$s_relationship_replaced = "Relationship replaced";
+$s_replace_relationship_button = "Replace";
+$s_replace_relationship_sure_msg = "There is already a relationship between the two issues. Are you sure you want to replace it?";
+$s_relationship_with_parent = "Relationship with the parent issue";
 $s_delete_relationship_button = "Delete";
 $s_delete_relationship_sure_msg = "Are you sure you wish to delete this relationship?";
 $s_relationship_warning_blocking_bugs_not_resolved = "Not all the children of this issue are yet resolved or closed.";
 $s_relationship_warning_blocking_bugs_not_resolved_2 = "<b>ATTENTION</b>. Not all the children of this issue are yet resolved or closed.<br>Before <b>resolving/closing</b> a parent issue, all the issues related as child with this one should be resolved or closed.";
-$s_create_child_bug_button = "Create Child";
+$s_create_child_bug_button = "Create Clone";
 $s_bug_cloned_to = "Issue cloned";
 $s_bug_created_from = "Issue generated from";
+# Relationship Graphs
+$s_viewing_bug_relationship_graph_title = "Relationship Graph";
+$s_relation_graph = "Relation Graph";
+$s_dependency_graph = "Dependency Graph";
+$s_vertical = "Vertical";
+$s_horizontal = "Horizontal";
+$s_view_issue = "View Issue";
 
 # Source Control Integration
 $s_checkin = 'Checkin';
+# Pemissions report
+$s_perm_rpt_capability = 'Capability';
+$s_view = 'View';
+$s_issues = 'ISSUES';
+$s_report_issue = 'Report an issue';
+$s_update_issue = 'Update an issue';
+$s_monitor_issue = 'Monitor an issue';
+$s_handle_issue = 'Handle an issue';
+$s_move_issue = 'Move an issue';
+$s_delete_issue = 'Delete an issue';
+$s_reopen_issue = 'Reopen an issue';
+$s_view_private_issues = 'View private issues';
+$s_update_readonly_issues = 'Update readonly issues';
+$s_update_issue_status = 'Update issue status';
+$s_set_view_status = 'Set view status (public vs private)';
+$s_update_view_status = 'Update view status (public vs private)';
+$s_show_list_of_users_monitoring_issue = 'Show list of users monitoring issue';
+$s_notes = 'NOTES';
+$s_add_notes = 'Add notes';
+$s_update_notes = 'Update notes';
+$s_delete_note = 'Delete note';
+$s_view_private_notes = 'View private notes';
+$s_news = 'NEWS';
+$s_view_private_news = 'View private news';
+$s_manage_news = 'Manage news';
+$s_view_list_of_attachments = 'View list of attachments';
+$s_download_attachments = 'Download attachments';
+$s_delete_attachments = 'Delete attachments';
+$s_upload_issue_attachments = 'Upload issue attachments';
+$s_filters = 'filters';
+$s_save_filters = 'Save filters';
+$s_save_filters_as_shared = 'Save filters as shared';
+$s_use_saved_filters = 'Use saved filters';
+$s_create_project = 'Create project';
+$s_delete_project = 'Delete project';
+$s_manage_project = 'Manage project';
+$s_manage_user_access_to_project = 'Manage user access to a project';
+$s_automatically_included_in_private_projects = 'Automatically included in private projects';
+$s_project_documents = 'PROJECT DOCUMENTS';
+$s_view_project_documents = 'View project documents';
+$s_upload_project_documents = 'Upload project documents';
+$s_link_custom_fields_to_projects = 'Link custom fields to projects';
+$s_sponsorships = 'SPONSORSHIPS';
+$s_view_sponsorship_details = 'View sponsorship details';
+$s_view_sponsorship_total = 'View sponsorship total';
+$s_sponsor_issue = 'Sponsor issue';
+$s_assign_sponsored_issue = 'Assign sponsored issue';
+$s_handle_sponsored_issue = 'Handle sponsored issue';
+$s_others = 'OTHERS';
+$s_see_email_addresses_of_other_users = 'See email addresses of other users';
+$s_send_reminders = 'Send reminders';
+$s_add_profiles = 'Add profiles';
+$s_notify_of_new_user_created = 'Notify of new user created';
+$s_email_notification = 'EMAIL NOTIFICATION';
+$s_status_changed_to = 'Status changes to';
+$s_email_on_deleted = 'Email on Deleted';
+$s_email_on_sponsorship_changed = 'Email on Sponsorship changed';
+$s_email_on_relationship_changed = 'Email on Relationship changed';
 ?>

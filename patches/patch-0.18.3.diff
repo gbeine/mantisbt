@@ -1,0 +1,1398 @@
+From db64875f88d3ef0bc59b376cd99b0dc9b6b14656 Mon Sep 17 00:00:00 2001
+From: Gerrit Beine <gerrit.beine@gmx.de>
+Date: Wed, 4 Sep 2013 07:18:51 +0200
+Subject: [PATCH] Applied mail import patch to MantisBT 0.18.3
+
+---
+ README.bug_report_mail      |  54 ++++
+ bug_report_mail.php         |  37 +++
+ config_inc.php.sample       |  11 +
+ core/mail_api.php           | 212 ++++++++++++
+ core/user_api.php           |  20 ++
+ core/user_api.php.orig      | 772 ++++++++++++++++++++++++++++++++++++++++++++
+ manage_proj_edit_page.php   |  53 +++
+ manage_proj_mail_delete.php |  45 +++
+ manage_proj_mail_update.php |  60 ++++
+ sql/bug_report_mail.sql     |   5 +
+ sql/db_generate.sql         |   3 +
+ 11 files changed, 1272 insertions(+)
+ create mode 100644 README.bug_report_mail
+ create mode 100644 bug_report_mail.php
+ create mode 100644 core/mail_api.php
+ create mode 100644 core/user_api.php.orig
+ create mode 100644 manage_proj_mail_delete.php
+ create mode 100644 manage_proj_mail_update.php
+ create mode 100644 sql/bug_report_mail.sql
+
+diff --git a/README.bug_report_mail b/README.bug_report_mail
+new file mode 100644
+index 0000000..2efeccc
+--- /dev/null
++++ b/README.bug_report_mail
+@@ -0,0 +1,54 @@
++The current version of bug_report_mail only support plain text e-mails
++and POP3 Mailaccounts with PEAR's Net_POP3 packge.
++
++bug_report_mail is able to recognize if mail is a reply to an already opened
++bug and adds the content as a bugnote.
++
++If you are alway running Mantis you have to alter you projects table
++with the sql/bug_report_mail.sql script.
++If not, you can create the database tables in the way described in
++the doc/INSTALL file.
++
++This patch changes the following files:
++    core/user_api.php
++    manage_proj_edit_page.php
++    config_inc.php.sample
++These files are new:
++    core/mail_api.php
++    sql/bug_report_mail.php
++    bug_report_mail.php
++    manage_proj_mail_delete.php
++    manage_proj_mail_update.php
++
++After installing this patch, you can add a POP3 server's hostname
++and authentication data for each of your projects with the
++project edit form.
++
++There are two ways to receive mail with bug_report_mail:
++The secure way is to use a standard reporting user:
++You have to create a reporter account, for example 'Mail'.
++The name for this reporter account you have to write in your config_inc.php file:
++	$g_mail_reporter = "Mail";
++and then, bug_report_mail must be informed to behave like this:
++    $g_mail_use_reporter = ON;
++
++The other way is to signup new user accounts automatically.
++For using this, you have to change this
++    $g_mail_auto_signup     = OFF;
++from OFF to ON.
++Now, bug_report_mail will look for an user named like the mail's sender
++or an user which mail adress is identical.
++If no user is found, then a new account will be created.
++The new user's name will be the mail address.
++
++This could be used for attacks, but there is no other way in the moment.
++
++After this, bug_report_mail can be used via cron like this:
++
++*/5 *   *   *   * lynx --dump http://mantis.homepage.com/bug_report_mail.php
++
++This line uses lynx to fetch bug reports from via POP3 every 5 minutes. 
++
++This addon is distributed under the same condition as Mantis itself.
++
++Gerrit Beine, August 2004
+diff --git a/bug_report_mail.php b/bug_report_mail.php
+new file mode 100644
+index 0000000..5379f30
+--- /dev/null
++++ b/bug_report_mail.php
+@@ -0,0 +1,37 @@
++<?php
++	# Mantis - a php based bugtracking system
++	# Copyright (C) 2000 - 2002  Kenzaburo Ito - kenito@300baud.org
++	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
++	# This program is distributed under the terms and conditions of the GPL
++	# See the README and LICENSE files for details
++    # Copyright (C) 2004  Gerrit Beine - gerrit.beine@pitcom.de
++    # Copyright (C) 2004  pitcom GmbH, Plauen, Germany
++
++	# --------------------------------------------------------
++	# $Id$
++	# --------------------------------------------------------
++?>
++<?php
++	# This page receives an E-Mail via POP3 and generates an Report
++    header("Content-type: text/plain");
++?>
++<?php
++	require_once( 'core.php' );
++	
++	$t_core_path = config_get( 'core_path' );
++	
++	require_once( $t_core_path.'string_api.php' );
++	require_once( $t_core_path.'bug_api.php' );
++	require_once( $t_core_path.'mail_api.php' );
++?>
++<?php
++	$t_projects = mail_project_get_all_rows();
++	foreach ($t_projects as $t_project) {
++		$t_mails = mail_get_all_mails($t_project);
++        foreach ($t_mails as $t_mail)
++        {
++            mail_add_bug($t_mail, $t_project);
++        }
++	}
++?>
++
+diff --git a/config_inc.php.sample b/config_inc.php.sample
+index 1d648db..7b05f07 100644
+--- a/config_inc.php.sample
++++ b/config_inc.php.sample
+@@ -64,4 +64,15 @@
+ 	# The default value is ON but you must make sure file uploading is enabled
+ 	#  in PHP as well.  You may need to add "file_uploads = TRUE" to your php.ini.
+ 	$g_allow_file_upload	= ON;
++    
++    # --- mail reporting settings -----
++    # This tells Mantis to report all the Mail with only one account
++    $g_mail_use_reporter    = ON;
++    
++    # The account's name for mail reporting
++    $g_mail_reporter        = 'Mail';
++    
++    # Signup new users automatically (possible security risk!)
++    # Default is OFF, only works if mail_use_reporter is OFF
++    $g_mail_auto_signup     = OFF;
+ ?>
+diff --git a/core/mail_api.php b/core/mail_api.php
+new file mode 100644
+index 0000000..23a1c32
+--- /dev/null
++++ b/core/mail_api.php
+@@ -0,0 +1,212 @@
++<?php
++	# Mantis - a php based bugtracking system
++	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
++	# This program is distributed under the terms and conditions of the GPL
++	# See the README and LICENSE files for details
++    # Copyright (C) 2004  Gerrit Beine - gerrit.beine@pitcom.de
++    # Copyright (C) 2004  pitcom GmbH, Plauen, Germany
++
++	# --------------------------------------------------------
++	# $Id$
++	# --------------------------------------------------------
++
++	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
++	
++	require_once( $t_core_dir . 'bug_api.php' );
++	require_once( $t_core_dir . 'bugnote_api.php' );
++	require_once( $t_core_dir . 'user_api.php' );
++	require_once( $t_core_dir . 'project_api.php' );
++?>
++<?php
++	# This page receives an E-Mail via POP3 and generates an Report
++?>
++<?php
++	require_once( 'Net/POP3.php' );
++    
++	# --------------------
++	# Update the mail account data
++	function mail_update( $p_project_id, $p_pop3_host, $p_pop3_user, $p_pop3_pass ) {
++		$c_project_id	= db_prepare_int( $p_project_id );
++		$c_pop3_host	= db_prepare_string( $p_pop3_host );
++		$c_pop3_user	= db_prepare_string( $p_pop3_user );
++		$c_pop3_pass	= db_prepare_string( $p_pop3_pass );
++		
++        $t_project_table = config_get( 'mantis_project_table' );
++        
++		$query = "UPDATE $t_project_table 
++				  SET pop3_host='$c_pop3_host',
++					pop3_user='$c_pop3_user',
++					pop3_pass='$c_pop3_pass'
++				  WHERE id='$c_project_id'";
++		db_query( $query );
++		return true;
++	}
++
++	# --------------------
++	# Removes the mail account data
++	function mail_delete( $p_project_id ) {
++		$c_project_id	= db_prepare_int( $p_project_id );
++		
++        $t_project_table = config_get( 'mantis_project_table' );
++        
++		$query = "UPDATE $t_project_table 
++				  SET pop3_host=NULL,
++					pop3_user=NULL,
++					pop3_pass=NULL
++				  WHERE id='$c_project_id'";
++		db_query( $query );
++		return true;
++	}
++
++	#===================================
++	# Data Access
++	#===================================
++
++	# --------------------
++	# Return all versions for the specified project
++	function mail_get_account_data( $p_project_id ) {
++		$c_project_id = db_prepare_int( $p_project_id );
++
++		$t_project_table = config_get( 'mantis_project_table' );
++
++		$query = "SELECT pop3_host, pop3_user, pop3_pass
++				  FROM $t_project_table 
++				  WHERE id='$c_project_id'";
++		$result = db_query( $query );
++
++		return db_fetch_array( $result );
++	}
++
++	# --------------------
++	# return all projects with valid data for mail access
++	#  return an empty array if there are no such projects
++	function mail_project_get_all_rows() {
++		$m_projects = array();
++		$t_projects = project_get_all_rows();
++		foreach ($t_projects as $t_project) {
++			if ($t_project['pop3_host']) {
++				array_push($m_projects, $t_project);
++			}
++		}
++		return $m_projects;
++	}
++
++	# --------------------
++	# return all mails for a project
++	#  return an empty array if there are no new mails
++	function mail_get_all_mails($p_project) {
++		$t_mails = array();
++		$pop3 = &new Net_POP3();
++		$t_pop3_host = $p_project['pop3_host'];
++		$t_pop3_user = $p_project['pop3_user'];
++		$t_pop3_password = $p_project['pop3_pass'];
++		$pop3->connect($t_pop3_host, 110);
++		$pop3->login($t_pop3_user, $t_pop3_password);
++		for ($i = 1; $i <= $pop3->numMsg(); $i++) {
++			$mail = $pop3->getParsedHeaders($i);
++			$mail['X-Mantis-Body'] = $pop3->getBody($i);
++			$mail['X-Mantis-Complete'] = $pop3->getMsg($i);
++			array_push($t_mails, $mail);
++			$pop3->deleteMsg($i);
++		}
++		$pop3->disconnect();
++		return $t_mails;
++	}
++    
++	# --------------------
++	# return the a valid username from an email address
++    function mail_user_name_from_address ($p_mailaddress) {
++        $t_mailaddress = $p_mailaddress;
++        if (preg_match("/<(.*?)>/", $p_mailaddress, $matches)) {
++            $t_mailaddress = $matches[1];
++        }
++        return preg_replace("/[@\.-]/",'_',$t_mailaddress);
++    }
++
++	# --------------------
++	# return true if there is a valid mantis bug referernce in subject
++    function mail_is_a_bugnote ($p_subject) {
++        return preg_match("/\[([A-Za-z0-9-_\.]*\s[0-9]{7})\]/", $p_subject);
++    }
++    
++	# --------------------
++	# return the bug's id from the subject
++    function mail_get_bug_id_from_subject ($p_subject) {
++        preg_match("/\[([A-Za-z0-9-_\.]*\s([0-9]{7}?))\]/", $p_subject, $matches);
++        return $matches[2];
++    }
++	# --------------------
++	# return the user id for the mail reporting user
++	#  return false if no username can be found
++    function mail_get_user ($p_mail) {
++        $t_mail_use_reporter = config_get( 'mail_use_reporter' );
++        $t_mail_auto_signup = config_get( 'mail_auto_signup' );
++        if ($t_mail_use_reporter) {
++            $t_mail_reporter = config_get( 'mail_reporter' );
++            $t_reporter_id = user_get_id_by_name($t_mail_reporter);
++        }
++        else {
++            $t_user_name = mail_user_name_from_address($p_mail['From']);
++            $t_reporter_id = user_get_id_by_name($t_user_name);
++            if (!$t_reporter_id) { // try to get the user's id searching for mail address
++                $t_reporter_id = user_get_id_by_mail($p_mail['From']);
++            }
++            if (!$t_reporter_id && $t_mail_auto_signup) { // try to signup the user
++                user_signup($t_user_name, $p_mail['From']);
++                $t_reporter_id = user_get_id_by_name($t_user_name);
++            }
++        }
++        return $t_reporter_id;
++    }
++    
++    # --------------------
++    # Adds a bug reported via email
++    # Todo: If there is already a bug, add it as a bug note
++    function mail_add_bug($p_mail, $p_project) {
++		$f_build				= gpc_get_string( 'build', '' );
++		$f_platform				= gpc_get_string( 'platform', '' );
++		$f_os					= gpc_get_string( 'os', '' );
++		$f_os_build				= gpc_get_string( 'os_build', '' );
++		$f_product_version		= gpc_get_string( 'product_version', '' );
++		$f_profile_id			= gpc_get_int( 'profile_id', 0 );
++		$f_handler_id			= gpc_get_int( 'handler_id', 0 );
++		$f_view_state			= gpc_get_int( 'view_state', 0 );
++
++		$f_category				= gpc_get_string( 'category', '' );
++		$f_priority				= gpc_get_int( 'priority', NORMAL );
++		$f_steps_to_reproduce	= gpc_get_string( 'steps_to_reproduce', '' );
++
++        $f_reproducibility		= 10;
++        $f_severity				= 50;
++        $f_summary				= $p_mail['Subject'];
++        $f_description			= $p_mail['X-Mantis-Body'];
++        $f_additional_info		= $p_mail['X-Mantis-Complete'];
++        $f_project_id			= $p_project['id'];
++        $t_reporter_id		    = mail_get_user($p_mail);
++
++        if (mail_is_a_bugnote($p_mail['Subject']))
++        {
++            # Add a bug note
++            $t_bug_id = mail_get_bug_id_from_subject($p_mail['Subject']);
++            bugnote_add ( $t_bug_id, $p_mail['X-Mantis-Body'] );
++            email_bugnote_add ( $t_bug_id );
++        }
++        else
++        {
++	        # Create the bug
++	        $t_bug_id = bug_create( $f_project_id,
++		    	            $t_reporter_id, $f_handler_id,
++                            $f_priority,
++				            $f_severity, $f_reproducibility,
++					        $f_category,
++					        $f_os, $f_os_build,
++					        $f_platform, $f_product_version,
++					        $f_build,
++					        $f_profile_id, $f_summary, $f_view_state,
++					        $f_description, $f_steps_to_reproduce, $f_additional_info );
++            email_new_bug( $t_bug_id );
++        }
++
++    }
++
++?>
+diff --git a/core/user_api.php b/core/user_api.php
+index 06a059a..3054709 100644
+--- a/core/user_api.php
++++ b/core/user_api.php
+@@ -412,6 +412,26 @@
+ 	}
+ 
+ 	# --------------------
++	# get a user id from an mail address
++	#  return false if the mail address does not exist
++	function user_get_id_by_mail( $p_mailadress ) {
++		$c_mailadress = db_prepare_string( $p_mailadress );
++
++		$t_user_table = config_get( 'mantis_user_table' );
++
++		$query = "SELECT id
++				  FROM $t_user_table
++				  WHERE email='$c_mailadress'";
++		$result = db_query( $query );
++
++		if ( 0 == db_num_rows( $result ) ) {
++			return false;
++		} else {
++			return db_result( $result );
++		}
++	}
++
++	# --------------------
+ 	# return all data associated with a particular user name
+ 	#  return false if the username does not exist
+ 	function user_get_row_by_name( $p_username ) {
+diff --git a/core/user_api.php.orig b/core/user_api.php.orig
+new file mode 100644
+index 0000000..06a059a
+--- /dev/null
++++ b/core/user_api.php.orig
+@@ -0,0 +1,772 @@
++<?php
++	# Mantis - a php based bugtracking system
++	# Copyright (C) 2000 - 2002  Kenzaburo Ito - kenito@300baud.org
++	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
++	# This program is distributed under the terms and conditions of the GPL
++	# See the README and LICENSE files for details
++
++	# --------------------------------------------------------
++	# $Id: user_api.php,v 1.70 2004-05-09 02:24:19 vboctor Exp $
++	# --------------------------------------------------------
++
++	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
++
++	require_once( $t_core_dir . 'email_api.php' );
++	require_once( $t_core_dir . 'ldap_api.php' );
++
++	### User API ###
++
++	#===================================
++	# Caching
++	#===================================
++
++	#########################################
++	# SECURITY NOTE: cache globals are initialized here to prevent them
++	#   being spoofed if register_globals is turned on
++
++	$g_cache_user = array();
++
++	# --------------------
++	# Cache a user row if necessary and return the cached copy
++	#  If the second parameter is true (default), trigger an error
++	#  if the user can't be found.  If the second parameter is
++	#  false, return false if the user can't be found.
++	function user_cache_row( $p_user_id, $p_trigger_errors=true) {
++		global $g_cache_user;
++
++		$c_user_id = db_prepare_int( $p_user_id );
++
++		$t_user_table = config_get( 'mantis_user_table' );
++
++		if ( isset ( $g_cache_user[$c_user_id] ) ) {
++			return $g_cache_user[$c_user_id];
++		}
++
++		$query = "SELECT *
++				  FROM $t_user_table
++				  WHERE id='$c_user_id'";
++		$result = db_query( $query );
++
++		if ( 0 == db_num_rows( $result ) ) {
++			if ( $p_trigger_errors ) {
++				trigger_error( ERROR_USER_NOT_FOUND, ERROR );
++			} else {
++				return false;
++			}
++		}
++
++		$row = db_fetch_array( $result );
++
++		$g_cache_user[$c_user_id] = $row;
++
++		return $row;
++	}
++
++	# --------------------
++	# Clear the user cache (or just the given id if specified)
++	function user_clear_cache( $p_user_id = null ) {
++		global $g_cache_user;
++
++		if ( null === $p_user_id ) {
++			$g_cache_user = array();
++		} else {
++			$c_user_id = db_prepare_int( $p_user_id );
++			unset( $g_cache_user[$c_user_id] );
++		}
++
++		return true;
++	}
++
++	#===================================
++	# Boolean queries and ensures
++	#===================================
++
++	# --------------------
++	# check to see if user exists by id
++	# return true if it does, false otherwise
++	#
++	# Use user_cache_row() to benefit from caching if called multiple times
++	#  and because if the user does exist the data may well be wanted
++	function user_exists( $p_user_id ) {
++		$row = user_cache_row( $p_user_id, false );
++
++		if ( false === $row ) {
++			return false;
++		} else {
++			return true;
++		}
++	}
++
++	# --------------------
++	# check to see if project exists by id
++	# if it doesn't exist then error
++	#  otherwise let execution continue undisturbed
++	function user_ensure_exists( $p_user_id ) {
++		if ( !user_exists( $p_user_id ) ) {
++			trigger_error( ERROR_USER_NOT_FOUND, ERROR );
++		}
++	}
++
++	# --------------------
++	# return true if the username is unique, false if there is already a user
++	#  with that username
++	function user_is_name_unique( $p_username ) {
++		$c_username = db_prepare_string( $p_username );
++
++		$t_user_table = config_get( 'mantis_user_table' );
++
++		$query = "SELECT username
++				FROM $t_user_table
++				WHERE username='$c_username'";
++		$result = db_query( $query, 1 );
++
++		if ( db_num_rows( $result ) > 0 ) {
++			$row = db_fetch_array( $result );
++			return (strcmp($row['username'], $p_username) != 0);  # Xyz & xyz shouldn't match
++		} else {
++			return true;
++		}
++	}
++
++	# --------------------
++	# Check if the username is unique and trigger an ERROR if it isn't
++	function user_ensure_name_unique( $p_username ) {
++		if ( !user_is_name_unique( $p_username ) ) {
++			trigger_error( ERROR_USER_NAME_NOT_UNIQUE, ERROR );
++		}
++	}
++
++	# --------------------
++	# Check if the username is a valid username (does not account for uniqueness)
++	# Return true if it is, false otherwise
++	function user_is_name_valid( $p_username ) {
++		# The DB field is only 32 characters
++		if ( strlen( $p_username ) > 32 ) {
++			return false;
++		}
++
++		# Only allow a basic set of characters
++		if ( 0 == preg_match( config_get( 'user_login_valid_regex' ), $p_username ) ) {
++			return false;
++		}
++
++		# We have a valid username
++		return true;
++	}
++
++	# --------------------
++	# Check if the username is a valid username (does not account for uniqueness)
++	# Trigger an error if the username is not valid
++	function user_ensure_name_valid( $p_username ) {
++		if ( !user_is_name_valid( $p_username ) ) {
++			trigger_error( ERROR_USER_NAME_INVALID, ERROR );
++		}
++	}
++
++	# --------------------
++	# return whether user is monitoring bug for the user id and bug id
++	function user_is_monitoring_bug( $p_user_id, $p_bug_id ) {
++		$c_user_id	= db_prepare_int( $p_user_id );
++		$c_bug_id	= db_prepare_int( $p_bug_id );
++
++		$t_bug_monitor_table = config_get( 'mantis_bug_monitor_table' );
++
++		$query = "SELECT COUNT(*)
++				  FROM $t_bug_monitor_table
++				  WHERE user_id='$c_user_id' AND bug_id='$c_bug_id'";
++
++		$result = db_query( $query );
++
++		if ( 0 == db_result( $result ) ) {
++			return false;
++		} else {
++			return true;
++		}
++	}
++
++	# --------------------
++	# return true if the user has access of ADMINISTRATOR or higher, false otherwise
++	function user_is_administrator( $p_user_id ) {
++		$t_access_level = user_get_field( $p_user_id, 'access_level' );
++
++		if ( $t_access_level >= ADMINISTRATOR ) {
++			return true;
++		} else {
++			return false;
++		}
++	}
++
++	# --------------------
++	# return true is the user account is protected, false otherwise
++	function user_is_protected( $p_user_id ) {
++		if ( ON == user_get_field( $p_user_id, 'protected' ) ) {
++			return true;
++		} else {
++			return false;
++		}
++	}
++
++	# --------------------
++	# Trigger an ERROR if the user account is protected
++	function user_ensure_unprotected( $p_user_id ) {
++		if ( user_is_protected( $p_user_id ) ) {
++			trigger_error( ERROR_PROTECTED_ACCOUNT, ERROR );
++		}
++	}
++
++	# --------------------
++	# return true is the user account is enabled, false otherwise
++	function user_is_enabled( $p_user_id ) {
++		if ( ON == user_get_field( $p_user_id, 'enabled' ) ) {
++			return true;
++		} else {
++			return false;
++		}
++	}
++
++	#===================================
++	# Creation / Deletion / Updating
++	#===================================
++
++	# --------------------
++	# Create a user.
++	# returns false if error, the generated cookie string if ok
++	function user_create( $p_username, $p_password, $p_email='', $p_access_level=null, $p_protected=false, $p_enabled=true ) {
++		if ( null === $p_access_level ) {
++			$p_access_level = config_get( 'default_new_account_access_level');
++		}
++
++		$t_password = auth_process_plain_password( $p_password );
++
++		$c_username		= db_prepare_string( $p_username );
++		$c_password		= db_prepare_string( $t_password );
++		$c_email		= db_prepare_string( $p_email );
++		$c_access_level	= db_prepare_int( $p_access_level );
++		$c_protected	= db_prepare_bool( $p_protected );
++		$c_enabled		= db_prepare_bool( $p_enabled );
++
++		user_ensure_name_valid( $p_username );
++		user_ensure_name_unique( $p_username );
++		email_ensure_valid( $p_email );
++
++		$t_seed				= $p_email . $p_username;
++		$t_cookie_string	= auth_generate_unique_cookie_string( $t_seed );
++		$t_user_table 		= config_get( 'mantis_user_table' );
++
++		$query = "INSERT INTO $t_user_table
++				    ( username, email, password, date_created, last_visit,
++				     enabled, access_level, login_count, cookie_string )
++				  VALUES
++				    ( '$c_username', '$c_email', '$c_password', " . db_now() . "," . db_now() . ",
++				     $c_enabled, $c_access_level, 0, '$t_cookie_string')";
++		db_query( $query );
++
++		# Create preferences for the user
++		$t_user_id = db_insert_id( $t_user_table );
++		user_pref_set_default( $t_user_id );
++
++		# Users are added with protected set to FALSE in order to be able to update
++		# preferences.  Now set the real value of protected.
++		if ( $c_protected ) {
++			user_set_field( $t_user_id, 'protected', 1 );
++		}
++
++		# Send notification email
++		if ( !is_blank( $p_email ) ) {
++			email_signup( $t_user_id, $p_password );
++		}
++
++		return $t_cookie_string;
++	}
++
++	# --------------------
++	# Signup a user.
++	# If the use_ldap_email config option is on then tries to find email using
++	# ldap. $p_email may be empty, but the user wont get any emails.
++	# returns false if error, the generated cookie string if ok
++	function user_signup( $p_username, $p_email=null ) {
++		if ( null === $p_email ) {
++			$p_email = '';
++
++			# @@@ I think the ldap_email stuff is a bit borked
++			#  Where is it being set?  When is it being used?
++			#  Shouldn't we override an email that is passed in here?
++			#  If the user doesn't exist in ldap, is the account created?
++			#  If so, there password won't get set anywhere...  (etc)
++			#  RJF: I was going to check for the existence of an LDAP email.
++			#  however, since we can't create an LDAP account at the moment,
++			#  and we don't know the user password in advance, we may not be able
++			#  to retrieve it anyway.
++			#  I'll re-enable this once a plan has been properly formulated for LDAP
++			#  account management and creation.
++
++/*			$t_email = '';
++			if ( ON == config_get( 'use_ldap_email' ) ) {
++				$t_email = ldap_email_from_username( $p_username );
++			}
++
++			if ( !is_blank( $t_email ) ) {
++				$p_email = $t_email;
++			}
++*/
++		}
++
++		$p_email = trim( $p_email );
++
++		$t_seed = $p_email . $p_username;
++		# Create random password
++		$t_password	= auth_generate_random_password( $t_seed );
++
++		return user_create( $p_username, $t_password, $p_email );
++	}
++
++	# --------------------
++	# delete project-specific user access levels.
++	# returns true when successfully deleted
++	function user_delete_project_specific_access_levels( $p_user_id ) {
++		$c_user_id = db_prepare_int($p_user_id);
++
++		user_ensure_unprotected( $p_user_id );
++
++		$t_project_user_list_table 	= config_get('mantis_project_user_list_table');
++
++		$query = "DELETE FROM $t_project_user_list_table
++				  WHERE user_id='$c_user_id'";
++		db_query( $query );
++
++		user_clear_cache( $p_user_id );
++
++		return true;
++	}
++
++	# --------------------
++	# delete profiles for the specified user
++	# returns true when successfully deleted
++	function user_delete_profiles( $p_user_id ) {
++		$c_user_id = db_prepare_int($p_user_id);
++
++		user_ensure_unprotected( $p_user_id );
++
++		$t_user_profile_table = config_get('mantis_user_profile_table');
++
++		# Remove associated profiles
++		$query = "DELETE FROM $t_user_profile_table
++				  WHERE user_id='$c_user_id'";
++		db_query( $query );
++
++		user_clear_cache( $p_user_id );
++
++		return true;
++	}
++
++	# --------------------
++	# delete a user account (account, profiles, preferences, project-specific access levels)
++	# returns true when the account was successfully deleted
++	function user_delete( $p_user_id ) {
++		$c_user_id 					= db_prepare_int($p_user_id);
++
++		user_ensure_unprotected( $p_user_id );
++
++		# Remove associated profiles
++		user_delete_profiles( $p_user_id );
++
++		# Remove associated preferences
++		user_pref_delete_all( $p_user_id );
++
++		# Remove project specific access levels
++		user_delete_project_specific_access_levels( $p_user_id );
++
++		user_clear_cache( $p_user_id );
++
++		$t_user_table = config_get('mantis_user_table');
++
++		# Remove account
++		$query = "DELETE FROM $t_user_table
++				  WHERE id='$c_user_id'";
++		db_query( $query );
++
++		return true;
++	}
++
++	#===================================
++	# Data Access
++	#===================================
++
++	# --------------------
++	# get a user id from a username
++	#  return false if the username does not exist
++	function user_get_id_by_name( $p_username ) {
++		$c_username		= db_prepare_string( $p_username );
++		$t_user_table	= config_get( 'mantis_user_table' );
++
++		$query = "SELECT id
++				  FROM $t_user_table
++				  WHERE username='$c_username'";
++		$result = db_query( $query );
++
++		if ( 0 == db_num_rows( $result ) ) {
++			return false;
++		} else {
++			return db_result( $result );
++		}
++	}
++
++	# --------------------
++	# return all data associated with a particular user name
++	#  return false if the username does not exist
++	function user_get_row_by_name( $p_username ) {
++		$t_user_id = user_get_id_by_name( $p_username );
++
++		if ( false === $t_user_id ) {
++			return false;
++		}
++
++		$row = user_get_row( $t_user_id );
++
++		return $row;
++	}
++
++	# --------------------
++	# return a user row
++	function user_get_row( $p_user_id ) {
++		return user_cache_row( $p_user_id );
++	}
++
++	# --------------------
++	# return the specified user field for the user id
++	function user_get_field( $p_user_id, $p_field_name ) {
++		if ( NO_USER == $p_user_id ) {
++			trigger_error( 'user_get_field() for NO_USER', WARNING );
++			return "@null@";
++		}
++
++		$row = user_get_row( $p_user_id );
++
++		if ( isset( $row[$p_field_name] ) ) {
++			return $row[$p_field_name];
++		} else {
++			error_parameters( $p_field_name );
++			trigger_error( ERROR_DB_FIELD_NOT_FOUND, WARNING );
++			return '';
++		}
++	}
++
++	# --------------------
++	# lookup the user's email in LDAP or the db as appropriate
++	function user_get_email( $p_user_id ) {
++		$t_email = '';
++		if ( ON == config_get( 'use_ldap_email' ) ) {
++		    $t_email = ldap_email( $p_user_id );
++		}
++		if ( is_blank( $t_email ) ) {
++			$t_email =  user_get_field( $p_user_id, 'email' );
++		}
++		return $t_email;
++	}
++
++	# --------------------
++	# return the username or a string "user<id>" if the user does not exist
++	function user_get_name( $p_user_id ) {
++		$row = user_cache_row( $p_user_id, false );
++
++		if ( false == $row ) {
++			return lang_get( 'prefix_for_deleted_users' ) . (int)$p_user_id;
++		} else {
++			return $row['username'];
++		}
++	}
++
++	# --------------------
++	# return the user's access level
++	#  account for private project and the project user lists
++	function user_get_access_level( $p_user_id, $p_project_id = ALL_PROJECTS ) {
++		$t_access_level  = user_get_field( $p_user_id, 'access_level' );
++
++		if ( $t_access_level >= ADMINISTRATOR ) {
++			return $t_access_level;
++		}
++
++		$t_project_access_level = project_get_local_user_access_level( $p_project_id, $p_user_id );
++
++		if ( false === $t_project_access_level ) {
++			return $t_access_level;
++		} else {
++			return $t_project_access_level;
++		}
++	}
++
++	# --------------------
++	# retun an array of project IDs to which the user has access
++	function user_get_accessible_projects( $p_user_id ) {
++		$c_user_id = db_prepare_int( $p_user_id );
++
++		$t_project_table			= config_get( 'mantis_project_table' );
++		$t_project_user_list_table	= config_get( 'mantis_project_user_list_table' );
++
++		$t_public	= VS_PUBLIC;
++		$t_private	= VS_PRIVATE;
++
++		if ( user_is_administrator( $p_user_id ) ) {
++			$query = "SELECT DISTINCT( id ), name
++					  FROM $t_project_table
++					  WHERE enabled=1
++					  ORDER BY name";
++		} else {
++			$query = "SELECT DISTINCT( p.id ), p.name
++					  FROM $t_project_table p
++					  LEFT JOIN $t_project_user_list_table u
++					    ON p.id=u.project_id
++					  WHERE ( p.enabled = 1 ) AND
++						( p.view_state='$t_public'
++						    OR (p.view_state='$t_private'
++							    AND
++						        u.user_id='$c_user_id' )
++						)
++					  ORDER BY p.name";
++		}
++
++		$result = db_query( $query );
++		$row_count = db_num_rows( $result );
++
++		$t_projects = array();
++
++		for ( $i=0 ; $i < $row_count ; $i++ ) {
++			$row = db_fetch_array( $result );
++
++			array_push( $t_projects, $row['id'] );
++		}
++
++		return $t_projects;
++	}
++
++	# --------------------
++	# return the number of open assigned bugs to a user in a project
++	function user_get_assigned_open_bug_count( $p_user_id, $p_project_id=ALL_PROJECTS ) {
++		$c_user_id		= db_prepare_int($p_user_id);
++		$c_project_id	= db_prepare_int($p_project_id);
++
++		$t_bug_table	= config_get('mantis_bug_table');
++
++		if ( ALL_PROJECTS == $p_project_id ) {
++			$t_where_prj = '';
++		} else {
++			$t_where_prj = "project_id='$c_project_id' AND";
++		}
++
++		$t_resolved	= RESOLVED;
++		$t_closed	= CLOSED;
++
++		$query = "SELECT COUNT(*)
++				  FROM $t_bug_table
++				  WHERE $t_where_prj
++				  		status<>'$t_resolved' AND status<>'$t_closed' AND
++				  		handler_id='$c_user_id'";
++		$result = db_query( $query );
++
++		return db_result( $result );
++	}
++
++	# --------------------
++	# return the number of open reported bugs by a user in a project
++	function user_get_reported_open_bug_count( $p_user_id, $p_project_id=ALL_PROJECTS ) {
++		$c_user_id		= db_prepare_int($p_user_id);
++		$c_project_id	= db_prepare_int($p_project_id);
++
++		$t_bug_table	= config_get('mantis_bug_table');
++
++		if ( ALL_PROJECTS == $p_project_id ) {
++			$t_where_prj = '';
++		} else {
++			$t_where_prj = "project_id='$c_project_id' AND";
++		}
++
++		$t_resolved	= RESOLVED;
++		$t_closed	= CLOSED;
++
++		$query = "SELECT COUNT(*)
++				  FROM $t_bug_table
++				  WHERE $t_where_prj
++						  status<>'$t_resolved' AND status<>'$t_closed' AND
++						  reporter_id='$c_user_id'";
++		$result = db_query( $query );
++
++		return db_result( $result );
++	}
++
++	# --------------------
++	# return a profile row
++	function user_get_profile_row( $p_user_id, $p_profile_id ) {
++		$c_user_id		= db_prepare_int( $p_user_id );
++		$c_profile_id	= db_prepare_int( $p_profile_id );
++
++		$t_user_profile_table = config_get( 'mantis_user_profile_table' );
++
++		$query = "SELECT *
++				  FROM $t_user_profile_table
++				  WHERE id='$c_profile_id' AND
++				  		user_id='$c_user_id'";
++		$result = db_query( $query );
++
++		if ( 0 == db_num_rows( $result ) ) {
++			trigger_error( ERROR_USER_PROFILE_NOT_FOUND, ERROR );
++		}
++
++		$row = db_fetch_array( $result );
++
++		return $row;
++	}
++
++	#===================================
++	# Data Modification
++	#===================================
++
++	# --------------------
++	# Update the last_visited field to be now
++	function user_update_last_visit( $p_user_id ) {
++		$c_user_id = db_prepare_int( $p_user_id );
++
++		$t_user_table = config_get( 'mantis_user_table' );
++
++		$query = "UPDATE $t_user_table
++				  SET last_visit= " . db_now() . "
++				  WHERE id='$c_user_id'";
++
++		db_query( $query );
++
++		user_clear_cache( $p_user_id );
++
++		# db_query() errors on failure so:
++		return true;
++	}
++
++	# --------------------
++	# Increment the number of times the user has logegd in
++	# This function is only called from the login.php script
++	function user_increment_login_count( $p_user_id ) {
++		$c_user_id = db_prepare_int( $p_user_id );
++
++		$t_user_table = config_get( 'mantis_user_table' );
++
++		$query = "UPDATE $t_user_table
++				SET login_count=login_count+1
++				WHERE id='$c_user_id'";
++
++		db_query( $query );
++
++		user_clear_cache( $p_user_id );
++
++		#db_query() errors on failure so:
++		return true;
++	}
++
++	# --------------------
++	# Set a user field
++	function user_set_field( $p_user_id, $p_field_name, $p_field_value ) {
++		$c_user_id		= db_prepare_int( $p_user_id );
++		$c_field_name	= db_prepare_string( $p_field_name );
++		$c_field_value	= db_prepare_string( $p_field_value );
++
++		if ( $p_field_name != "protected" ) {
++			user_ensure_unprotected( $p_user_id );
++		}
++
++		$t_user_table = config_get( 'mantis_user_table' );
++
++		$query = "UPDATE $t_user_table
++				  SET $c_field_name='$c_field_value'
++				  WHERE id='$c_user_id'";
++
++		db_query( $query );
++
++		user_clear_cache( $p_user_id );
++
++		#db_query() errors on failure so:
++		return true;
++	}
++
++	# --------------------
++	# Set the user's default project
++	function user_set_default_project( $p_user_id, $p_project_id ) {
++		return user_pref_set_pref( $p_user_id, 'default_project', (int)$p_project_id );
++	}
++
++	# --------------------
++	# Set the user's password to the given string, encoded as appropriate
++	function user_set_password( $p_user_id, $p_password, $p_allow_protected=false ) {
++		$c_user_id = db_prepare_int( $p_user_id );
++
++		if ( !$p_allow_protected ) {
++			user_ensure_unprotected( $p_user_id );
++		}
++
++		$t_password		= auth_process_plain_password( $p_password );
++		$t_user_table	= config_get( 'mantis_user_table' );
++		$query = "UPDATE $t_user_table
++				  SET password='$t_password'
++				  WHERE id='$c_user_id'";
++		db_query( $query );
++
++		#db_query() errors on failure so:
++		return true;
++	}
++
++	# --------------------
++	# Set the user's email to the given string after checking that it is a valid email
++	function user_set_email( $p_user_id, $p_email ) {
++		email_ensure_valid( $p_email );
++
++		return user_set_field( $p_user_id, 'email', $p_email );
++	}
++
++	# --------------------
++	# Set the user's username to the given string after checking that it is valid
++	function user_set_name( $p_user_id, $p_username ) {
++		user_ensure_name_valid( $p_username );
++		user_ensure_name_unique( $p_username );
++
++		return user_set_field( $p_user_id, 'username', $p_username );
++	}
++
++	# --------------------
++	# Reset the user's password
++	#  Take into account the 'send_reset_password' setting
++	#   - if it is ON, generate a random password and send an email
++	#      (unless the second parameter is false)
++	#   - if it is OFF, set the password to blank
++	#  Return false if the user is protected, true if the password was
++	#   successfully reset
++	function user_reset_password( $p_user_id, $p_send_email=true ) {
++		$t_protected = user_get_field( $p_user_id, 'protected' );
++
++		# Go with random password and email it to the user
++		if ( ON == $t_protected ) {
++			return false;
++		}
++
++		# @@@ do we want to force blank password instead of random if
++		#      email notifications are turned off?
++		#     How would we indicate that we had done this with a return value?
++		#     Should we just have two functions? (user_reset_password_random()
++		#     and user_reset_password() )?
++
++		if ( ON == config_get( 'send_reset_password' ) ) {
++			# Create random password
++			$t_email		= user_get_field( $p_user_id, 'email' );
++			$t_password		= auth_generate_random_password( $t_email );
++			$t_password2	= auth_process_plain_password( $t_password );
++
++			user_set_field( $p_user_id, 'password', $t_password2 );
++
++			# Send notification email
++			if ( $p_send_email ) {
++				email_reset( $p_user_id, $t_password );
++			}
++		} else { # use blank password, no emailing
++			$t_password = auth_process_plain_password( '' );
++
++			user_set_field( $p_user_id, 'password', $t_password );
++		}
++
++		return true;
++	}
++?>
+\ No newline at end of file
+diff --git a/manage_proj_edit_page.php b/manage_proj_edit_page.php
+index facfb79..2228728 100644
+--- a/manage_proj_edit_page.php
++++ b/manage_proj_edit_page.php
+@@ -18,6 +18,7 @@
+ 	require_once( $t_core_path . 'version_api.php' );
+ 	require_once( $t_core_path . 'custom_field_api.php' );
+ 	require_once( $t_core_path . 'icon_api.php' );
++	require_once( $t_core_path . 'mail_api.php' );
+ ?>
+ <?php
+ 	$f_project_id = gpc_get_int( 'project_id' );
+@@ -25,6 +26,7 @@
+ 	access_ensure_project_level( config_get( 'manage_project_threshold' ), $f_project_id );
+ 
+ 	$row = project_get_row( $f_project_id );
++    $mail = mail_get_account_data( $f_project_id );
+ ?>
+ <?php html_page_top1() ?>
+ <?php html_page_top2() ?>
+@@ -526,4 +528,55 @@ if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_projec
+ 	</table>
+ </div>
+ 
++<!-- MAIL ACCOUNT RESET -->
++<br />
++<div align="center">
++	<form method="post" action="manage_proj_mail_update.php">
++		<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
++		<table class="width75" cellspacing="1">
++			<tr>
++				<td class="form-title" colspan="4">
++					<?php echo 'Mail Account Settings' ?>
++				</td>
++			</tr>
++			<tr class="row-1">
++				<td class="category" width="25%">
++					<?php echo "POP3 Host"?>
++				</td>
++				<td width="75%">
++					<input type="text" name="pop3_host" size="64" maxlength="255" value="<?php echo string_attribute( $mail['pop3_host'] ) ?>" />
++				</td>
++			</tr>
++			<tr class="row-1">
++				<td class="category" width="25%">
++					<?php echo "POP3 User"?>
++				</td>
++				<td width="75%">
++					<input type="text" name="pop3_user" size="64" maxlength="255" value="<?php echo string_attribute( $mail['pop3_user'] ) ?>" />
++				</td>
++			</tr>
++			<tr class="row-1">
++				<td class="category" width="25%">
++					<?php echo "POP3 Password"?>
++				</td>
++				<td width="75%">
++					<input type="text" name="pop3_pass" size="64" maxlength="255" value="<?php echo string_attribute( $mail['pop3_pass'] ) ?>" />
++				</td>
++			</tr>
++			<tr>
++				<td colspan="2">
++					<input type="submit" value="<?php echo 'Set Mail Account Data' ?>" />
++				</td>
++			</tr>
++		</table>
++	</form>
++</div>
++<!-- MAIL ACCOUNT RESET -->
++<div class="border-center">
++	<form method="post" action="manage_proj_mail_delete.php">
++		<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
++		<input type="submit" value="<?php echo 'Delete Mail Account Data' ?>" />
++	</form>
++</div>
++
+ <?php html_page_bottom1( __FILE__ ) ?>
+diff --git a/manage_proj_mail_delete.php b/manage_proj_mail_delete.php
+new file mode 100644
+index 0000000..c498236
+--- /dev/null
++++ b/manage_proj_mail_delete.php
+@@ -0,0 +1,45 @@
++<?php
++	# Mantis - a php based bugtracking system
++	# Copyright (C) 2000 - 2002  Kenzaburo Ito - kenito@300baud.org
++	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
++	# This program is distributed under the terms and conditions of the GPL
++	# See the README and LICENSE files for details
++
++	# --------------------------------------------------------
++	# $Id$
++	# --------------------------------------------------------
++?>
++<?php
++	require_once( 'core.php' );
++	
++	$t_core_path = config_get( 'core_path' );
++	
++	require_once( $t_core_path.'mail_api.php' );
++?>
++<?php
++	$f_project_id	= gpc_get_int( 'project_id' );
++
++	access_ensure_project_level( config_get( 'manage_project_threshold' ), $f_project_id );
++
++	mail_delete( $f_project_id );
++
++	$t_redirect_url = 'manage_proj_edit_page.php?project_id=' . $f_project_id;
++?>
++<?php
++	html_page_top1();
++
++	html_meta_redirect( $t_redirect_url );
++
++	html_page_top2();
++?>
++
++<br />
++<div align="center">
++<?php
++	echo lang_get( 'operation_successful' ) . '<br />';
++
++	print_bracket_link( $t_redirect_url, lang_get( 'proceed' ) );
++?>
++</div>
++
++<?php html_page_bottom1( __FILE__ ) ?>
+diff --git a/manage_proj_mail_update.php b/manage_proj_mail_update.php
+new file mode 100644
+index 0000000..034a5ee
+--- /dev/null
++++ b/manage_proj_mail_update.php
+@@ -0,0 +1,60 @@
++<?php
++	# Mantis - a php based bugtracking system
++	# Copyright (C) 2000 - 2002  Kenzaburo Ito - kenito@300baud.org
++	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
++	# This program is distributed under the terms and conditions of the GPL
++	# See the README and LICENSE files for details
++
++	# --------------------------------------------------------
++	# $Id$
++	# --------------------------------------------------------
++?>
++<?php
++	require_once( 'core.php' );
++	
++	$t_core_path = config_get( 'core_path' );
++	
++	require_once( $t_core_path.'mail_api.php' );
++?>
++<?php
++	$f_project_id	= gpc_get_int( 'project_id' );
++	$f_pop3_host	= gpc_get_string( 'pop3_host' );
++	$f_pop3_user	= gpc_get_string( 'pop3_user' );
++	$f_pop3_pass	= gpc_get_string( 'pop3_pass' );
++
++	access_ensure_project_level( config_get( 'manage_project_threshold' ), $f_project_id );
++
++	if ( is_blank( $f_pop3_host ) ) {
++			trigger_error( ERROR_EMPTY_FIELD, ERROR );
++	}
++	else {
++		if ( is_blank( $f_pop3_user ) ) {
++			trigger_error( ERROR_EMPTY_FIELD, ERROR );
++        }
++		if ( is_blank( $f_pop3_pass ) ) {
++			trigger_error( ERROR_EMPTY_FIELD, ERROR );
++        }
++	}
++
++	mail_update( $f_project_id, $f_pop3_host, $f_pop3_user, $f_pop3_pass );
++
++	$t_redirect_url = 'manage_proj_edit_page.php?project_id=' . $f_project_id;
++?>
++<?php
++	html_page_top1();
++
++	html_meta_redirect( $t_redirect_url );
++
++	html_page_top2();
++?>
++
++<br />
++<div align="center">
++<?php
++	echo lang_get( 'operation_successful' ) . '<br />';
++
++	print_bracket_link( $t_redirect_url, lang_get( 'proceed' ) );
++?>
++</div>
++
++<?php html_page_bottom1( __FILE__ ) ?>
+diff --git a/sql/bug_report_mail.sql b/sql/bug_report_mail.sql
+new file mode 100644
+index 0000000..3e620bf
+--- /dev/null
++++ b/sql/bug_report_mail.sql
+@@ -0,0 +1,5 @@
++
++ALTER TABLE `mantis_project_table`
++ADD `pop3_host` VARCHAR( 255 ) DEFAULT NULL ,
++ADD `pop3_user` VARCHAR( 255 ) DEFAULT NULL ,
++ADD `pop3_pass` VARCHAR( 255 ) DEFAULT NULL ;
+diff --git a/sql/db_generate.sql b/sql/db_generate.sql
+index 8424226..929b958 100644
+--- a/sql/db_generate.sql
++++ b/sql/db_generate.sql
+@@ -306,6 +306,9 @@ CREATE TABLE mantis_project_table (
+   access_min int(2) NOT NULL default '10',
+   file_path varchar(250) NOT NULL default '',
+   description text NOT NULL,
++  pop3_host varchar(255) default NULL,
++  pop3_user varchar(255) default NULL,
++  pop3_pass varchar(255) default NULL,
+   PRIMARY KEY  (id),
+   UNIQUE KEY name (name),
+   KEY id (id)
+-- 
+1.8.3.2
+

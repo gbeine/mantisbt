@@ -1,0 +1,1078 @@
+From 9d5bfed51a20991fef1df6ad1766191ee6c16256 Mon Sep 17 00:00:00 2001
+From: Gerrit Beine <gerrit.beine@gmx.de>
+Date: Wed, 4 Sep 2013 07:21:36 +0200
+Subject: [PATCH] Applied mail import patch to MantisBT 0.19.0
+
+---
+ bug_report_mail.php             |  33 ++++
+ config_defaults_inc.php         |  16 ++
+ config_inc.php.sample           |  12 ++
+ core/category_api.php           |   2 +-
+ core/mail_api.php               | 341 ++++++++++++++++++++++++++++++++++++++++
+ core/user_api.php               |  21 +++
+ doc/README.bug_report_mail      |  58 +++++++
+ manage_proj_cat_edit_page.php   |  62 ++++++++
+ manage_proj_cat_mail_delete.php |  43 +++++
+ manage_proj_cat_mail_update.php |  58 +++++++
+ manage_proj_edit_page.php       |  73 +++++++++
+ manage_proj_mail_categories.php |  43 +++++
+ manage_proj_mail_delete.php     |  42 +++++
+ manage_proj_mail_update.php     |  58 +++++++
+ sql/bug_report_mail.sql         |  12 ++
+ sql/db_generate.sql             |   9 ++
+ 16 files changed, 882 insertions(+), 1 deletion(-)
+ create mode 100644 bug_report_mail.php
+ create mode 100644 core/mail_api.php
+ create mode 100644 doc/README.bug_report_mail
+ create mode 100644 manage_proj_cat_mail_delete.php
+ create mode 100644 manage_proj_cat_mail_update.php
+ create mode 100644 manage_proj_mail_categories.php
+ create mode 100644 manage_proj_mail_delete.php
+ create mode 100644 manage_proj_mail_update.php
+ create mode 100644 sql/bug_report_mail.sql
+
+diff --git a/bug_report_mail.php b/bug_report_mail.php
+new file mode 100644
+index 0000000..e756fbe
+--- /dev/null
++++ b/bug_report_mail.php
+@@ -0,0 +1,33 @@
++<?php
++	# Mantis - a php based bugtracking system
++	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
++	# Copyright (C) 2004  Gerrit Beine - gerrit.beine@pitcom.de
++	# This program is distributed under the terms and conditions of the GPL
++	# See the README and LICENSE files for details
++
++	# --------------------------------------------------------
++	# $Id$
++	# --------------------------------------------------------
++
++	# This page receives an E-Mail via POP3 and generates an Report
++	header("Content-type: text/plain");
++
++	require_once( 'core.php' );
++
++	$t_core_path = config_get( 'core_path' );
++
++	require_once( $t_core_path . 'string_api.php' );
++	require_once( $t_core_path . 'bug_api.php' );
++	require_once( $t_core_path . 'mail_api.php' );
++
++	$t_mailaccounts = mail_get_accounts();
++	
++	foreach ($t_mailaccounts as $t_mailaccount) {
++		$t_mails = mail_get_all_mails($t_mailaccount);
++		foreach ($t_mails as $t_mail)
++		{
++			mail_add_bug($t_mail, $t_mailaccount);
++		}
++	}
++?>
++
+diff --git a/config_defaults_inc.php b/config_defaults_inc.php
+index c30025d..e7461a6 100644
+--- a/config_defaults_inc.php
++++ b/config_defaults_inc.php
+@@ -1335,4 +1335,20 @@
+ 	# Enable support for bug relationships where a bug can be a related, dependent on, or duplicate of another.
+ 	# See relationship_api.php for more details.
+ 	$g_enable_relationship = ON;
++
++	######################
++	# Mail Reporting
++	######################
++
++	# --- mail reporting settings -----
++	# This tells Mantis to report all the Mail with only one account
++	$g_mail_use_reporter    = ON;
++
++	# The account's name for mail reporting
++	# Also used for fallback if a user is not found in database
++	$g_mail_reporter        = 'Mail';
++
++	# Signup new users automatically (possible security risk!)
++	# Default is OFF, ignored if mail_use_reporter is ON
++	$g_mail_auto_signup	= OFF;
+ ?>
+\ No newline at end of file
+diff --git a/config_inc.php.sample b/config_inc.php.sample
+index 8f05757..933e27b 100644
+--- a/config_inc.php.sample
++++ b/config_inc.php.sample
+@@ -60,4 +60,16 @@
+ 	# The default value is ON but you must make sure file uploading is enabled
+ 	#  in PHP as well.  You may need to add "file_uploads = TRUE" to your php.ini.
+ 	$g_allow_file_upload	= ON;
++
++	# --- mail reporting settings -----
++	# This tells Mantis to report all the Mail with only one account
++	$g_mail_use_reporter    = OFF;
++
++	# The account's name for mail reporting
++	# Also used for fallback if a user is not found in database
++	$g_mail_reporter        = 'Mail';
++
++	# Signup new users automatically (possible security risk!)
++	# Default is OFF, ignored if mail_use_reporter is ON
++	$g_mail_auto_signup	= ON;
+ ?>
+diff --git a/core/category_api.php b/core/category_api.php
+index a94f603..c4c6a28 100644
+--- a/core/category_api.php
++++ b/core/category_api.php
+@@ -206,7 +206,7 @@
+ 
+ 		$t_project_category_table = config_get( 'mantis_project_category_table' );
+ 
+-		$query = "SELECT category, user_id
++		$query = "SELECT category, user_id, pop3_host, pop3_user, pop3_pass
+ 				FROM $t_project_category_table
+ 				WHERE project_id='$c_project_id'
+ 				ORDER BY category";
+diff --git a/core/mail_api.php b/core/mail_api.php
+new file mode 100644
+index 0000000..d7a7afb
+--- /dev/null
++++ b/core/mail_api.php
+@@ -0,0 +1,341 @@
++<?php
++	# Mantis - a php based bugtracking system
++	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
++	# Copyright (C) 2004  Gerrit Beine - gerrit.beine@pitcom.de
++	# This program is distributed under the terms and conditions of the GPL
++	# See the README and LICENSE files for details
++
++	# --------------------------------------------------------
++	# $Id$
++	# --------------------------------------------------------
++
++	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
++	
++	require_once( $t_core_dir . 'bug_api.php' );
++	require_once( $t_core_dir . 'bugnote_api.php' );
++	require_once( $t_core_dir . 'user_api.php' );
++	require_once( $t_core_dir . 'project_api.php' );
++
++	# This page receives an E-Mail via POP3 and generates an Report
++
++	require_once( 'Net/POP3.php' );
++
++	# --------------------
++	# Return mail account data for the specified project
++	function mail_get_account_data( $p_project_id ) {
++		$v_project_id = db_prepare_int( $p_project_id );
++
++		$t_project_table = config_get( 'mantis_project_table' );
++
++		$query = "SELECT pop3_host, pop3_user, pop3_pass, pop3_categories
++				FROM $t_project_table 
++				WHERE id='$v_project_id'";
++
++		$result = db_query( $query );
++
++		return db_fetch_array( $result );
++	}
++
++	# --------------------
++	# Update the mail account data
++	function mail_update( $p_project_id, $p_pop3_host, $p_pop3_user, $p_pop3_pass ) {
++		$v_project_id	= db_prepare_int( $p_project_id );
++		$v_pop3_host	= db_prepare_string( $p_pop3_host );
++		$v_pop3_user	= db_prepare_string( $p_pop3_user );
++		$v_pop3_pass	= db_prepare_string( $p_pop3_pass );
++
++		$t_project_table = config_get( 'mantis_project_table' );
++
++		$query = "UPDATE $t_project_table 
++			 	SET pop3_host='$v_pop3_host',
++				pop3_user='$v_pop3_user',
++				pop3_pass='$v_pop3_pass'
++				WHERE id='$v_project_id'";
++		db_query( $query );
++		return true;
++	}
++
++	# --------------------
++	# Removes the mail account data
++	function mail_delete( $p_project_id ) {
++		$v_project_id	= db_prepare_int( $p_project_id );
++
++		$t_project_table = config_get( 'mantis_project_table' );
++
++		$query = "UPDATE $t_project_table 
++				SET pop3_host=NULL,
++				pop3_user=NULL,
++				pop3_pass=NULL
++				WHERE id='$v_project_id'";
++
++		db_query( $query );
++
++		return true;
++	}
++
++	# --------------------
++	# Activate the Mail per Category feature for a project
++	function mail_categories( $p_project_id , $p_active ) {
++		$v_project_id	= db_prepare_int( $p_project_id );
++
++		if ($p_active == 'On') {
++			$v_active = 1;
++		} else {
++			$v_active = 0;
++		}
++
++		$t_project_table = config_get( 'mantis_project_table' );
++
++		$query = "UPDATE $t_project_table 
++				SET pop3_categories='$v_active'
++				WHERE id='$v_project_id'";
++
++		db_query( $query );
++
++		return true;
++	}
++
++	# --------------------
++	# Return mail account data for the specified project and category
++	function mail_category_get_account_data( $p_project_id, $p_category ) {
++		$c_project_id = db_prepare_int( $p_project_id );
++		$c_category	= db_prepare_string( $p_category );
++
++		$t_project_category_table = config_get( 'mantis_project_category_table' );
++
++		$query = "SELECT pop3_host, pop3_user, pop3_pass
++				FROM $t_project_category_table 
++				WHERE project_id='$c_project_id' AND category='$c_category'";
++
++		$result = db_query( $query );
++
++		return db_fetch_array( $result );
++	}
++
++	# --------------------
++	# Update the mail account data for a category
++	function mail_category_update( $p_project_id, $p_category, $p_pop3_host, $p_pop3_user, $p_pop3_pass ) {
++		$c_project_id	= db_prepare_int( $p_project_id );
++		$c_category	= db_prepare_string( $p_category );
++		$c_pop3_host	= db_prepare_string( $p_pop3_host );
++		$c_pop3_user	= db_prepare_string( $p_pop3_user );
++		$c_pop3_pass	= db_prepare_string( $p_pop3_pass );
++
++		$t_project_category_table = config_get( 'mantis_project_category_table' );
++
++		$query = "UPDATE $t_project_category_table 
++			 	SET pop3_host='$c_pop3_host',
++				pop3_user='$c_pop3_user',
++				pop3_pass='$c_pop3_pass'
++				WHERE project_id='$c_project_id' AND category='$c_category'";
++		db_query( $query );
++		return true;
++	}
++
++	# --------------------
++	# Removes the mail account data for a category
++	function mail_category_delete( $p_project_id, $p_category ) {
++		$c_project_id	= db_prepare_int( $p_project_id );
++		$c_category	= db_prepare_string( $p_category );
++		
++		$t_project_table = config_get( 'mantis_project_table' );
++
++		$t_project_category_table = config_get( 'mantis_project_category_table' );
++
++		$query = "UPDATE $t_project_category_table 
++			 	SET pop3_host=NULL,
++				pop3_user=NULL,
++				pop3_pass=NULL
++				WHERE project_id='$c_project_id' AND category='$c_category'";
++
++		db_query( $query );
++		return true;
++	}
++
++	# --------------------
++	# return all mailaccounts
++	#  return an empty array if there are no
++	function mail_get_accounts() {
++		$v_accounts = array();
++		$t_projects = mail_project_get_all_rows();
++
++		foreach ($t_projects as $t_project) {
++			if ($t_project['pop3_categories']) {
++				$v_categories = mail_categories_get_all_rows( $t_project['pop3_categories'] );
++				$v_accounts = array_merge($v_accounts, $v_categories);
++			} else {
++				array_push($v_accounts, $t_project);
++			}
++		}
++
++		return $v_accounts;
++	}
++
++	# --------------------
++	# return all projects with valid data for mail access
++	#  return an empty array if there are no such projects
++	function mail_project_get_all_rows() {
++		$v_projects = array();
++		$t_projects = project_get_all_rows();
++
++		foreach ($t_projects as $t_project) {
++			if ($t_project['pop3_host'] || $t_project['pop3_categories']) {
++				array_push($v_projects, $t_project);
++			}
++		}
++
++		return $v_projects;
++	}
++
++	# --------------------
++	# return all projects with valid data for mail access
++	#  return an empty array if there are no such projects
++	function mail_categories_get_all_rows( $p_project_id ) {
++		$v_categories = array();
++		$t_categories = category_get_all_rows( $p_project_id );
++
++		foreach ($t_categories as $t_category) {
++			if ($t_category['pop3_host']) {
++				$t_category['id'] = $p_project_id;
++				array_push($v_categories, $t_category);
++			}
++		}
++
++		return $v_categories;
++	}
++
++	# --------------------
++	# return all mails for an account
++	#  return an empty array if there are no new mails
++	function mail_get_all_mails( $p_account ) {
++		$v_mails = array();
++		$t_pop3 = &new Net_POP3();
++		$t_pop3_host = $p_account['pop3_host'];
++		$t_pop3_user = $p_account['pop3_user'];
++		$t_pop3_password = $p_account['pop3_pass'];
++
++		$t_pop3->connect($t_pop3_host, 110);
++		$t_pop3->login($t_pop3_user, $t_pop3_password);
++
++		for ($i = 1; $i <= $t_pop3->numMsg(); $i++) {
++			$t_mail = $t_pop3->getParsedHeaders($i);
++			$t_mail['X-Mantis-Body'] = $t_pop3->getBody($i);
++			$t_mail['X-Mantis-Complete'] = $t_pop3->getMsg($i);
++			array_push($v_mails, $t_mail);
++			$t_pop3->deleteMsg($i);
++		}
++
++		$t_pop3->disconnect();
++		return $v_mails;
++	}
++
++	# --------------------
++	# return the mailadress from the mail's 'From'
++	function mail_parse_address ( $p_mailaddress ) {
++		if (preg_match("/<(.*?)>/", $p_mailaddress, $matches)) {
++			$c_mailaddress = $matches[1];
++		}
++
++		return $c_mailaddress;
++	}
++
++	# --------------------
++	# return the a valid username from an email address
++	function mail_user_name_from_address ( $p_mailaddress ) {
++
++		return preg_replace("/[@\.-]/", '_', $p_mailaddress);
++	}
++
++	# --------------------
++	# return true if there is a valid mantis bug referernce in subject
++	function mail_is_a_bugnote ($p_mail_subject) {
++		return preg_match("/\[([A-Za-z0-9-_\.]*\s[0-9]{7})\]/", $p_mail_subject);
++	}
++
++	# --------------------
++	# return the bug's id from the subject
++	function mail_get_bug_id_from_subject ( $p_mail_subject) {
++		preg_match("/\[([A-Za-z0-9-_\.]*\s([0-9]{7}?))\]/", $p_mail_subject, $v_matches);
++
++		return $v_matches[2];
++	}
++
++	# --------------------
++	# return the user id for the mail reporting user
++	function mail_get_user ($p_mailaddress) {
++		$t_mail_use_reporter	= config_get( 'mail_use_reporter' );
++		$t_mail_auto_signup	= config_get( 'mail_auto_signup' );
++		$t_mail_reporter	= config_get( 'mail_reporter' );
++		
++		$c_mailaddress = mail_parse_address( $p_mailaddress );
++
++		if ( $t_mail_use_reporter ) {
++			// Always report as mail_reporter
++			$t_reporter_id = user_get_id_by_name( $t_mail_reporter );
++		} else {
++			// Try to get the reporting users id
++			$t_reporter_id = user_get_id_by_mail ( $c_mailaddress );
++			if ( ! $t_reporter_id && $t_mail_auto_signup ) {
++				// So, we've to sign up a new user...
++				$t_user_name = mail_user_name_from_address ( $c_mailaddress );
++				user_signup($t_user_name, $c_mailaddress);
++				$t_reporter_id = user_get_id_by_name($t_user_name);
++			} elseif ( ! $t_reporter_id ) {
++				// Fall back to the default mail_reporter
++				$t_reporter_id = user_get_id_by_name( $t_mail_reporter );
++			}
++		}
++
++		return $t_reporter_id;
++	}
++    
++	# --------------------
++	# Adds a bug which is reported via email
++	# Taken from bug_report.php and 
++	function mail_add_bug( $p_mail, $p_account ) {
++		$t_bug_data = new BugData;
++		$t_bug_data->build			= gpc_get_string( 'build', '' );
++		$t_bug_data->platform			= gpc_get_string( 'platform', '' );
++		$t_bug_data->os				= gpc_get_string( 'os', '' );
++		$t_bug_data->os_build			= gpc_get_string( 'os_build', '' );
++		$t_bug_data->version			= gpc_get_string( 'product_version', '' );
++		$t_bug_data->profile_id			= gpc_get_int( 'profile_id', 0 );
++		$t_bug_data->handler_id			= gpc_get_int( 'handler_id', 0 );
++		$t_bug_data->view_state			= gpc_get_int( 'view_state', config_get( 'default_bug_view_status' ) );
++
++		if ( $p_account['category']) {
++			$t_bug_data->category			= gpc_get_string( 'category', $p_account['category'] );
++		} else {
++			$t_bug_data->category			= gpc_get_string( 'category', '' );
++		}
++		$t_bug_data->reproducibility		= 10;
++		$t_bug_data->severity			= 50;
++		$t_bug_data->priority			= gpc_get_int( 'priority', NORMAL );
++		$t_bug_data->summary			= $p_mail['Subject'];
++		$t_bug_data->description		= $p_mail['X-Mantis-Body'];
++		$t_bug_data->steps_to_reproduce		= gpc_get_string( 'steps_to_reproduce', '' );
++		$t_bug_data->additional_information	= $p_mail['X-Mantis-Complete'];
++
++		$t_bug_data->project_id			= $p_account['id'];
++
++		$t_bug_data->reporter_id		= mail_get_user( $p_mail['From'] );
++
++		if (mail_is_a_bugnote($p_mail['Subject']))
++		{
++			# Add a bug note
++			$t_bug_id = mail_get_bug_id_from_subject( $p_mail['Subject'] );
++			if ( ! bug_is_readonly( $t_bug_id ) ) {
++				bugnote_add ( $t_bug_id, $p_mail['X-Mantis-Body'] );
++				email_bugnote_add ( $t_bug_id );
++			}
++		}
++		else
++		{
++			# Create the bug
++			$t_bug_id = bug_create( $t_bug_data );
++			email_new_bug( $t_bug_id );
++		}
++
++	}
++
++?>
+diff --git a/core/user_api.php b/core/user_api.php
+index 0ae43b9..2644e81 100644
+--- a/core/user_api.php
++++ b/core/user_api.php
+@@ -478,6 +478,27 @@
+ 	}
+ 
+ 	# --------------------
++	# get a user id from an mail address
++	#  return false if the mail address does not exist
++	function user_get_id_by_mail( $p_mailaddress ) {
++		
++		$c_mailaddress = db_prepare_string( $p_mailaddress );
++
++		$t_user_table = config_get( 'mantis_user_table' );
++
++		$query = "SELECT id
++				  FROM $t_user_table
++				  WHERE email='$c_mailaddress'";
++		$result = db_query( $query );
++
++		if ( 0 == db_num_rows( $result ) ) {
++			return false;
++		} else {
++			return db_result( $result );
++		}
++	}
++
++	# --------------------
+ 	# return all data associated with a particular user name
+ 	#  return false if the username does not exist
+ 	function user_get_row_by_name( $p_username ) {
+diff --git a/doc/README.bug_report_mail b/doc/README.bug_report_mail
+new file mode 100644
+index 0000000..6ceb486
+--- /dev/null
++++ b/doc/README.bug_report_mail
+@@ -0,0 +1,58 @@
++The current version of bug_report_mail only support plain text e-mails
++and POP3 Mailaccounts with PEAR's Net_POP3 packge.
++
++bug_report_mail is able to recognize if mail is a reply to an already opened
++bug and adds the content as a bugnote.
++
++If you are alway running Mantis you have to alter your projects table
++with the sql/bug_report_mail.sql script.
++If not, you can create the database tables in the way described in
++the doc/INSTALL file.
++
++This patch changes the following files:
++    core/category_api.php
++    core/user_api.php
++    config_defaults_inc.php
++    manage_proj_cat_edit_page.php
++    manage_proj_edit_page.php
++These files are new:
++    core/mail_api.php
++    sql/bug_report_mail.sql
++    bug_report_mail.php
++    manage_proj_cat_mail_delete.php
++    manage_proj_cat_mail_update.php
++    manage_proj_mail_categories.php
++    manage_proj_mail_delete.php
++    manage_proj_mail_update.php
++
++After installing this patch, you can add a POP3 server's hostname
++and authentication data for each of your projects with the project edit form.
++
++There are two ways to receive mail with bug_report_mail:
++The secure (and default) way is to use a standard reporting user:
++You have to create a reporter account, for example 'Mail'.
++The name for this reporter account you have to write in your config_inc.php file:
++	$g_mail_reporter = "Mail";
++and then, bug_report_mail must be informed to behave like this:
++    $g_mail_use_reporter = ON;
++
++The other way is to signup new user accounts automatically.
++For using this, you have to change this
++    $g_mail_auto_signup     = OFF;
++from OFF to ON.
++Now, bug_report_mail will look for an user named like the mail's sender
++or an user which mail adress is identical.
++If no user is found, then a new account will be created.
++The new user's name will be the mail address.
++
++This could be used for attacks, but there is no other way in the moment.
++
++After this, bug_report_mail can be used via cron like this:
++
++*/5 *   *   *   * lynx --dump http://mantis.homepage.com/bug_report_mail.php
++
++This line uses lynx to fetch bug reports from via POP3 every 5 minutes. 
++
++This addon is distributed under the same condition as Mantis itself.
++
++Gerrit Beine, August 2004
+diff --git a/manage_proj_cat_edit_page.php b/manage_proj_cat_edit_page.php
+index 8ddb220..b96a455 100644
+--- a/manage_proj_cat_edit_page.php
++++ b/manage_proj_cat_edit_page.php
+@@ -15,6 +15,7 @@
+ 	$t_core_path = config_get( 'core_path' );
+ 	
+ 	require_once( $t_core_path.'category_api.php' );
++	require_once( $t_core_path.'mail_api.php' );
+ ?>
+ <?php
+ 	$f_project_id	= gpc_get_int( 'project_id' );
+@@ -24,6 +25,12 @@
+ 
+ 	$t_row = category_get_row( $f_project_id, $f_category );
+ 	$t_assigned_to = $t_row['user_id'];
++	$t_mail = mail_get_account_data( $f_project_id );
++	if ( $t_mail['pop3_categories'] ) {
++		$t_category_mail = mail_category_get_account_data( $f_project_id, $f_category );
++		print_r($t_category_mail);
++	}
++
+ ?>
+ <?php html_page_top1() ?>
+ <?php html_page_top2() ?>
+@@ -84,4 +91,59 @@
+ 	</form>
+ </div>
+ 
++<?php  if ( $t_mail['pop3_categories'] ) { ?>
++<!-- MAIL ACCOUNT CHANGE -->
++<br />
++<div align="center">
++	<form method="post" action="manage_proj_cat_mail_update.php">
++		<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
++		<input type="hidden" name="category" value="<?php echo string_attribute( $f_category ) ?>" />
++		<table class="width75" cellspacing="1">
++			<tr>
++				<td class="form-title" colspan="4">
++					<?php echo 'Category Mail Account Settings' ?>
++				</td>
++			</tr>
++			<tr class="row-1">
++				<td class="category" width="25%">
++					<?php echo "POP3 Host"?>
++				</td>
++				<td width="75%">
++					<input type="text" name="pop3_host" size="64" maxlength="255" value="<?php echo string_attribute( $t_category_mail['pop3_host'] ) ?>" />
++				</td>
++			</tr>
++			<tr class="row-1">
++				<td class="category" width="25%">
++					<?php echo "POP3 User"?>
++				</td>
++				<td width="75%">
++					<input type="text" name="pop3_user" size="64" maxlength="255" value="<?php echo string_attribute( $t_category_mail['pop3_user'] ) ?>" />
++				</td>
++			</tr>
++			<tr class="row-1">
++				<td class="category" width="25%">
++					<?php echo "POP3 Password"?>
++				</td>
++				<td width="75%">
++					<input type="text" name="pop3_pass" size="64" maxlength="255" value="<?php echo string_attribute( $t_category_mail['pop3_pass'] ) ?>" />
++				</td>
++			</tr>
++			<tr>
++				<td colspan="2">
++					<input type="submit" value="<?php echo 'Set Mail Account Data' ?>" />
++				</td>
++			</tr>
++		</table>
++	</form>
++</div>
++<!-- MAIL ACCOUNT RESET -->
++<div class="border-center">
++	<form method="post" action="manage_proj_cat_mail_delete.php">
++		<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
++		<input type="hidden" name="category" value="<?php echo string_attribute( $f_category ) ?>" />
++		<input type="submit" value="<?php echo 'Delete Mail Account Data' ?>" />
++	</form>
++</div>
++<?php } ?>
++
+ <?php html_page_bottom1( __FILE__ ) ?>
+diff --git a/manage_proj_cat_mail_delete.php b/manage_proj_cat_mail_delete.php
+new file mode 100644
+index 0000000..596ddfc
+--- /dev/null
++++ b/manage_proj_cat_mail_delete.php
+@@ -0,0 +1,43 @@
++<?php
++	# Mantis - a php based bugtracking system
++	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
++	# Copyright (C) 2004  Gerrit Beine - gerrit.beine@pitcom.de
++	# This program is distributed under the terms and conditions of the GPL
++	# See the README and LICENSE files for details
++
++	# --------------------------------------------------------
++	# $Id$
++	# --------------------------------------------------------
++
++	require_once( 'core.php' );
++	
++	$t_core_path = config_get( 'core_path' );
++	
++	require_once( $t_core_path . 'mail_api.php' );
++
++	$f_project_id	= gpc_get_int( 'project_id' );
++	$f_category	= gpc_get_string( 'category' );
++
++	access_ensure_project_level( config_get( 'manage_project_threshold' ), $f_project_id );
++
++	mail_category_delete( $f_project_id, $f_category );
++
++	$t_redirect_url = 'manage_proj_cat_edit_page.php?project_id=' . $f_project_id . '&category=' . $f_category;
++
++	html_page_top1();
++
++	html_meta_redirect( $t_redirect_url );
++
++	html_page_top2();
++?>
++
++<br />
++<div align="center">
++<?php
++	echo lang_get( 'operation_successful' ) . '<br />';
++
++	print_bracket_link( $t_redirect_url, lang_get( 'proceed' ) );
++?>
++</div>
++
++<?php html_page_bottom1( __FILE__ ) ?>
+diff --git a/manage_proj_cat_mail_update.php b/manage_proj_cat_mail_update.php
+new file mode 100644
+index 0000000..f517e32
+--- /dev/null
++++ b/manage_proj_cat_mail_update.php
+@@ -0,0 +1,58 @@
++<?php
++	# Mantis - a php based bugtracking system
++	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
++	# Copyright (C) 2004  Gerrit Beine - gerrit.beine@pitcom.de
++	# This program is distributed under the terms and conditions of the GPL
++	# See the README and LICENSE files for details
++
++	# --------------------------------------------------------
++	# $Id$
++	# --------------------------------------------------------
++
++	require_once( 'core.php' );
++	
++	$t_core_path = config_get( 'core_path' );
++	
++	require_once( $t_core_path . 'mail_api.php' );
++
++	$f_project_id	= gpc_get_int( 'project_id' );
++	$f_pop3_host	= gpc_get_string( 'pop3_host' );
++	$f_pop3_user	= gpc_get_string( 'pop3_user' );
++	$f_pop3_pass	= gpc_get_string( 'pop3_pass' );
++	$f_category	= gpc_get_string( 'category' );
++
++	access_ensure_project_level( config_get( 'manage_project_threshold' ), $f_project_id );
++
++	if ( is_blank( $f_pop3_host ) ) {
++			trigger_error( ERROR_EMPTY_FIELD, ERROR );
++	}
++	else {
++		if ( is_blank( $f_pop3_user ) ) {
++			trigger_error( ERROR_EMPTY_FIELD, ERROR );
++        }
++		if ( is_blank( $f_pop3_pass ) ) {
++			trigger_error( ERROR_EMPTY_FIELD, ERROR );
++        }
++	}
++
++	mail_category_update( $f_project_id, $f_category, $f_pop3_host, $f_pop3_user, $f_pop3_pass );
++
++	$t_redirect_url = 'manage_proj_cat_edit_page.php?project_id=' . $f_project_id . '&category=' . $f_category;
++
++	html_page_top1();
++
++	html_meta_redirect( $t_redirect_url );
++
++	html_page_top2();
++?>
++
++<br />
++<div align="center">
++<?php
++	echo lang_get( 'operation_successful' ) . '<br />';
++
++	print_bracket_link( $t_redirect_url, lang_get( 'proceed' ) );
++?>
++</div>
++
++<?php html_page_bottom1( __FILE__ ) ?>
+diff --git a/manage_proj_edit_page.php b/manage_proj_edit_page.php
+index 44e4743..19b4b5a 100644
+--- a/manage_proj_edit_page.php
++++ b/manage_proj_edit_page.php
+@@ -18,6 +18,7 @@
+ 	require_once( $t_core_path . 'version_api.php' );
+ 	require_once( $t_core_path . 'custom_field_api.php' );
+ 	require_once( $t_core_path . 'icon_api.php' );
++	require_once( $t_core_path . 'mail_api.php' );
+ ?>
+ <?php
+ 	$f_project_id = gpc_get_int( 'project_id' );
+@@ -25,6 +26,8 @@
+ 	access_ensure_project_level( config_get( 'manage_project_threshold' ), $f_project_id );
+ 
+ 	$row = project_get_row( $f_project_id );
++	$mail = mail_get_account_data( $f_project_id );
++
+ ?>
+ <?php html_page_top1() ?>
+ <?php html_page_top2() ?>
+@@ -534,4 +537,74 @@ if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_projec
+ 	</table>
+ </div>
+ 
++<?php  if ( ! $mail['pop3_categories'] ) { ?>
++<!-- MAIL ACCOUNT CHANGE -->
++<br />
++<div align="center">
++	<form method="post" action="manage_proj_mail_update.php">
++		<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
++		<table class="width75" cellspacing="1">
++			<tr>
++				<td class="form-title" colspan="4">
++					<?php echo 'Mail Account Settings' ?>
++				</td>
++			</tr>
++			<tr class="row-1">
++				<td class="category" width="25%">
++					<?php echo "POP3 Host"?>
++				</td>
++				<td width="75%">
++					<input type="text" name="pop3_host" size="64" maxlength="255" value="<?php echo string_attribute( $mail['pop3_host'] ) ?>" />
++				</td>
++			</tr>
++			<tr class="row-1">
++				<td class="category" width="25%">
++					<?php echo "POP3 User"?>
++				</td>
++				<td width="75%">
++					<input type="text" name="pop3_user" size="64" maxlength="255" value="<?php echo string_attribute( $mail['pop3_user'] ) ?>" />
++				</td>
++			</tr>
++			<tr class="row-1">
++				<td class="category" width="25%">
++					<?php echo "POP3 Password"?>
++				</td>
++				<td width="75%">
++					<input type="text" name="pop3_pass" size="64" maxlength="255" value="<?php echo string_attribute( $mail['pop3_pass'] ) ?>" />
++				</td>
++			</tr>
++			<tr>
++				<td colspan="2">
++					<input type="submit" value="<?php echo 'Set Mail Account Data' ?>" />
++				</td>
++			</tr>
++		</table>
++	</form>
++</div>
++<!-- MAIL ACCOUNT RESET -->
++<div class="border-center">
++	<form method="post" action="manage_proj_mail_delete.php">
++		<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
++		<input type="submit" value="<?php echo 'Delete Mail Account Data' ?>" />
++	</form>
++</div>
++<br />
++<!-- MAIL ACCOUNT CATEGORIES -->
++<div class="border-center">
++	<form method="post" action="manage_proj_mail_categories.php">
++		<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
++		<input type="hidden" name="categories" value="On" />
++		<input type="submit" value="<?php echo 'Activate Mail Account per Category' ?>" />
++	</form>
++</div>
++<?php } else { ?>
++<!-- MAIL ACCOUNT CATEGORIES -->
++<div class="border-center">
++	<form method="post" action="manage_proj_mail_categories.php">
++		<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
++		<input type="hidden" name="categories" value="Off" />
++		<input type="submit" value="<?php echo 'Deactivate Mail Account per Category' ?>" />
++	</form>
++</div>
++<?php } ?>
+ <?php html_page_bottom1( __FILE__ ) ?>
+diff --git a/manage_proj_mail_categories.php b/manage_proj_mail_categories.php
+new file mode 100644
+index 0000000..6c508d3
+--- /dev/null
++++ b/manage_proj_mail_categories.php
+@@ -0,0 +1,43 @@
++<?php
++	# Mantis - a php based bugtracking system
++	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
++	# Copyright (C) 2004  Gerrit Beine - gerrit.beine@pitcom.de
++	# This program is distributed under the terms and conditions of the GPL
++	# See the README and LICENSE files for details
++
++	# --------------------------------------------------------
++	# $Id$
++	# --------------------------------------------------------
++
++	require_once( 'core.php' );
++	
++	$t_core_path = config_get( 'core_path' );
++	
++	require_once( $t_core_path . 'mail_api.php' );
++
++	$f_project_id	= gpc_get_int( 'project_id' );
++	$f_activate	= gpc_get_string( 'categories' );
++
++	access_ensure_project_level( config_get( 'manage_project_threshold' ), $f_project_id );
++
++	mail_categories( $f_project_id, $f_activate );
++
++	$t_redirect_url = 'manage_proj_edit_page.php?project_id=' . $f_project_id;
++
++	html_page_top1();
++
++	html_meta_redirect( $t_redirect_url );
++
++	html_page_top2();
++?>
++
++<br />
++<div align="center">
++<?php
++	echo lang_get( 'operation_successful' ) . '<br />';
++
++	print_bracket_link( $t_redirect_url, lang_get( 'proceed' ) );
++?>
++</div>
++
++<?php html_page_bottom1( __FILE__ ) ?>
+diff --git a/manage_proj_mail_delete.php b/manage_proj_mail_delete.php
+new file mode 100644
+index 0000000..85e6cc0
+--- /dev/null
++++ b/manage_proj_mail_delete.php
+@@ -0,0 +1,42 @@
++<?php
++	# Mantis - a php based bugtracking system
++	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
++	# Copyright (C) 2004  Gerrit Beine - gerrit.beine@pitcom.de
++	# This program is distributed under the terms and conditions of the GPL
++	# See the README and LICENSE files for details
++
++	# --------------------------------------------------------
++	# $Id$
++	# --------------------------------------------------------
++
++	require_once( 'core.php' );
++	
++	$t_core_path = config_get( 'core_path' );
++	
++	require_once( $t_core_path . 'mail_api.php' );
++
++	$f_project_id	= gpc_get_int( 'project_id' );
++
++	access_ensure_project_level( config_get( 'manage_project_threshold' ), $f_project_id );
++
++	mail_delete( $f_project_id );
++
++	$t_redirect_url = 'manage_proj_edit_page.php?project_id=' . $f_project_id;
++
++	html_page_top1();
++
++	html_meta_redirect( $t_redirect_url );
++
++	html_page_top2();
++?>
++
++<br />
++<div align="center">
++<?php
++	echo lang_get( 'operation_successful' ) . '<br />';
++
++	print_bracket_link( $t_redirect_url, lang_get( 'proceed' ) );
++?>
++</div>
++
++<?php html_page_bottom1( __FILE__ ) ?>
+diff --git a/manage_proj_mail_update.php b/manage_proj_mail_update.php
+new file mode 100644
+index 0000000..ae6147b
+--- /dev/null
++++ b/manage_proj_mail_update.php
+@@ -0,0 +1,58 @@
++<?php
++	# Mantis - a php based bugtracking system
++	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
++	# Copyright (C) 2004  Gerrit Beine - gerrit.beine@pitcom.de
++	# This program is distributed under the terms and conditions of the GPL
++	# See the README and LICENSE files for details
++
++	# --------------------------------------------------------
++	# $Id$
++	# --------------------------------------------------------
++
++	require_once( 'core.php' );
++	
++	$t_core_path = config_get( 'core_path' );
++	
++	require_once( $t_core_path . 'mail_api.php' );
++
++	$f_project_id	= gpc_get_int( 'project_id' );
++	$f_pop3_host	= gpc_get_string( 'pop3_host' );
++	$f_pop3_user	= gpc_get_string( 'pop3_user' );
++	$f_pop3_pass	= gpc_get_string( 'pop3_pass' );
++
++	echo $f_project_id;
++	access_ensure_project_level( config_get( 'manage_project_threshold' ), $f_project_id );
++
++	if ( is_blank( $f_pop3_host ) ) {
++			trigger_error( ERROR_EMPTY_FIELD, ERROR );
++	}
++	else {
++		if ( is_blank( $f_pop3_user ) ) {
++			trigger_error( ERROR_EMPTY_FIELD, ERROR );
++        }
++		if ( is_blank( $f_pop3_pass ) ) {
++			trigger_error( ERROR_EMPTY_FIELD, ERROR );
++        }
++	}
++
++	mail_update( $f_project_id, $f_pop3_host, $f_pop3_user, $f_pop3_pass );
++
++	$t_redirect_url = 'manage_proj_edit_page.php?project_id=' . $f_project_id;
++
++	html_page_top1();
++
++	html_meta_redirect( $t_redirect_url );
++
++	html_page_top2();
++?>
++
++<br />
++<div align="center">
++<?php
++	echo lang_get( 'operation_successful' ) . '<br />';
++
++	print_bracket_link( $t_redirect_url, lang_get( 'proceed' ) );
++?>
++</div>
++
++<?php html_page_bottom1( __FILE__ ) ?>
+diff --git a/sql/bug_report_mail.sql b/sql/bug_report_mail.sql
+new file mode 100644
+index 0000000..e4cd394
+--- /dev/null
++++ b/sql/bug_report_mail.sql
+@@ -0,0 +1,12 @@
++ALTER TABLE `mantis_project_table`
++ADD `pop3_host` VARCHAR( 255 ) DEFAULT NULL ,
++ADD `pop3_user` VARCHAR( 255 ) DEFAULT NULL ,
++ADD `pop3_pass` VARCHAR( 255 ) DEFAULT NULL ,
++ADD `pop3_categories` ENUM( '0', '1' ) DEFAULT '0' NOT NULL ;
++
++ALTER TABLE `mantis_project_category_table`
++ADD `pop3_host` VARCHAR( 255 ) DEFAULT NULL ,
++ADD `pop3_user` VARCHAR( 255 ) DEFAULT NULL ,
++ADD `pop3_pass` VARCHAR( 255 ) DEFAULT NULL ;
++
++
+diff --git a/sql/db_generate.sql b/sql/db_generate.sql
+index 7511264..f5820c0 100644
+--- a/sql/db_generate.sql
++++ b/sql/db_generate.sql
+@@ -328,6 +328,10 @@ CREATE TABLE mantis_project_category_table (
+   project_id int(7) unsigned NOT NULL default '0',
+   category varchar(64) NOT NULL default '',
+   user_id int(7) unsigned NOT NULL default '0',
++  pop3_host varchar( 255 ) default NULL ,
++  pop3_user varchar( 255 ) default NULL ,
++  pop3_pass varchar( 255 ) default NULL ,
++  pop3_pass varchar( 255 ) default NULL ,
+   PRIMARY KEY  (project_id,category)
+ ) TYPE=MyISAM;
+ 
+@@ -377,6 +381,11 @@ CREATE TABLE mantis_project_table (
+   access_min int(2) NOT NULL default '10',
+   file_path varchar(250) NOT NULL default '',
+   description text NOT NULL,
++  pop3_host varchar( 255 ) default NULL ,
++  pop3_user varchar( 255 ) default NULL ,
++  pop3_pass varchar( 255 ) default NULL ,
++  pop3_pass varchar( 255 ) default NULL ,
++  pop3_categories enum( '0','1' ) NOT NULL default '0',
+   PRIMARY KEY  (id),
+   UNIQUE KEY name (name),
+   KEY id (id)
+-- 
+1.8.3.2
+

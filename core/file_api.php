@@ -6,13 +6,15 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: file_api.php,v 1.46 2004-04-08 20:52:50 prescience Exp $
+	# $Id: file_api.php,v 1.55 2004-08-31 13:11:51 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
 
 	require_once( $t_core_dir . 'history_api.php' );
 	require_once( $t_core_dir . 'bug_api.php' );
+
+	$g_cache_file_count = array();
 
 	### File API ###
 
@@ -33,15 +35,42 @@
 	# --------------------
 	# Check the number of attachments a bug has (if any)
 	function file_bug_attachment_count( $p_bug_id ) {
+		global $g_cache_file_count;
+
 		$c_bug_id			= db_prepare_int( $p_bug_id );
 		$t_bug_file_table	= config_get( 'mantis_bug_file_table' );
 
-		$query = "SELECT bug_id
+		# First check if we have a cache hit
+		if ( isset( $g_cache_file_count[ $p_bug_id ] ))
+			return $g_cache_file_count[ $p_bug_id ];
+
+		# If there is no cache hit, check if there is anything in
+		#   the cache. If the cache isn't empty and we didn't have
+		#   a hit, then there are not attachments for this bug.
+		if ( count( $g_cache_file_count ) > 0 )
+			return 0;
+
+		# Otherwise build the cache and return the attachment count
+		#   for the given bug (if any).
+		$query = "SELECT bug_id, COUNT(bug_id) AS attachments
 				FROM $t_bug_file_table
-				WHERE bug_id='$c_bug_id'";
+				GROUP BY bug_id";
 		$result = db_query( $query );
 
-		return db_num_rows( $result );
+		$t_file_count = 0;
+		while( $row = db_fetch_array( $result )) {
+			$g_cache_file_count[ $row['bug_id'] ] = $row['attachments'];
+			if ( $p_bug_id == $row['bug_id'] )
+				$t_file_count = $row['attachments'];
+		}
+
+		# If no attachments are present, mark the cache to avoid
+		#   repeated queries for this.
+		if ( count( $g_cache_file_count ) == 0 ) {
+			$g_cache_file_count[ '_no_files_' ] = -1;
+		}
+
+		return $t_file_count;
 	}
 
 	# --------------------
@@ -120,6 +149,7 @@
 			$row = db_fetch_array( $result );
 			extract( $row, EXTR_PREFIX_ALL, 'v' );
 
+			$t_file_display_name = $v_filename;
 			$t_filesize		= number_format( $v_filesize );
 			$t_date_added	= date( config_get( 'normal_date_format' ), db_unixtimestamp( $v_date_added ) );
 
@@ -129,17 +159,21 @@
 			}
 
 			if ( $t_can_download ) {
-				$t_href_start	= "<a href=\"file_download.php?file_id=$v_id&amp;type=bug\" target=\"_blank\">";
+				$t_href_start	= "<a href=\"file_download.php?file_id=$v_id&amp;type=bug\">";
 				$t_href_end		= '</a>';
+
+				$t_href_clicket = " [<a href=\"file_download.php?file_id=$v_id&amp;type=bug\" target=\"_blank\">^</a>]";
 			} else {
 				$t_href_start	= '';
 				$t_href_end		= '';
+
+				$t_href_clicket = '';
 			}
 
 			PRINT $t_href_start;
-			print_file_icon ( file_get_display_name( $v_filename ) );
-			PRINT $t_href_end . '</a>&nbsp;' . $t_href_start . file_get_display_name( $v_filename ) .
-				$t_href_end . " ($t_filesize bytes) <span class=\"italic\">$t_date_added</span>";
+			print_file_icon ( $t_file_display_name );
+			PRINT $t_href_end . '</a>&nbsp;' . $t_href_start . $t_file_display_name .
+				$t_href_end . "$t_href_clicket ($t_filesize bytes) <span class=\"italic\">$t_date_added</span>";
 
 			if ( $t_can_delete ) {
 				PRINT " [<a class=\"small\" href=\"bug_file_delete.php?file_id=$v_id\">" . lang_get('delete_link') . '</a>]';
@@ -152,7 +186,7 @@
 			if ( $t_can_download &&
 				( $v_filesize <= config_get( 'preview_attachments_inline_max_size' ) ) &&
 				( $v_filesize != 0 ) &&
-				( in_array( strtolower( file_get_extension( $v_diskfile ) ), array( 'png', 'jpg', 'gif', 'bmp' ), true ) ) ) {
+				( in_array( strtolower( file_get_extension( $t_file_display_name ) ), array( 'png', 'jpg', 'gif', 'bmp' ), true ) ) ) {
 
 				PRINT "<br /><img src=\"file_download.php?file_id=$v_id&amp;type=bug\" />";
 				$image_previewed = true;
@@ -382,10 +416,62 @@
 
 		return false;
 	}
+
+	# --------------------
+	# clean file name by removing sensitive characters and replacing them with underscores
+	function file_clean_name( $p_filename ) {
+		return preg_replace( "/[\/\\ :&]/", "_", $p_filename); 
+	}
+
+	# --------------------
+	# Generate a string to use as the identifier for the file
+	# It is not guaranteed to be unique and should be checked
+	# The string returned should be 32 characters in length
+	function file_generate_name( $p_seed ) {
+		$t_val = md5( $p_seed . time() );
+
+		return substr( $t_val, 0, 32 );
+	}
+
+	# --------------------
+	# Generate a UNIQUE string to use as the identifier for the file
+	# The string returned should be 64 characters in length
+	function file_generate_unique_name( $p_seed , $p_filepath ) {
+		do {
+			$t_string = file_generate_name( $p_seed );
+		} while ( !file_is_name_unique( $t_string , $p_filepath ) );
+
+		return $t_string;
+	}
+
+	# --------------------
+	# Return true if the file name identifier is unique, false otherwise
+	function file_is_name_unique( $p_name , $p_filepath ) {
+		$t_file_table = config_get( 'mantis_bug_file_table' );
+
+		$c_name = db_prepare_string( $p_filepath . $p_name );
+
+		$query = "SELECT COUNT(*)
+				  FROM $t_file_table
+				  WHERE diskfile='$c_name'";
+		$result = db_query( $query );
+		$t_count = db_result( $result );
+
+		if ( $t_count > 0 ) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
 	# --------------------
 	function file_add( $p_bug_id, $p_tmp_file, $p_file_name, $p_file_type='' ) {
 		$c_bug_id		= db_prepare_int( $p_bug_id );
 		$c_file_type	= db_prepare_string( $p_file_type );
+
+		if ( !is_readable( $p_tmp_file ) && DISK != config_get( 'file_upload_method' ) ) {
+			trigger_error( ERROR_UPLOAD_FAILURE, ERROR );
+		}
 
 		if ( !file_type_check( $p_file_name ) ) {
 			trigger_error( ERROR_FILE_NOT_ALLOWED, ERROR );
@@ -396,11 +482,19 @@
 			# prepare variables for insertion
 			$t_file_path = project_get_field( $t_project_id, 'file_path' );
 			$c_file_path = db_prepare_string( $t_file_path );
+			$c_new_file_name = db_prepare_string( $p_file_name );
 
-			$t_new_file_name = $t_bug_id . '-' . $p_file_name;
-			$c_new_file_name = db_prepare_string( $t_new_file_name );
+			$t_disk_file_name = $t_file_path . file_generate_unique_name( $t_bug_id . '-' . $p_file_name, $t_file_path );
+			$c_disk_file_name = db_prepare_string( $t_disk_file_name );
 
-			$t_file_size = filesize( $p_tmp_file );
+			if ( is_readable ( $p_tmp_file ) ) { 
+				$t_file_size = filesize( $p_tmp_file );
+			} else {
+				//try to get filesize from 'post' data
+				//@@@ fixme - this should support >1 file ? 
+				global $HTTP_POST_FILES;
+				$t_file_size = $HTTP_POST_FILES['file']['size'];
+			}
 			$c_file_size = db_prepare_int( $t_file_size );
 
 			$t_method			= config_get( 'file_upload_method' );
@@ -411,15 +505,15 @@
 				case DISK:
 					file_ensure_valid_upload_path( $t_file_path );
 
-					if ( !file_exists( $t_file_path . $t_new_file_name ) ) {
+					if ( !file_exists( $t_disk_file_name ) ) {
 						if ( FTP == $t_method ) {
 							$conn_id = file_ftp_connect();
-							file_ftp_put ( $conn_id, $t_new_file_name, $p_tmp_file );
+							file_ftp_put ( $conn_id, $t_disk_file_name, $p_tmp_file );
 							file_ftp_disconnect ( $conn_id );
 						}
 
 						umask( 0333 );  # make read only
-						copy( $p_tmp_file, $t_file_path . $t_new_file_name );
+						move_uploaded_file( $p_tmp_file, $t_disk_file_name );
 
 						$c_content = '';
 					} else {
@@ -436,7 +530,7 @@
 			$query = "INSERT INTO $t_bug_file_table
 						(bug_id, title, description, diskfile, filename, folder, filesize, file_type, date_added, content)
 					  VALUES
-						($c_bug_id, '', '', '$c_file_path$c_new_file_name', '$c_new_file_name', '$c_file_path', $c_file_size, '$c_file_type', " . db_now() .", '$c_content')";
+						($c_bug_id, '', '', '$c_disk_file_name', '$c_new_file_name', '$c_file_path', $c_file_size, '$c_file_type', " . db_now() .", '$c_content')";
 			db_query( $query );
 
 			# updated the last_updated date

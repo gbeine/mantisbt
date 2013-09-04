@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: config_defaults_inc.php,v 1.164 2004-05-09 02:24:18 vboctor Exp $
+	# $Id: config_defaults_inc.php,v 1.206 2004-09-12 12:12:30 vboctor Exp $
 	# --------------------------------------------------------
 
 
@@ -53,9 +53,14 @@
 			$t_protocol = 'https';
 		}
 
-		$t_port = ':' . $_SERVER['SERVER_PORT'];
-		if ( ( ':80' == $t_port && 'http' == $t_protocol )
-		  || ( ':443' == $t_port && 'https' == $t_protocol )) {
+		# $_SERVER['SERVER_PORT'] is not defined in case of php-cgi.exe
+		if ( isset( $_SERVER['SERVER_PORT'] ) ) {
+			$t_port = ':' . $_SERVER['SERVER_PORT'];
+			if ( ( ':80' == $t_port && 'http' == $t_protocol )
+			  || ( ':443' == $t_port && 'https' == $t_protocol )) {
+				$t_port = '';
+			}
+		} else {
 			$t_port = '';
 		}
 
@@ -99,7 +104,62 @@
 	#############################
 
 	# Using Microsoft Internet Information Server (IIS)
-	$g_use_iis = ( strstr( $_SERVER['SERVER_SOFTWARE'], 'IIS' ) !== false ) ? ON : OFF;
+	if ( isset( $_SERVER['SERVER_SOFTWARE'] ) ) { # SERVER_SOFTWARE not defined in case of php-cgi.exe
+		$g_use_iis = ( strstr( $_SERVER['SERVER_SOFTWARE'], 'IIS' ) !== false ) ? ON : OFF;
+	} else {
+		$g_use_iis = OFF;
+	}
+
+	#############################
+	# Signup and Lost Password
+	#############################
+
+	# --- signup ----------------------
+
+	# allow users to signup for their own accounts.
+	# Mail settings must be correctly configured in order for this to work
+	$g_allow_signup			= ON;
+
+	# Max. attempts to login using a wrong password before lock the account.
+	# When locked, it's required to reset the password (lost password)
+	# Value resets to zero at each successfully login
+	# Set to OFF to disable this control
+	$g_max_failed_login_count = OFF;
+
+	# access level required to be notified when a new user has been created using the "signup form"
+	$g_notify_new_user_created_threshold_min = ADMINISTRATOR;
+
+	# if ON users will be sent their password when reset.
+	# if OFF the password will be set to blank. If set to ON, mail settings must be
+	# correctly configured.
+	$g_send_reset_password	= ON;
+
+	# String used to generate the confirm_hash for the 'lost password' feature and captcha code for 'signup'
+	# ATTENTION: CHANGE IT TO WHATEVER VALUE YOU PREFER
+	$g_password_confirm_hash_magic_string = 'blowfish';
+
+	# --- captcha image ---------------
+
+	# use captcha image to validate subscription it requires GD library installed
+	$g_signup_use_captcha	= ON;
+
+	# absolute path (with trailing slash!) to folder which contains your TrueType-Font files
+	# used to create the captcha image
+	$g_system_font_folder	= 'c:/winnt/fonts/';
+
+	# font name used to create the captcha image. i.e. arial.ttf
+	# (the font file has to exist in the system_font_folder)
+	$g_font_per_captcha	= 'arial.ttf';
+
+	# --- lost password -------------
+
+	#  Setting to disable the 'lost your password' feature.
+	$g_lost_password_feature = ON;
+
+	# Max. simultaneous requests of 'lost password'
+	# When this value is reached, it's no longer possible to request new password reset
+	# Value resets to zero at each successfully login
+	$g_max_lost_password_in_progress_count = 3;
 
 	#############################
 	# Mantis Email Settings
@@ -112,23 +172,12 @@
 	# the 'From: ' field in emails
 	$g_from_email			= 'noreply@example.com';
 
-	# the 'To: ' address all emails are sent.  This can be a mailing list or archive address.
-	# Actual users are emailed via the bcc: fields
-	$g_to_email				= 'nobody@example.com';
-
 	# the return address for bounced mail
 	$g_return_path_email	= 'admin@example.com';
 
-	# allow users to signup for their own accounts.
-	# Mail settings must be correctly configured in order for this to work
-	$g_allow_signup			= ON;
-
-	# if ON users will be sent their password when reset.
-	# if OFF the password will be set to blank. If set to ON, mail settings must be
-	# correctly configured.
-	$g_send_reset_password	= ON;
-
 	# allow email notification
+	#  note that if this is disabled, sign-up and password reset messages will
+	#  not be sent.  
 	$g_enable_email_notification	= ON;
 
 	# The following two config options allow you to control who should get email
@@ -148,12 +197,15 @@
 	# option above is used.  The possible actions are:
 	#
 	#             'new': a new bug has been added
- 	#        'assigned': a bug has been assigned
+ 	#           'owner': a bug has been assigned to a new owner
 	#        'reopened': a bug has been reopened
  	#         'deleted': a bug has been deleted
 	#         'updated': a bug has been updated
 	#         'bugnote': a bugnote has been added to a bug
-	# 'status_<status>': eg: 'status_resolved', 'status_closed', 'status_feedback', 'status_acknowledged', ...etc.
+	#         'sponsor': sponsorship has changed on this bug 
+	#        'relation': a relationship has changed on this bug 
+	#        '<status>': eg: 'resolved', 'closed', 'feedback', 'acknowledged', ...etc.
+	#                     this list corresponds to $g_status_enum_string
 
 	#
 	# If you wanted to have all developers get notified of new bugs you might add
@@ -195,7 +247,7 @@
 	# note if you allow users to create their own accounts, they
 	#  must specify an email at that point, no matter what the value
 	#  of this option is.  Otherwise they wouldn't get their passwords.
-	$g_allow_blank_email	= ON;
+	$g_allow_blank_email	= OFF;
 
 	# Only allow and send email to addresses in the given domain
 	# For example:
@@ -209,9 +261,6 @@
 	# Urgent = 1, Not Urgent = 5, Disable = 0
 	# Note: some MTAs interpret X-Priority = 0 to mean 'Very Urgent'
 	$g_mail_priority		= 3;
-
-	# Set to OFF on Windows systems, as long as php-mail-function has its bcc-bug (~PHP 4.0.6)
-	$g_use_bcc				= ON;
 
 	# select the method to mail by:
 	# 0 - mail()
@@ -245,7 +294,7 @@
 	#############################
 
 	# --- version variables -----------
-	$g_mantis_version		= '0.19.0-CVS';
+	$g_mantis_version		= '0.19.0';
 	$g_show_version			= ON;
 
 	################################
@@ -253,16 +302,53 @@
 	################################
 
 	# --- language settings -----------
+
+	# If the language is set to 'auto', the actual
+	# language is determined by the user agent (web browser)
+	# language preference.
 	$g_default_language		= 'english';
 
 	# list the choices that the users are allowed to choose
 	$g_language_choices_arr	= array(
-		'english', 'chinese_simplified', 'chinese_traditional', 'czech',
+		'auto', 'english', 'chinese_simplified', 'chinese_traditional', 'czech',
 		'danish', 'dutch', 'estonian', 'french', 'german', 'hungarian',
-		'italian', 'japanese_euc', 'japanese_sjis', 'korean', 'lithuanian',
-		'norwegian', 'polish', 'portuguese_brazil', 'portuguese_standard',
-		'romanian', 'russian', 'russian_koi8', 'serbian', 'slovak', 'spanish',
-		'swedish', 'turkish' );
+		'italian', 'japanese_euc', 'japanese_sjis', 'japanese_utf8', 'korean', 
+		'lithuanian', 'norwegian', 'polish', 'portuguese_brazil', 'portuguese_standard',
+		'romanian', 'russian', 'russian_koi8', 'serbian', 'slovak', 'slovene', 
+		'spanish', 'swedish', 'turkish' );
+
+	# Browser language mapping for 'auto' language selection
+	$g_language_auto_map = array(
+		'en-us, en-gb, en-au, en' => 'english',
+		'zh-cn, zh-sg, zh' => 'chinese_simplified',
+		'zh-hk, zh-tw' => 'chinese_traditional',
+		'cs' => 'czech',
+		'da' => 'danish',
+		'nl-be, nl' => 'dutch',
+		'et' => 'estonian',
+		'fr-be, fr-ca, fr-ch, fr' => 'french',
+		'de-de, de-at, de-ch, de' => 'german',
+		'hu' => 'hungarian',
+		'it-ch, it' => 'italian',
+		'ja' => 'japanese_sjis',
+		'ko' => 'korean',
+		'lt' => 'lithuanian',
+		'no' => 'norwegian',
+		'pl' => 'polish',
+		'pt-br' => 'portugese_brazil',
+		'pt' => 'portugese_standard',
+		'ro-mo, ro' => 'romanian',
+		'ru-mo, ru' => 'russian',
+		'sr' => 'serbian',
+		'sk' => 'slovak',
+		'sl' => 'slovene',
+		'es-mx, es-co, es-ar, es-cl, es-pr, es' => 'spanish',
+		'sv-fi, sv' => 'swedish',
+		'tr' => 'turkish'
+	);
+
+	# Fallback for automatic language selection 
+	$g_fallback_language	= 'english';
 
 	###############################
 	# Mantis Display Settings
@@ -304,6 +390,16 @@
 	# --- Position of the status colour legend, can be: STATUS_LEGEND_POSITION_*
 	# --- see constant_inc.php. (*: BOTTOM or TOP)
 	$g_status_legend_position	= STATUS_LEGEND_POSITION_BOTTOM;
+
+	# --- show product versions in create, view and update screens
+	#  ON forces display even if none are defined
+	#  OFF suppresses display
+	#  AUTO suppresses the display if there are no versions defined for the project
+	$g_show_product_version = AUTO;
+
+	# -- show users with their real name or not
+	$g_show_realname = OFF;
+	$g_differentiate_duplicates = OFF;  # leave off for now
 
 	############################
 	# Mantis JPGRAPH Addon
@@ -408,6 +504,7 @@
 	$g_default_advanced_update		= OFF;
 	$g_default_refresh_delay		= 30;    # in minutes
 	$g_default_redirect_delay		= 2;     # in seconds
+	$g_default_bugnote_order		= 'ASC';
 	$g_default_email_on_new			= ON;
 	$g_default_email_on_assigned	= ON;
 	$g_default_email_on_feedback	= ON;
@@ -426,6 +523,7 @@
 	$g_default_email_on_bugnote_minimum_severity	= 'any';
 	$g_default_email_on_status_minimum_severity		= 'any'; # @@@ Unused
 	$g_default_email_on_priority_minimum_severity	= 'any'; # @@@ Unused
+	$g_default_email_bugnote_limit					= 0;
 	# default_language - is set to site language
 
 	###############################
@@ -445,7 +543,7 @@
 	$g_summary_category_include_project	= OFF;
 
 	# threshold for viewing summary
-	$g_view_summary_threshold	= VIEWER;
+	$g_view_summary_threshold	= MANAGER;
 
 	###############################
 	# Mantis Bugnote Settings
@@ -453,7 +551,7 @@
 
 	# --- bugnote ordering ------------
 	# change to ASC or DESC
-	$g_bugnote_order		= 'ASC';
+	$g_bugnote_order		= 'DESC';
 
 	################################
 	# Mantis Bug History Settings
@@ -479,8 +577,8 @@
 	# If recipients of the reminders are below the monitor threshold, they will not be added.
 	$g_reminder_recipents_monitor_bug = ON;
 
-        # Default Reminder View Status (VS_PUBLIC or VS_PRIVATE)
-        $g_default_reminder_view_status = VS_PUBLIC;
+	# Default Reminder View Status (VS_PUBLIC or VS_PRIVATE)
+	$g_default_reminder_view_status = VS_PUBLIC;
 
 	###################################
 	# Mantis Sponsorship Settings
@@ -582,7 +680,8 @@
 	$g_ldap_server			= 'ldaps://ldap.example.com.au/';
 	$g_ldap_port			= '636';
 	$g_ldap_root_dn			= 'dc=example,dc=com,dc=au';
-	#$g_ldap_organization	= '(organizationname=*Traffic)'; # optional
+	$g_ldap_organization		= '';    # e.g. '(organizationname=*Traffic)'
+	$g_ldap_uid_field		= 'uid'; # Use 'sAMAccountName' for Active Directory
 	$g_ldap_bind_dn			= '';
 	$g_ldap_bind_passwd		= '';
 	$g_use_ldap_email		= OFF; # Should we send to the LDAP email address or what MySql tells us
@@ -605,6 +704,10 @@
 
 	# --- status thresholds (*_status_threshold) ---
 
+	# Bug becomes readonly if its status is >= this status.  The bug becomes read/write again if re-opened and its
+	# status becomes less than this threshold.
+	$g_bug_readonly_status_threshold = RESOLVED;
+
 	# Bug is resolved, ready to be closed or reopened.  In some custom installations a bug
 	# maybe considered as resolved when it is moved to a custom (FIXED OR TESTED) status.
 	$g_bug_resolved_status_threshold = RESOLVED;
@@ -613,6 +716,20 @@
 	# This is useful for installations where assigned status is to be used when
 	# the bug is in progress, rather than just put in a person's queue.
 	$g_auto_set_status_to_assigned	= ON;
+
+	# 'status_enum_workflow' defines the workflow, and reflects a simple 
+	#  2-dimensional matrix. For each existing status, you define which
+	#  statuses you can go to from that status, e.g. from NEW_ you might list statuses 
+	#  '10:new,20:feedback,30:acknowledged' but not higher ones.
+	# The following example can be transferred to config_inc.php
+	# $g_status_enum_workflow[NEW_]='10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved';
+	# $g_status_enum_workflow[FEEDBACK] ='10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved';
+	# $g_status_enum_workflow[ACKNOWLEDGED] ='20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved';
+	# $g_status_enum_workflow[CONFIRMED] ='20:feedback,40:confirmed,50:assigned,80:resolved';
+	# $g_status_enum_workflow[ASSIGNED] ='20:feedback,50:assigned,80:resolved,90:closed';
+	# $g_status_enum_workflow[RESOLVED] ='50:assigned,80:resolved,90:closed';
+	# $g_status_enum_workflow[CLOSED] ='50:assigned';
+	$g_status_enum_workflow = array();
 
 	############################
 	# Bug Attachments Settings
@@ -662,16 +779,8 @@
 	# access level needed to report a bug
 	$g_report_bug_threshold			= REPORTER;
 
-	# access level needed to update bugs
+	# access level needed to update bugs (i.e., the update_bug_page)
 	$g_update_bug_threshold			= UPDATER;
-
-	# access level needed to re-open bugs
-	# Look in the constant_inc.php file if you want to set a different value
-	$g_reopen_bug_threshold			= DEVELOPER;
-
-	# access level needed to close bugs
-	# Look in the constant_inc.php file if you want to set a different value
-	$g_close_bug_threshold			= DEVELOPER;
 
 	# access level needed to monitor bugs
 	# Look in the constant_inc.php file if you want to set a different value
@@ -778,6 +887,21 @@
 	# Threshold needed to be able to create shared stored queries
 	$g_stored_query_create_shared_threshold = MANAGER;
 
+	# Threshold needed to update readonly bugs.  Readonly bugs are identified via 
+	# $g_bug_readonly_status_threshold.
+	$g_update_readonly_bug_threshold = MANAGER;
+
+	# threshold for viewing changelog
+	$g_view_changelog_threshold = VIEWER;
+
+	# status change thresholds
+	$g_update_bug_status_threshold = DEVELOPER;
+
+	# this array sets the access thresholds needed to enter each status listed.
+	# if a status is not listed, it falls back to $g_update_bug_status_threshold
+	# example: $g_set_status_threshold = array( ACKNOWLEDGED => MANAGER, CONFIRMED => DEVELOPER, CLOSED => MANAGER );
+	$g_set_status_threshold = array();
+	
 	# --- login method ----------------
 	# CRYPT or PLAIN or MD5 or LDAP or BASIC_AUTH
 	# You can simply change this at will. Mantis will try to figure out how the passwords were encrypted.
@@ -816,6 +940,26 @@
 	# insert the URL to your CVSweb or ViewCVS
 	# eg: http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/mantisbt/mantisbt/
 	$g_cvs_web				= '';
+	
+	# --- Source Control Integration ------
+	
+	# For open source projects it is expected that the notes be public, however,
+	# for non-open source it will probably be VS_PRIVATE.
+	$g_source_control_notes_view_status = VS_PRIVATE;
+
+	# Account to be used by the source control script.  The account must be enabled
+	# and must have the appropriate access level to add notes to all issues even
+	# private ones (DEVELOPER access recommended).
+	$g_source_control_account           = '';
+
+	# If set to a status, then after a checkin, the issue status is set to the 
+	# specified status, otherwise if set to OFF, the issue status is not affected.
+	$g_source_control_set_status_to     = OFF;
+
+	# Regular expression used to detect issue ids within checkin comments.
+	# see preg_match_all() documentation at
+	# http://www.php.net/manual/en/function.preg-match-all.php
+	$g_source_control_regexp = "/\bissue [#]{0,1}(\d+)\b/i";
 
 	# --- Bug Linking ---------------
 	# if a number follows this tag it will create a link to a bug.
@@ -893,12 +1037,14 @@
 	$g_project_cookie		= $g_cookie_prefix.'_PROJECT_COOKIE';
 	$g_view_all_cookie		= $g_cookie_prefix.'_VIEW_ALL_COOKIE';
 	$g_manage_cookie		= $g_cookie_prefix.'_MANAGE_COOKIE';
+	$g_logout_cookie		= $g_cookie_prefix.'_LOGOUT_COOKIE';
 
 	#######################################
 	# Mantis Filter Variables
 	#######################################
 	$g_filter_by_custom_fields = ON;
-	$g_filter_custom_fields_per_row = 10;
+	$g_filter_custom_fields_per_row = 7;
+	$g_view_filters = SIMPLE_DEFAULT;
 
 	#######################################
 	# Mantis Database Table Variables
@@ -950,11 +1096,15 @@
 	$g_severity_enum_string				= '10:feature,20:trivial,30:text,40:tweak,50:minor,60:major,70:crash,80:block';
 	$g_reproducibility_enum_string		= '10:always,30:sometimes,50:random,70:have not tried,90:unable to duplicate,100:N/A';
 	$g_status_enum_string				= '10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved,90:closed';
+	  # @@@ for documentation, the values in this list are also used to define variables in the language files
+	  #  (e.g., $s_new_bug_title referenced in bug_change_status_page.php )
+	  # Embedded spaces are converted to underscores (e.g., "working on" references $s_working_on_bug_title). 
+	  # they are also expected to be english names for the states
 	$g_resolution_enum_string			= '10:open,20:fixed,30:reopened,40:unable to duplicate,50:not fixable,60:duplicate,70:not a bug,80:suspended,90:wont fix';
 	$g_projection_enum_string			= '10:none,30:tweak,50:minor fix,70:major rework,90:redesign';
 	$g_eta_enum_string					= '10:none,20:< 1 day,30:2-3 days,40:< 1 week,50:< 1 month,60:> 1 month';
 
-	$g_custom_field_type_enum_string    = '0:string,1:numeric,2:float,3:enum,4:email';
+	$g_custom_field_type_enum_string    = '0:string,1:numeric,2:float,3:enum,4:email,5:checkbox,6:list,7:multiselection list';
 
 	#############################
 	# Mantis Javascript Variables
@@ -1080,6 +1230,19 @@
 	# Whether to start editng a custom field immediately after creating it
 	$g_custom_field_edit_after_create = ON;
 
+
+	#################
+	# Custom Menus
+	#################
+
+	# Add custom options to the main menu.  For example:
+	# $g_main_menu_custom_options = array(	array( "My Link",  MANAGER,       'my_link.php' ),
+	#					array( "My Link2", ADMINISTRATOR, 'my_link2.php' ) );
+	# Note that if the caption is found in custom_strings_inc.php, then it will be replaced by the
+	# translated string.  Options will only be added to the menu if the current logged in user has
+	# the appropriate access level.
+	$g_main_menu_custom_options = array ();
+
 	##########
 	# Icons
 	##########
@@ -1121,7 +1284,7 @@
 	# Status to icon mapping
 	$g_status_icon_arr = array (
 		NONE      => '',
-		LOW       => '',
+		LOW       => 'priority_low_1.gif',
 		NORMAL    => '',
 		HIGH      => 'priority_1.gif',
 		URGENT    => 'priority_2.gif',
@@ -1136,8 +1299,56 @@
 	# --------------------
 	# Read status to icon mapping
 	$g_unread_icon_arr = array (
-		READ         => 'mantis-space.gif',
+		READ         => 'mantis_space.gif',
 		UNREAD       => 'unread.gif'
 	);
 	# --------------------
+
+	##################
+	# My View Settings
+	##################
+
+	# Number of bugs shown in each box
+	$g_my_view_bug_count = 10;
+
+	# Boxes to be shown and their order
+	# A box that is not to be shown can have its value set to 0
+	$g_my_view_boxes = array (
+		'assigned'      => '1',
+		'unassigned'    => '2',
+		'reported'      => '3',
+		'resolved'      => '4',
+		'recent_mod'	=> '5',
+		'monitored'	=> '6'
+	);
+	
+	# Toggle whether 'My View' boxes are shown in a fixed position (i.e. adjacent boxes start at the same vertical position)
+	$g_my_view_boxes_fixed_position = ON;
+
+	# Default page after Login or Set Project
+	$g_default_home_page = 'my_view_page.php';
+
+	######################
+	# Bug Relationships
+	######################
+
+	# Enable support for bug relationships where a bug can be a related, dependent on, or duplicate of another.
+	# See relationship_api.php for more details.
+	$g_enable_relationship = ON;
+
+	######################
+	# Mail Reporting
+	######################
+
+	# --- mail reporting settings -----
+	# This tells Mantis to report all the Mail with only one account
+	$g_mail_use_reporter    = ON;
+
+	# The account's name for mail reporting
+	# Also used for fallback if a user is not found in database
+	$g_mail_reporter        = 'Mail';
+
+	# Signup new users automatically (possible security risk!)
+	# Default is OFF, ignored if mail_use_reporter is ON
+	$g_mail_auto_signup	= OFF;
 ?>

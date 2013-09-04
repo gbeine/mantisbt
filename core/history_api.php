@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: history_api.php,v 1.22 2004-05-09 02:24:19 vboctor Exp $
+	# $Id: history_api.php,v 1.28 2004-08-17 18:01:18 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### History API ###
@@ -109,12 +109,15 @@
 		$c_bug_id					= db_prepare_int( $p_bug_id );
 
 		# grab history and display by date_modified then field_name
-		$query = "SELECT b.*, u.username
-				FROM $t_mantis_bug_history_table b
-				LEFT JOIN $t_mantis_user_table u
-				ON b.user_id=u.id
+		# @@@ by MASC I guess it's better by id then by field_name. When we have more history lines with the same
+		# date, it's better to respect the storing order otherwise we should risk to mix different information
+		# I give you an example. We create a child of a bug with different custom fields. In the history of the child
+		# bug we will find the line related to the relationship mixed with the custom fields (the history is creted
+		# for the new bug with the same timestamp...)
+		$query = "SELECT *
+				FROM $t_mantis_bug_history_table
 				WHERE bug_id='$c_bug_id'
-				ORDER BY date_modified $t_history_order, field_name ASC";
+				ORDER BY date_modified $t_history_order,id";
 		$result = db_query( $query );
 		$raw_history_count = db_num_rows( $result );
 		$raw_history = array();
@@ -126,12 +129,8 @@
 			$raw_history[$i]['date']	= db_unixtimestamp( $v_date_modified );
 			$raw_history[$i]['userid']	= $v_user_id;
 
-			# $v_username will be empty, if user no longer exists.
-			if ( is_blank( $v_username ) ) {
-				$raw_history[$i]['username'] = user_get_name( $v_user_id );
-			} else {
-				$raw_history[$i]['username'] = $v_username;
-			}
+			# user_get_name handles deleted users, and username vs realname
+			$raw_history[$i]['username'] = user_get_name( $v_user_id );
 
 			$raw_history[$i]['field']		= $v_field_name;
 			$raw_history[$i]['type']		= $v_type;
@@ -229,6 +228,21 @@
 					$p_new_value = user_get_name( $p_new_value );
 				}
 				break;
+			case 'fixed_in_version':
+				$t_field_localized = lang_get( 'fixed_in_version' );
+				break;
+			case 'date_submitted':
+				$t_field_localized = lang_get( 'date_submitted' );
+				break;
+			case 'last_updated':
+				$t_field_localized = lang_get( 'last_update' );
+				break;
+			case 'summary':
+				$t_field_localized = lang_get( 'summary' );
+				break;
+			case 'duplicate_id':
+				$t_field_localized = lang_get( 'duplicate_id' );
+				break;
 		}
 
 		if ( NORMAL_TYPE != $p_type ) {
@@ -244,9 +258,6 @@
 					break;
 				case BUGNOTE_DELETED:
 					$t_note = lang_get( 'bugnote_deleted' ) . ": " . $p_old_value;
-					break;
-				case SUMMARY_UPDATED:
-					$t_note = lang_get( 'summary_updated' );
 					break;
 				case DESCRIPTION_UPDATED:
 					$t_note = lang_get( 'description_updated' );
@@ -289,6 +300,25 @@
 				case BUG_DELETE_SPONSORSHIP:
 					$t_note = lang_get( 'sponsorship_deleted' );
 					$t_change = user_get_name( $p_old_value ) . ': ' . sponsorship_format_amount( $p_new_value );
+					break;
+				case BUG_ADD_RELATIONSHIP:
+					$t_note = lang_get( 'relationship_added' );
+					$t_change = relationship_get_description_for_history( $p_old_value ) . ' ' . bug_format_id( $p_new_value );
+					break;
+				case BUG_DEL_RELATIONSHIP:
+					$t_note = lang_get( 'relationship_deleted' );
+					$t_change = relationship_get_description_for_history( $p_old_value ) . ' ' . bug_format_id( $p_new_value );
+					break;
+				case BUG_CLONED_TO:
+					$t_note = lang_get( 'bug_cloned_to' );
+					$t_change = bug_format_id( $p_new_value );
+					break;
+				case BUG_CREATED_FROM:
+					$t_note = lang_get( 'bug_created_from' );
+					$t_change = bug_format_id( $p_new_value );
+					break;
+				case CHECKIN:
+					$t_note = lang_get( 'checkin' );
 					break;
 			}
 		}

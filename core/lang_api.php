@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: lang_api.php,v 1.22 2004-05-09 02:24:19 vboctor Exp $
+	# $Id: lang_api.php,v 1.32 2004-08-31 15:22:30 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### Language (Internationalization) API ##
@@ -15,45 +15,32 @@
 	# lang_load call
 	$g_lang_strings = array();
 
-	# Currently loaded language
-	$g_loaded_language = '';
+	# stack for language overrides
+	$g_lang_overrides = array();
 
-	# Currently used language
-	# if not the same as $g_loaded_language - it will be loaded on the first call of lang_get(...)
-	$g_current_language = '';
-
-	# Languages stack
-	# contains names of languages set by lang_push(...)
-	$g_language_stack = array();
+	# To be used in custom_strings_inc.php :
+	$g_active_language  = '';
 
 	# ------------------
 	# Loads the specified language and stores it in $g_lang_strings,
 	# to be used by lang_get
 	function lang_load( $p_lang ) {
-		global $g_lang_strings, $g_loaded_language, $g_current_language;
+		global $g_lang_strings, $g_active_language;
 
-		$g_current_language = $p_lang;
-
-		if ( $g_loaded_language == $p_lang ) {
+		$g_active_language  = $p_lang;
+		if ( isset( $g_lang_strings[ $p_lang ] ) ) {
 			return;
 		}
 
-		# define current language here so that when custom_strings_inc is
-		# included it knows the current language
-		$g_loaded_language = $p_lang;
-
 		$t_lang_dir = dirname ( dirname ( __FILE__ ) ) . DIRECTORY_SEPARATOR . 'lang' . DIRECTORY_SEPARATOR;
 
-		if ( strcasecmp( $p_lang, "english" ) !== 0 ) {
-			require_once( $t_lang_dir . 'strings_english.txt' );
-		}
-		require_once( $t_lang_dir . 'strings_'.$p_lang.'.txt' );
+		require_once( $t_lang_dir . 'strings_' . $p_lang . '.txt' );
 
 		# Allow overriding strings declared in the language file.
 		# custom_strings_inc.php can use $g_active_language
 		$t_custom_strings = dirname ( dirname( __FILE__ ) ) . DIRECTORY_SEPARATOR . 'custom_strings_inc.php';
 		if ( file_exists( $t_custom_strings ) ) {
-			require_once( $t_custom_strings );
+			require( $t_custom_strings ); # this may be loaded multiple times, once per language
 		}
 
 		$t_vars = get_defined_vars();
@@ -61,102 +48,166 @@
 		foreach ( array_keys( $t_vars ) as $t_var ) {
 			$t_lang_var = ereg_replace( '^s_', '', $t_var );
 			if ( $t_lang_var != $t_var || 'MANTIS_ERROR' == $t_var ) {
-				$g_lang_strings[$t_lang_var] = $$t_var;
+				$g_lang_strings[ $p_lang ][ $t_lang_var ] = $$t_var;
 			}
 		}
 	}
 
 	# ------------------
-	# Loads the user's language or, if the database is unavailable, the default language
-	function lang_load_default() {
-		$t_cookie_string = gpc_get_cookie( config_get( 'string_cookie' ), '' );
+	# Determine the preferred language
+	function lang_get_default() {
+		global $g_active_language;
+
+		$t_lang = false;
 
 		# Confirm that the user's language can be determined
-		if ( db_is_connected() && !is_blank( $t_cookie_string ) ) {
-			$t_mantis_user_pref_table 	= config_get( 'mantis_user_pref_table' );
-			$t_mantis_user_table		= config_get( 'mantis_user_table' );
+		if ( auth_is_user_authenticated() ) {
+			$t_lang = user_pref_get_language( auth_get_current_user_id() );
+		}
 
-			$query = "SELECT DISTINCT language
-					FROM $t_mantis_user_pref_table p, $t_mantis_user_table u
-					WHERE u.cookie_string='$t_cookie_string' AND
-							u.id=p.user_id";
+		if ( 'auto' == $t_lang ) {
+			$t_lang = lang_map_auto();
+		}
 
-			$result = db_query( $query );
-			$t_active_language = db_result( $result, 0 , 0 );
+		# Otherwise fall back to default
+		if ( false === $t_lang ) {
+			$t_lang = config_get( 'default_language' );
+		}
 
-			if ( false == $t_active_language ) {
-				$t_active_language = config_get( 'default_language' );
+		# Remember the language
+		$g_active_language = $t_lang;
+
+		return $t_lang;
+	}
+
+	# ------------------
+
+	function lang_map_auto() {
+		$t_lang = config_get( 'fallback_language' );
+
+		if ( isset( $_SERVER['HTTP_ACCEPT_LANGUAGE'] ) ) {
+			$t_accept_langs = explode( ',', $_SERVER['HTTP_ACCEPT_LANGUAGE'] );
+			$t_auto_map = config_get( 'language_auto_map' );
+
+			# Expand language map
+			$t_auto_map_exp = array();
+			foreach( $t_auto_map as $t_encs => $t_enc_lang ) {
+				$t_encs_arr = explode( ',', $t_encs );
+
+				foreach ( $t_encs_arr as $t_enc ) {
+					$t_auto_map_exp[ trim( $t_enc ) ] = $t_enc_lang;
+				}
 			}
-		} else {
-			$t_active_language = config_get( 'default_language' );
+
+			# Find encoding
+			foreach ( $t_accept_langs as $t_accept_lang ) {
+				$t_tmp = explode( ';', strtolower( $t_accept_lang ) );
+
+				if ( isset( $t_auto_map_exp[ trim( $t_tmp[0] ) ] ) ) {
+					$t_valid_langs = config_get( 'language_choices_arr' );
+					$t_found_lang = $t_auto_map_exp[ trim( $t_tmp[0] ) ];
+
+					if ( in_array( $t_found_lang, $t_valid_langs, true ) ) {
+						$t_lang = $t_found_lang;
+						break;
+					}
+				}
+			}
 		}
 
-		lang_load( $t_active_language );
+		return $t_lang;
 	}
 
-	# ------------------
 	# Ensures that a language file has been loaded
-	function lang_ensure_loaded() {
-		global $g_loaded_language, $g_current_language;
+	function lang_ensure_loaded( $p_lang ) {
+		global $g_lang_strings;
 
-		# Load the language, if necessary
-		if ( is_blank( $g_current_language ) ) {
-			lang_load_default();
-		}
-		else if ( $g_current_language !== $g_loaded_language ) {
-			lang_load( $g_current_language );
+		if ( ! isset( $g_lang_strings[ $p_lang ] ) ) {
+			lang_load( $p_lang );
 		}
 	}
 
-	# ------------------
-	# sets the current language but only loads it on the next call to
-	# lang_get().
-	function lang_set( $p_language ) {
-		global $g_current_language;
 
-		$g_current_language = $p_language;
-	}
 
 	# ------------------
-	# push the current language into an array/stack, and calls lang_set()
-	# on the specified one.
-	function lang_push( $p_language ) {
-		global $g_language_stack;
+	# language stack implementation
+	#
+  # push a language onto the stack
+  function lang_push( $p_lang=null ) {
+		global $g_lang_overrides;
 
-		$g_language_stack[] = $p_language;
-		lang_set( $p_language );
-	}
+  	# If no specific language is requested, we'll
+		#  try to determine the language from the users
+		#  preferences
 
-	# ------------------
-	# pop last language from the array and calls lang_set() with the
-	# popped value.
-	function lang_pop() {
-		global $g_language_stack;
+		$t_lang = $p_lang;
 
-		$t_last_index = count( $g_language_stack ) - 1;
-		if ( $t_last_index >= 0 ) {
-			lang_set( $g_language_stack[$t_last_index] );
-			unset( $g_language_stack[$t_last_index] );
+		if ( null === $t_lang ) {
+			$t_lang = lang_get_default();
 		}
-	}
+
+		$g_lang_overrides[] = $t_lang;
+		
+		# Remember the language
+		$g_active_language = $t_lang;
+
+		# make sure it's loaded
+		lang_ensure_loaded( $t_lang );
+  }
+
+  # pop a language onto the stack and return it
+  function lang_pop( ) {
+		global $g_lang_overrides;
+
+		return array_pop( $g_lang_overrides );
+  }
+
+  # return value on top of the language stack
+  #  return default if stack is empty
+  function lang_get_current( ) {
+		global $g_lang_overrides;
+
+		if (count($g_lang_overrides) > 0 ) {
+			$t_lang = $g_lang_overrides[ count( $g_lang_overrides ) - 1];
+		}else{
+			$t_lang = lang_get_default();
+		}
+		
+		return $t_lang;
+  }
+
+  
+
 
 	# ------------------
 	# Retrieves an internationalized string
 	#  This function will return one of (in order of preference):
 	#    1. The string in the current user's preferred language (if defined)
 	#    2. The string in English
-	function lang_get( $p_string ) {
+	function lang_get( $p_string, $p_lang = null ) {
 		global $g_lang_strings;
 
-		lang_ensure_loaded();
+		# If no specific language is requested, we'll
+		#  try to determine the language from the users
+		#  preferences
+
+		$t_lang = $p_lang;
+
+		if ( null === $t_lang ) {
+			$t_lang = lang_get_current();
+		}
+
+		# Now we'll make sure that the requested language is loaded
+
+		lang_ensure_loaded( $t_lang );
 
 		# note in the current implementation we always return the same value
 		#  because we don't have a concept of falling back on a language.  The
 		#  language files actually *contain* English strings if none has been
 		#  defined in the correct language
 
-		if ( lang_exists( $p_string ) ) {
-			return $g_lang_strings[$p_string];
+		if ( lang_exists( $p_string, $t_lang ) ) {
+			return $g_lang_strings[ $t_lang ][ $p_string];
 		} else {
 			error_parameters( $p_string );
 			trigger_error( ERROR_LANG_STRING_NOT_FOUND, WARNING );
@@ -166,12 +217,11 @@
 
 	# ------------------
 	# Check the language entry, if found return true, otherwise return false.
-	function lang_exists( $p_string ) {
+	function lang_exists( $p_string, $p_lang ) {
 		global $g_lang_strings;
 
-		lang_ensure_loaded();
-
-		return ( isset( $g_lang_strings[$p_string] ) );
+		return ( isset( $g_lang_strings[ $p_lang ] )
+			&& isset( $g_lang_strings[ $p_lang ][ $p_string ] ) );
 	}
 
 	# ------------------
@@ -179,8 +229,17 @@
 	# - If found, return the appropriate string (as lang_get()).
 	# - If not found, no default supplied, return the supplied string as is.
 	# - If not found, default supplied, return default.
-	function lang_get_defaulted( $p_string, $p_default = null ) {
-		if ( lang_exists( $p_string) ) {
+	function lang_get_defaulted( $p_string, $p_default = null, $p_lang = null ) {
+		$t_lang = $p_lang;
+
+		if ( null === $t_lang ) {
+			$t_lang = lang_get_current();
+		}
+
+		# Now we'll make sure that the requested language is loaded
+		lang_ensure_loaded( $t_lang );
+
+		if ( lang_exists( $p_string, $t_lang ) ) {
 			return lang_get( $p_string );
 		} else {
 			if ( null === $p_default ) {

@@ -1,10 +1,9 @@
 <?php
 	# Mantis - a php based bugtracking system
 	# Copyright (C) 2002 - 2004  Mantis Team   - mantisbt-dev@lists.sourceforge.net
+	# Copyright (C) 2004  Gerrit Beine - gerrit.beine@pitcom.de
 	# This program is distributed under the terms and conditions of the GPL
 	# See the README and LICENSE files for details
-    # Copyright (C) 2004  Gerrit Beine - gerrit.beine@pitcom.de
-    # Copyright (C) 2004  pitcom GmbH, Plauen, Germany
 
 	# --------------------------------------------------------
 	# $Id$
@@ -16,28 +15,42 @@
 	require_once( $t_core_dir . 'bugnote_api.php' );
 	require_once( $t_core_dir . 'user_api.php' );
 	require_once( $t_core_dir . 'project_api.php' );
-?>
-<?php
+
 	# This page receives an E-Mail via POP3 and generates an Report
-?>
-<?php
+
 	require_once( 'Net/POP3.php' );
-    
+
+	# --------------------
+	# Return mail account data for the specified project
+	function mail_get_account_data( $p_project_id ) {
+		$v_project_id = db_prepare_int( $p_project_id );
+
+		$t_project_table = config_get( 'mantis_project_table' );
+
+		$query = "SELECT pop3_host, pop3_user, pop3_pass, pop3_categories
+				FROM $t_project_table 
+				WHERE id='$v_project_id'";
+
+		$result = db_query( $query );
+
+		return db_fetch_array( $result );
+	}
+
 	# --------------------
 	# Update the mail account data
 	function mail_update( $p_project_id, $p_pop3_host, $p_pop3_user, $p_pop3_pass ) {
-		$c_project_id	= db_prepare_int( $p_project_id );
-		$c_pop3_host	= db_prepare_string( $p_pop3_host );
-		$c_pop3_user	= db_prepare_string( $p_pop3_user );
-		$c_pop3_pass	= db_prepare_string( $p_pop3_pass );
-		
-        $t_project_table = config_get( 'mantis_project_table' );
-        
+		$v_project_id	= db_prepare_int( $p_project_id );
+		$v_pop3_host	= db_prepare_string( $p_pop3_host );
+		$v_pop3_user	= db_prepare_string( $p_pop3_user );
+		$v_pop3_pass	= db_prepare_string( $p_pop3_pass );
+
+		$t_project_table = config_get( 'mantis_project_table' );
+
 		$query = "UPDATE $t_project_table 
-				  SET pop3_host='$c_pop3_host',
-					pop3_user='$c_pop3_user',
-					pop3_pass='$c_pop3_pass'
-				  WHERE id='$c_project_id'";
+			 	SET pop3_host='$v_pop3_host',
+				pop3_user='$v_pop3_user',
+				pop3_pass='$v_pop3_pass'
+				WHERE id='$v_project_id'";
 		db_query( $query );
 		return true;
 	}
@@ -45,168 +58,284 @@
 	# --------------------
 	# Removes the mail account data
 	function mail_delete( $p_project_id ) {
-		$c_project_id	= db_prepare_int( $p_project_id );
-		
-        $t_project_table = config_get( 'mantis_project_table' );
-        
-		$query = "UPDATE $t_project_table 
-				  SET pop3_host=NULL,
-					pop3_user=NULL,
-					pop3_pass=NULL
-				  WHERE id='$c_project_id'";
-		db_query( $query );
-		return true;
-	}
-
-	#===================================
-	# Data Access
-	#===================================
-
-	# --------------------
-	# Return all versions for the specified project
-	function mail_get_account_data( $p_project_id ) {
-		$c_project_id = db_prepare_int( $p_project_id );
+		$v_project_id	= db_prepare_int( $p_project_id );
 
 		$t_project_table = config_get( 'mantis_project_table' );
 
+		$query = "UPDATE $t_project_table 
+				SET pop3_host=NULL,
+				pop3_user=NULL,
+				pop3_pass=NULL
+				WHERE id='$v_project_id'";
+
+		db_query( $query );
+
+		return true;
+	}
+
+	# --------------------
+	# Activate the Mail per Category feature for a project
+	function mail_categories( $p_project_id , $p_active ) {
+		$v_project_id	= db_prepare_int( $p_project_id );
+
+		if ($p_active == 'On') {
+			$v_active = 1;
+		} else {
+			$v_active = 0;
+		}
+
+		$t_project_table = config_get( 'mantis_project_table' );
+
+		$query = "UPDATE $t_project_table 
+				SET pop3_categories='$v_active'
+				WHERE id='$v_project_id'";
+
+		db_query( $query );
+
+		return true;
+	}
+
+	# --------------------
+	# Return mail account data for the specified project and category
+	function mail_category_get_account_data( $p_project_id, $p_category ) {
+		$c_project_id = db_prepare_int( $p_project_id );
+		$c_category	= db_prepare_string( $p_category );
+
+		$t_project_category_table = config_get( 'mantis_project_category_table' );
+
 		$query = "SELECT pop3_host, pop3_user, pop3_pass
-				  FROM $t_project_table 
-				  WHERE id='$c_project_id'";
+				FROM $t_project_category_table 
+				WHERE project_id='$c_project_id' AND category='$c_category'";
+
 		$result = db_query( $query );
 
 		return db_fetch_array( $result );
 	}
 
 	# --------------------
+	# Update the mail account data for a category
+	function mail_category_update( $p_project_id, $p_category, $p_pop3_host, $p_pop3_user, $p_pop3_pass ) {
+		$c_project_id	= db_prepare_int( $p_project_id );
+		$c_category	= db_prepare_string( $p_category );
+		$c_pop3_host	= db_prepare_string( $p_pop3_host );
+		$c_pop3_user	= db_prepare_string( $p_pop3_user );
+		$c_pop3_pass	= db_prepare_string( $p_pop3_pass );
+
+		$t_project_category_table = config_get( 'mantis_project_category_table' );
+
+		$query = "UPDATE $t_project_category_table 
+			 	SET pop3_host='$c_pop3_host',
+				pop3_user='$c_pop3_user',
+				pop3_pass='$c_pop3_pass'
+				WHERE project_id='$c_project_id' AND category='$c_category'";
+		db_query( $query );
+		return true;
+	}
+
+	# --------------------
+	# Removes the mail account data for a category
+	function mail_category_delete( $p_project_id, $p_category ) {
+		$c_project_id	= db_prepare_int( $p_project_id );
+		$c_category	= db_prepare_string( $p_category );
+		
+		$t_project_table = config_get( 'mantis_project_table' );
+
+		$t_project_category_table = config_get( 'mantis_project_category_table' );
+
+		$query = "UPDATE $t_project_category_table 
+			 	SET pop3_host=NULL,
+				pop3_user=NULL,
+				pop3_pass=NULL
+				WHERE project_id='$c_project_id' AND category='$c_category'";
+
+		db_query( $query );
+		return true;
+	}
+
+	# --------------------
+	# return all mailaccounts
+	#  return an empty array if there are no
+	function mail_get_accounts() {
+		$v_accounts = array();
+		$t_projects = mail_project_get_all_rows();
+
+		foreach ($t_projects as $t_project) {
+			if ($t_project['pop3_categories']) {
+				$v_categories = mail_categories_get_all_rows( $t_project['pop3_categories'] );
+				$v_accounts = array_merge($v_accounts, $v_categories);
+			} else {
+				array_push($v_accounts, $t_project);
+			}
+		}
+
+		return $v_accounts;
+	}
+
+	# --------------------
 	# return all projects with valid data for mail access
 	#  return an empty array if there are no such projects
 	function mail_project_get_all_rows() {
-		$m_projects = array();
+		$v_projects = array();
 		$t_projects = project_get_all_rows();
+
 		foreach ($t_projects as $t_project) {
-			if ($t_project['pop3_host']) {
-				array_push($m_projects, $t_project);
+			if ($t_project['pop3_host'] || $t_project['pop3_categories']) {
+				array_push($v_projects, $t_project);
 			}
 		}
-		return $m_projects;
+
+		return $v_projects;
 	}
 
 	# --------------------
-	# return all mails for a project
-	#  return an empty array if there are no new mails
-	function mail_get_all_mails($p_project) {
-		$t_mails = array();
-		$pop3 = &new Net_POP3();
-		$t_pop3_host = $p_project['pop3_host'];
-		$t_pop3_user = $p_project['pop3_user'];
-		$t_pop3_password = $p_project['pop3_pass'];
-		$pop3->connect($t_pop3_host, 110);
-		$pop3->login($t_pop3_user, $t_pop3_password);
-		for ($i = 1; $i <= $pop3->numMsg(); $i++) {
-			$mail = $pop3->getParsedHeaders($i);
-			$mail['X-Mantis-Body'] = $pop3->getBody($i);
-			$mail['X-Mantis-Complete'] = $pop3->getMsg($i);
-			array_push($t_mails, $mail);
-			$pop3->deleteMsg($i);
+	# return all projects with valid data for mail access
+	#  return an empty array if there are no such projects
+	function mail_categories_get_all_rows( $p_project_id ) {
+		$v_categories = array();
+		$t_categories = category_get_all_rows( $p_project_id );
+
+		foreach ($t_categories as $t_category) {
+			if ($t_category['pop3_host']) {
+				$t_category['id'] = $p_project_id;
+				array_push($v_categories, $t_category);
+			}
 		}
-		$pop3->disconnect();
-		return $t_mails;
+
+		return $v_categories;
 	}
-    
+
+	# --------------------
+	# return all mails for an account
+	#  return an empty array if there are no new mails
+	function mail_get_all_mails( $p_account ) {
+		$v_mails = array();
+		$t_pop3 = &new Net_POP3();
+		$t_pop3_host = $p_account['pop3_host'];
+		$t_pop3_user = $p_account['pop3_user'];
+		$t_pop3_password = $p_account['pop3_pass'];
+
+		$t_pop3->connect($t_pop3_host, 110);
+		$t_pop3->login($t_pop3_user, $t_pop3_password);
+
+		for ($i = 1; $i <= $t_pop3->numMsg(); $i++) {
+			$t_mail = $t_pop3->getParsedHeaders($i);
+			$t_mail['X-Mantis-Body'] = $t_pop3->getBody($i);
+			$t_mail['X-Mantis-Complete'] = $t_pop3->getMsg($i);
+			array_push($v_mails, $t_mail);
+			$t_pop3->deleteMsg($i);
+		}
+
+		$t_pop3->disconnect();
+		return $v_mails;
+	}
+
+	# --------------------
+	# return the mailadress from the mail's 'From'
+	function mail_parse_address ( $p_mailaddress ) {
+		if (preg_match("/<(.*?)>/", $p_mailaddress, $matches)) {
+			$c_mailaddress = $matches[1];
+		}
+
+		return $c_mailaddress;
+	}
+
 	# --------------------
 	# return the a valid username from an email address
-    function mail_user_name_from_address ($p_mailaddress) {
-        $t_mailaddress = $p_mailaddress;
-        if (preg_match("/<(.*?)>/", $p_mailaddress, $matches)) {
-            $t_mailaddress = $matches[1];
-        }
-        return preg_replace("/[@\.-]/",'_',$t_mailaddress);
-    }
+	function mail_user_name_from_address ( $p_mailaddress ) {
+
+		return preg_replace("/[@\.-]/", '_', $p_mailaddress);
+	}
 
 	# --------------------
 	# return true if there is a valid mantis bug referernce in subject
-    function mail_is_a_bugnote ($p_subject) {
-        return preg_match("/\[([A-Za-z0-9-_\.]*\s[0-9]{7})\]/", $p_subject);
-    }
-    
+	function mail_is_a_bugnote ($p_mail_subject) {
+		return preg_match("/\[([A-Za-z0-9-_\.]*\s[0-9]{7})\]/", $p_mail_subject);
+	}
+
 	# --------------------
 	# return the bug's id from the subject
-    function mail_get_bug_id_from_subject ($p_subject) {
-        preg_match("/\[([A-Za-z0-9-_\.]*\s([0-9]{7}?))\]/", $p_subject, $matches);
-        return $matches[2];
-    }
+	function mail_get_bug_id_from_subject ( $p_mail_subject) {
+		preg_match("/\[([A-Za-z0-9-_\.]*\s([0-9]{7}?))\]/", $p_mail_subject, $v_matches);
+
+		return $v_matches[2];
+	}
+
 	# --------------------
 	# return the user id for the mail reporting user
-	#  return false if no username can be found
-    function mail_get_user ($p_mail) {
-        $t_mail_use_reporter = config_get( 'mail_use_reporter' );
-        $t_mail_auto_signup = config_get( 'mail_auto_signup' );
-        if ($t_mail_use_reporter) {
-            $t_mail_reporter = config_get( 'mail_reporter' );
-            $t_reporter_id = user_get_id_by_name($t_mail_reporter);
-        }
-        else {
-            $t_user_name = mail_user_name_from_address($p_mail['From']);
-            $t_reporter_id = user_get_id_by_name($t_user_name);
-            if (!$t_reporter_id) { // try to get the user's id searching for mail address
-                $t_reporter_id = user_get_id_by_mail($p_mail['From']);
-            }
-            if (!$t_reporter_id && $t_mail_auto_signup) { // try to signup the user
-                user_signup($t_user_name, $p_mail['From']);
-                $t_reporter_id = user_get_id_by_name($t_user_name);
-            }
-        }
-        return $t_reporter_id;
-    }
+	function mail_get_user ($p_mailaddress) {
+		$t_mail_use_reporter	= config_get( 'mail_use_reporter' );
+		$t_mail_auto_signup	= config_get( 'mail_auto_signup' );
+		$t_mail_reporter	= config_get( 'mail_reporter' );
+		
+		$c_mailaddress = mail_parse_address( $p_mailaddress );
+
+		if ( $t_mail_use_reporter ) {
+			// Always report as mail_reporter
+			$t_reporter_id = user_get_id_by_name( $t_mail_reporter );
+		} else {
+			// Try to get the reporting users id
+			$t_reporter_id = user_get_id_by_mail ( $c_mailaddress );
+			if ( ! $t_reporter_id && $t_mail_auto_signup ) {
+				// So, we've to sign up a new user...
+				$t_user_name = mail_user_name_from_address ( $c_mailaddress );
+				user_signup($t_user_name, $c_mailaddress);
+				$t_reporter_id = user_get_id_by_name($t_user_name);
+			} elseif ( ! $t_reporter_id ) {
+				// Fall back to the default mail_reporter
+				$t_reporter_id = user_get_id_by_name( $t_mail_reporter );
+			}
+		}
+
+		return $t_reporter_id;
+	}
     
-    # --------------------
-    # Adds a bug reported via email
-    # Todo: If there is already a bug, add it as a bug note
-    function mail_add_bug($p_mail, $p_project) {
-		$f_build				= gpc_get_string( 'build', '' );
-		$f_platform				= gpc_get_string( 'platform', '' );
-		$f_os					= gpc_get_string( 'os', '' );
-		$f_os_build				= gpc_get_string( 'os_build', '' );
-		$f_product_version		= gpc_get_string( 'product_version', '' );
-		$f_profile_id			= gpc_get_int( 'profile_id', 0 );
-		$f_handler_id			= gpc_get_int( 'handler_id', 0 );
-		$f_view_state			= gpc_get_int( 'view_state', 0 );
+	# --------------------
+	# Adds a bug which is reported via email
+	# Taken from bug_report.php and 
+	function mail_add_bug( $p_mail, $p_account ) {
+		$t_bug_data = new BugData;
+		$t_bug_data->build			= gpc_get_string( 'build', '' );
+		$t_bug_data->platform			= gpc_get_string( 'platform', '' );
+		$t_bug_data->os				= gpc_get_string( 'os', '' );
+		$t_bug_data->os_build			= gpc_get_string( 'os_build', '' );
+		$t_bug_data->version			= gpc_get_string( 'product_version', '' );
+		$t_bug_data->profile_id			= gpc_get_int( 'profile_id', 0 );
+		$t_bug_data->handler_id			= gpc_get_int( 'handler_id', 0 );
+		$t_bug_data->view_state			= gpc_get_int( 'view_state', config_get( 'default_bug_view_status' ) );
 
-		$f_category				= gpc_get_string( 'category', '' );
-		$f_priority				= gpc_get_int( 'priority', NORMAL );
-		$f_steps_to_reproduce	= gpc_get_string( 'steps_to_reproduce', '' );
+		if ( $p_account['category']) {
+			$t_bug_data->category			= gpc_get_string( 'category', $p_account['category'] );
+		} else {
+			$t_bug_data->category			= gpc_get_string( 'category', '' );
+		}
+		$t_bug_data->reproducibility		= 10;
+		$t_bug_data->severity			= 50;
+		$t_bug_data->priority			= gpc_get_int( 'priority', NORMAL );
+		$t_bug_data->summary			= $p_mail['Subject'];
+		$t_bug_data->description		= $p_mail['X-Mantis-Body'];
+		$t_bug_data->steps_to_reproduce		= gpc_get_string( 'steps_to_reproduce', '' );
+		$t_bug_data->additional_information	= $p_mail['X-Mantis-Complete'];
 
-        $f_reproducibility		= 10;
-        $f_severity				= 50;
-        $f_summary				= $p_mail['Subject'];
-        $f_description			= $p_mail['X-Mantis-Body'];
-        $f_additional_info		= $p_mail['X-Mantis-Complete'];
-        $f_project_id			= $p_project['id'];
-        $t_reporter_id		    = mail_get_user($p_mail);
+		$t_bug_data->project_id			= $p_account['id'];
 
-        if (mail_is_a_bugnote($p_mail['Subject']))
-        {
-            # Add a bug note
-            $t_bug_id = mail_get_bug_id_from_subject($p_mail['Subject']);
-            bugnote_add ( $t_bug_id, $p_mail['X-Mantis-Body'] );
-            email_bugnote_add ( $t_bug_id );
-        }
-        else
-        {
-	        # Create the bug
-	        $t_bug_id = bug_create( $f_project_id,
-		    	            $t_reporter_id, $f_handler_id,
-                            $f_priority,
-				            $f_severity, $f_reproducibility,
-					        $f_category,
-					        $f_os, $f_os_build,
-					        $f_platform, $f_product_version,
-					        $f_build,
-					        $f_profile_id, $f_summary, $f_view_state,
-					        $f_description, $f_steps_to_reproduce, $f_additional_info );
-            email_new_bug( $t_bug_id );
-        }
+		$t_bug_data->reporter_id		= mail_get_user( $p_mail['From'] );
 
-    }
+		if (mail_is_a_bugnote($p_mail['Subject']))
+		{
+			# Add a bug note
+			$t_bug_id = mail_get_bug_id_from_subject( $p_mail['Subject'] );
+			if ( ! bug_is_readonly( $t_bug_id ) ) {
+				bugnote_add ( $t_bug_id, $p_mail['X-Mantis-Body'] );
+				email_bugnote_add ( $t_bug_id );
+			}
+		}
+		else
+		{
+			# Create the bug
+			$t_bug_id = bug_create( $t_bug_data );
+			email_new_bug( $t_bug_id );
+		}
+
+	}
 
 ?>

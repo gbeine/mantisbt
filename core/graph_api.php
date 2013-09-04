@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: graph_api.php,v 1.15 2004-04-08 22:44:59 prescience Exp $
+	# $Id: graph_api.php,v 1.20 2004-09-10 00:29:50 thraxisp Exp $
 	# --------------------------------------------------------
 
 	if ( ON == config_get( 'use_jpgraph' ) ) {
@@ -32,6 +32,7 @@
 		$enum_name_count	= null;
 
 		$t_project_id = helper_get_current_project();
+		$t_bug_table = config_get( 'mantis_bug_table' );
 
 		$t_arr = explode_enum_string( $p_enum_string );
 		$enum_count = count( $t_arr );
@@ -47,26 +48,25 @@
 
 			# Calculates the number of bugs with $p_enum and puts the results in a table
 			$query = "SELECT COUNT(*)
-					FROM $g_mantis_bug_table
+					FROM $t_bug_table
 					WHERE $p_enum='$t_s[0]' $specific_where";
 			$result = db_query( $query );
 			$enum_name_count[]= db_result( $result, 0);
 
-			$t_res_val = RESOLVED;
+			$t_res_val = config_get( 'bug_resolved_status_threshold' );
 			$t_clo_val = CLOSED;
 
 			# Calculates the number of bugs opened and puts the results in a table
 			$query = "SELECT COUNT(*)
-					FROM $g_mantis_bug_table
+					FROM $t_bug_table
 					WHERE $p_enum='$t_s[0]' AND
-						status<>'$t_res_val' AND
-						status<>'$t_clo_val' $specific_where";
+						status<'$t_res_val' $specific_where";
 			$result2 = db_query( $query );
 			$open_bug_count[] = db_result( $result2, 0, 0);
 
 			# Calculates the number of bugs closed and puts the results in a table
 			$query = "SELECT COUNT(*)
-					FROM $g_mantis_bug_table
+					FROM $t_bug_table
 					WHERE $p_enum='$t_s[0]' AND
 						status='$t_clo_val' $specific_where";
 			$result2 = db_query( $query );
@@ -75,9 +75,10 @@
 
 			# Calculates the number of bugs resolved and puts the results in a table
 			$query = "SELECT COUNT(*)
-					FROM $g_mantis_bug_table
+					FROM $t_bug_table
 					WHERE $p_enum='$t_s[0]' AND
-						status='$t_res_val' $specific_where";
+						status>='$t_res_val'  AND
+						status<'$t_clo_val' $specific_where";
 			$result2 = db_query( $query );
 			$resolved_bug_count[] = db_result( $result2, 0, 0);
 		} ### end for
@@ -130,6 +131,9 @@
 
 	    $gbplot = new GroupBarPlot(array($p1,$p2,$p3));
         $graph->Add($gbplot);
+		if ( ON == config_get( 'show_queries_count' ) ) {
+			$graph->subtitle->Set( db_count_queries() . ' queries (' . db_count_unique_queries() . ' unique)' );
+		}
 		$graph->Stroke();
 
 	}
@@ -137,16 +141,17 @@
 	# --------------------
 	# Function which finds the % according to the status
 	function enum_bug_group_pct( $p_enum_string, $p_enum ) {
-		global $g_mantis_bug_table, $enum_name, $enum_name_count;
+		global $enum_name, $enum_name_count;
 		global $open_bug_count, $closed_bug_count, $resolved_bug_count;
 		$enum_name = Null;
 		$enum_name_count = Null;
 
 		$t_project_id = helper_get_current_project();
+		$t_bug_table = config_get( 'mantis_bug_table' );
 
-		 #calculation per status
-		 $t_res_val = RESOLVED;
-		 $t_clo_val = CLOSED;
+		#calculation per status
+		$t_res_val = config_get( 'bug_resolved_status_threshold' );
+		$t_clo_val = CLOSED;
 
 		if ( ALL_PROJECTS == $t_project_id ) {
 			$specific_where = '';
@@ -155,16 +160,15 @@
 		}
 
 		$query = "SELECT COUNT(*)
-				FROM $g_mantis_bug_table
-				WHERE   status<>'$t_res_val' AND
-					status<>'$t_clo_val' $specific_where";
+				FROM $t_bug_table
+				WHERE   status<'$t_res_val' $specific_where";
 		$result = db_query( $query );
 		$total_open = db_result( $result, 0);
 
 
 		# Bugs closed
 		$query = "SELECT COUNT(*)
-				FROM $g_mantis_bug_table
+				FROM $t_bug_table
 				WHERE   status='$t_clo_val' $specific_where";
 		$result = db_query( $query );
 		$total_close= db_result( $result, 0);
@@ -172,8 +176,9 @@
 
 		# Bugs resolved
 		$query = "SELECT COUNT(*)
-				FROM $g_mantis_bug_table
-				WHERE   status='$t_res_val' $specific_where";
+				FROM $t_bug_table
+				WHERE   status>='$t_res_val' AND
+					status<'$t_clo_val' $specific_where";
 		$result = db_query( $query );
 		$total_resolved = db_result( $result, 0);
 
@@ -185,32 +190,44 @@
 			$enum_name[] = get_enum_to_string( $p_enum_string, $t_s[0] );
 
 			$query = "SELECT COUNT(*)
-					FROM $g_mantis_bug_table
+					FROM $t_bug_table
 					WHERE $p_enum='$t_s[0]' $specific_where";
 			$result = db_query( $query );
 			$t_enum_count[]= db_result( $result, 0 );
 
 			$query = "SELECT COUNT(*)
-					FROM $g_mantis_bug_table
+					FROM $t_bug_table
 					WHERE $p_enum='$t_s[0]' AND
-						status<>'$t_res_val' AND
-						status<>'$t_clo_val' $specific_where";
+						status<'$t_res_val' $specific_where";
 			$result2 = db_query( $query );
-			$open_bug_count[] = db_result( $result2, 0, 0) / $total_open * 100;
+			if ( 0 < $total_open ) {
+				$open_bug_count[] = db_result( $result2, 0, 0) / $total_open * 100;
+			}else{
+				$open_bug_count[] = 0;
+			}
 
 			$query = "SELECT COUNT(*)
-					FROM $g_mantis_bug_table
+					FROM $t_bug_table
 					WHERE $p_enum='$t_s[0]' AND
 						status='$t_clo_val' $specific_where";
 			$result2 = db_query( $query );
-			$closed_bug_count[] = db_result( $result2, 0, 0) / $total_close * 100;
+			if ( 0 < $total_close ) {
+				$closed_bug_count[] = db_result( $result2, 0, 0) / $total_close * 100;
+			}else{
+				$closed_bug_count[] = 0;
+			}
 
 			$query = "SELECT COUNT(*)
-					FROM $g_mantis_bug_table
+					FROM $t_bug_table
 					WHERE $p_enum='$t_s[0]' AND
-						status='$t_res_val' $specific_where";
+						status>='$t_res_val' AND
+						status<'$t_clo_val' $specific_where";
 			$result2 = db_query( $query );
-			$resolved_bug_count[] = db_result( $result2, 0, 0) / $total_resolved * 100;
+			if ( 0 < $total_resolved ) {
+				$resolved_bug_count[] = db_result( $result2, 0, 0) / $total_resolved * 100;
+			}else{
+				$resolved_bug_count[] = 0;
+			}
 
 		} ### end for
 	}
@@ -251,17 +268,21 @@
         $gbplot = new GroupBarPlot(array($p1,$p2,$p3));
 
         $graph->Add($gbplot);
+		if ( ON == config_get( 'show_queries_count' ) ) {
+			$graph->subtitle->Set( db_count_queries() . ' queries (' . db_count_unique_queries() . ' unique)' );
+		}
 		$graph->Stroke();
 	}
 
 	# --------------------
 	# Function which gets the values in %
 	function create_bug_enum_summary_pct( $p_enum_string, $p_enum ) {
-		global $g_mantis_bug_table, $enum_name, $enum_name_count, $total;
+		global $enum_name, $enum_name_count, $total;
 		$enum_name = Null;
 		$enum_name_count = Null;
 
 		$t_project_id = helper_get_current_project();
+		$t_bug_table = config_get( 'mantis_bug_table' );
 
 		if ( ALL_PROJECTS == $t_project_id ) {
 			$specific_where = '1=1';
@@ -270,10 +291,13 @@
 		}
 
 		$query = "SELECT COUNT(*)
-	                      FROM $g_mantis_bug_table
+	                      FROM $t_bug_table
 	                      WHERE $specific_where";
 		$result = db_query( $query );
 		$total = db_result( $result, 0 );
+		if ( 0 == $total ) {
+			return;
+		}
 
 		$t_arr = explode_enum_string( $p_enum_string );
 		$enum_count = count( $t_arr );
@@ -282,16 +306,11 @@
 			$enum_name[] = get_enum_to_string( $p_enum_string, $t_s[0] );
 
 			$query = "SELECT COUNT(*)
-					FROM $g_mantis_bug_table
+					FROM $t_bug_table
 					WHERE $p_enum='$t_s[0]' AND $specific_where";
 
 			$result = db_query( $query );
-			if ($total > 0){
 			$enum_name_count[] = db_result( $result, 0 ) / $total * 100;
-			}
-			else{$enum_name_count[] = db_result( $result, 0 )*0;
-
-			}
 		} ### end for
 	}
 
@@ -300,6 +319,9 @@
 	function graph_bug_enum_summary_pct( $p_title=''){
 		global $enum_name, $enum_name_count, $center, $poshorizontal, $posvertical;
 
+		if ( 0 == count($enum_name) ) {
+			return;
+		}
 		$graph = new PieGraph(500,350);
 		$graph->img->SetMargin(40,40,40,100);
 		$graph->title->Set($p_title);
@@ -321,50 +343,48 @@
 		$p1->value->Show();
 
 		$graph->Add($p1);
+		if ( ON == config_get( 'show_queries_count' ) ) {
+			$graph->subtitle->Set( db_count_queries() . ' queries (' . db_count_unique_queries() . ' unique)' );
+		}
 		$graph->Stroke();
 	}
 
 	# --------------------
 	function create_category_summary_pct() {
-		global 	$g_mantis_bug_table, $g_mantis_user_table,
-				$g_mantis_project_category_table,
-				$category_name, $category_bug_count;
+		global $category_name, $category_bug_count;
 
 		$t_project_id = helper_get_current_project();
+		$t_bug_table = config_get( 'mantis_bug_table' );
+		$t_cat_table = config_get( 'mantis_project_category_table' );
 
 		if ( ALL_PROJECTS == $t_project_id ) {
 			$specific_where = '1=1';
 		} else {
-			$specific_where = " project_id='$t_project_id'";
+			$specific_where = " t.project_id='$t_project_id'";
 		}
 
 		$query = "SELECT COUNT(*)
-				FROM $g_mantis_bug_table
+				FROM $t_bug_table as t
 				WHERE $specific_where";
 		$result = db_query( $query );
 		$total = db_result( $result, 0 );
+		if ( 0 == $total ) {
+			return;
+		}
 
-
-		$query = "SELECT category
-				FROM $g_mantis_project_category_table
+		$query = "SELECT t.category, t.project_id, count(b.id) as bugs 
+				FROM $t_cat_table as t LEFT JOIN $t_bug_table as b
+				ON t.category = b.category AND t.project_id = b.project_id 
 				WHERE $specific_where
-				ORDER BY category";
+				GROUP BY project_id, category
+				ORDER BY project_id, category";
 		$result = db_query( $query );
 		$category_count = db_num_rows( $result );
 
 		for ($i=0;$i<$category_count;$i++) {
 			$row = db_fetch_array( $result );
 			$category_name[] = $row['category'];
-			$c_category_name = addslashes($category_name[$i]);
-
-			$query = "SELECT COUNT(*)
-					FROM $g_mantis_bug_table
-					WHERE category='$c_category_name' AND $specific_where";
-
-			$result2 = db_query( $query );
-
-			$category_bug_count[] = db_result( $result2, 0 ) / $total * 100;
-
+			$category_bug_count[] = $row['bugs'] / $total * 100;
 		} ### end for
 	}
 
@@ -373,6 +393,9 @@
 	function graph_category_summary_pct( $p_title=''){
 		global $category_name, $category_bug_count;
 
+		if ( 0 == count( $category_bug_count) ) {
+			return;
+		}
 		$graph = new PieGraph(600,450);
 		$graph->img->SetMargin(40,40,40,100);
 		$graph->title->Set($p_title);
@@ -393,17 +416,21 @@
 		$p1->value->Show();
 
 		$graph->Add($p1);
+		if ( ON == config_get( 'show_queries_count' ) ) {
+			$graph->subtitle->Set( db_count_queries() . ' queries (' . db_count_unique_queries() . ' unique)' );
+		}
 		$graph->Stroke();
 
 	}
 
 	# --------------------
 	function create_bug_enum_summary( $p_enum_string, $p_enum ) {
-		global $g_mantis_bug_table, $enum_name, $enum_name_count;
+		global $enum_name, $enum_name_count;
 		$enum_name = Null;
 		$enum_name_count = Null;
 
 		$t_project_id = helper_get_current_project();
+		$t_bug_table = config_get( 'mantis_bug_table' );
 
 		$t_arr = explode_enum_string( $p_enum_string );
 		$enum_count = count( $t_arr );
@@ -419,7 +446,7 @@
 			}
 
 			$query = "SELECT COUNT(*)
-					FROM $g_mantis_bug_table
+					FROM $t_bug_table
 					WHERE $p_enum='$c_s[0]' $specific_where";
 			$result = db_query( $query );
 			$enum_name_count[] = db_result( $result, 0 );
@@ -446,6 +473,9 @@
 		$p1->SetFillColor('yellow');
 		$p1->SetWidth(0.8);
 		$graph->Add($p1);
+		if ( ON == config_get( 'show_queries_count' ) ) {
+			$graph->subtitle->Set( db_count_queries() . ' queries (' . db_count_unique_queries() . ' unique)' );
+		}
 
 		$graph->Stroke();
 
@@ -453,16 +483,50 @@
 
 	# --------------------
 	function create_developer_summary() {
-		global 	$g_mantis_bug_table, $g_mantis_user_table, $g_mantis_project_user_list_table,
-				$developer_name, $open_bug_count,
+		global $developer_name, $open_bug_count,
 				$resolved_bug_count, $total_bug_count;
 
 		$t_project_id = helper_get_current_project();
+		$t_user_table = config_get( 'mantis_user_table' );
+		$t_bug_table = config_get( 'mantis_bug_table' );
 
-		# selecting all users, some of them might not have a proper default access
-		# but be assigned on some particular projects
+		if ( ALL_PROJECTS == $t_project_id ) {
+			$specific_where = '';
+		} else {
+			$specific_where = " AND project_id='$t_project_id'";
+		}
+
+		$t_res_val = config_get( 'bug_resolved_status_threshold' );
+		$t_clo_val = CLOSED;
+
+		$query = "SELECT handler_id, status 
+				 FROM $t_bug_table 
+				 WHERE handler_id != '' $specific_where";
+		$result = db_query( $query );
+		$t_total_handled = db_num_rows( $result );
+
+		$t_handler_arr = array();
+		for ( $i = 0; $i < $t_total_handled; $i++ ) {
+			$row = db_fetch_array( $result );
+			if ( !isset( $t_handler_arr[$row['handler_id']] ) ) {
+				$t_handler_arr[$row['handler_id']]['res'] = 0;
+				$t_handler_arr[$row['handler_id']]['open'] = 0;
+			}
+			if ( $row['status'] >= $t_res_val ) {
+				$t_handler_arr[$row['handler_id']]['res']++;
+			} else {
+				$t_handler_arr[$row['handler_id']]['open']++;
+			}
+		}
+
+		if ( count( $t_handler_arr ) == 0 ) {
+			return;
+		}
+
+		$t_imploded_handlers = implode( ',', array_keys( $t_handler_arr ) );
 		$query = "SELECT id, username
-				FROM $g_mantis_user_table
+				FROM $t_user_table
+				WHERE id IN ($t_imploded_handlers)
 				ORDER BY username";
 		$result = db_query( $query );
 		$user_count = db_num_rows( $result );
@@ -471,39 +535,13 @@
 			$row = db_fetch_array( $result );
 			extract( $row, EXTR_PREFIX_ALL, 'v' );
 
-			if ( ALL_PROJECTS == $t_project_id ) {
-				$specific_where = '';
-			} else {
-				$specific_where = " AND project_id='$t_project_id'";
-			}
+			$open_buff = $t_handler_arr[$v_id]['open'];
+			$resolved_buff = $t_handler_arr[$v_id]['res'];
 
-			$query = "SELECT COUNT(*)
-					FROM $g_mantis_bug_table
-					WHERE handler_id='$v_id' $specific_where";
-			$result2 = db_query( $query );
-			$total_buff = db_result( $result2, 0, 0 );
-
-			$t_res_val = RESOLVED;
-			$t_clo_val = CLOSED;
-			$query = "SELECT COUNT(*)
-					FROM $g_mantis_bug_table
-					WHERE handler_id='$v_id' AND
-						status<>'$t_res_val' AND
-						status<>'$t_clo_val' $specific_where";
-			$result2 = db_query( $query );
-			$open_buff = db_result( $result2, 0, 0 );
-
-			$query = "SELECT COUNT(*)
-					FROM $g_mantis_bug_table
-					WHERE handler_id='$v_id' AND
-						(status='$t_res_val' OR status='$t_clo_val' ) $specific_where";
-			$result2 = db_query( $query );
-			$resolved_buff = db_result( $result2, 0, 0 );
-
-			if (($total_buff+$resolved_buff+$open_buff)>0) {
+			if (($resolved_buff+$open_buff)>0) {
 				$open_bug_count[]=$open_buff;
 				$resolved_bug_count[]=$resolved_buff;
-				$total_bug_count[]=$total_buff;
+				$total_bug_count[]=$resolved_buff+$open_buff;
 				$developer_name[]=$v_username;
 			}
 		} # end for
@@ -512,6 +550,10 @@
 	# --------------------
 	function graph_developer_summary( ){
 		global $developer_name, $total_bug_count, $open_bug_count, $resolved_bug_count;
+
+		if ( 0 == count($developer_name) ) {
+			return;
+		}
 
 		$graph = new Graph(300,380);
 		$graph->img->SetMargin(40,40,40,170);
@@ -543,6 +585,9 @@
 
 		$gbplot =  new GroupBarPlot( array($p1, $p2, $p3));
 		$graph->Add($gbplot);
+		if ( ON == config_get( 'show_queries_count' ) ) {
+			$graph->subtitle->Set( db_count_queries() . ' queries (' . db_count_unique_queries() . ' unique)' );
+		}
 
 		$graph->Stroke();
 
@@ -550,14 +595,44 @@
 
 	# --------------------
 	function create_reporter_summary() {
-		global 	$g_mantis_bug_table, $g_mantis_user_table,
-			$reporter_name, $reporter_count;
+		global $reporter_name, $reporter_count;
 
 
 		$t_project_id = helper_get_current_project();
+		$t_user_table = config_get( 'mantis_user_table' );
+		$t_bug_table = config_get( 'mantis_bug_table' );
 
+		if ( ALL_PROJECTS == $t_project_id ) {
+			$specific_where = '';
+		} else {
+			$specific_where = " AND project_id='$t_project_id'";
+		}
+
+		$query = "SELECT reporter_id 
+				 FROM $t_bug_table 
+				 WHERE id != '' $specific_where";
+		$result = db_query( $query );
+		$t_total_reported = db_num_rows( $result );
+
+		$t_reporter_arr = array();
+		for ( $i = 0; $i < $t_total_reported; $i++ ) {
+			$row = db_fetch_array( $result );
+
+			if ( isset( $t_reporter_arr[$row['reporter_id']] ) ) {
+				$t_reporter_arr[$row['reporter_id']]++;
+			} else {
+				$t_reporter_arr[$row['reporter_id']] = 1;
+			}
+		}
+
+		if ( count( $t_reporter_arr ) == 0 ) {
+			return;
+		}
+
+		$t_imploded_reporters = implode( ',', array_keys( $t_reporter_arr ) );
 		$query = "SELECT id, username
-				FROM $g_mantis_user_table
+				FROM $t_user_table
+				WHERE id IN ($t_imploded_reporters)
 				ORDER BY username";
 		$result = db_query( $query );
 		$user_count = db_num_rows( $result );
@@ -566,22 +641,10 @@
 			$row = db_fetch_array( $result );
 			extract( $row, EXTR_PREFIX_ALL, 'v' );
 
-			if ( ALL_PROJECTS == $t_project_id ) {
-				$specific_where = '';
-			} else {
-				$specific_where = " AND project_id='$t_project_id'";
-			}
-
-			$query = "SELECT COUNT(*)
-					FROM $g_mantis_bug_table
-					WHERE reporter_id ='$v_id' $specific_where";
-			$result2 = db_query( $query );
-			$t_count =  db_result( $result2, 0, 0 );
-			if ( $t_count > 0){
+			if ( $t_reporter_arr[$v_id] > 0){
 				$reporter_name[] = $v_username;
-				$reporter_count[] = $t_count;
+				$reporter_count[] = $t_reporter_arr[$v_id];
 			}
-
 		} # end for
 	}
 
@@ -589,6 +652,9 @@
 	function graph_reporter_summary( ){
 		global $reporter_name, $reporter_count;
 
+		if ( 0 == count($reporter_name) ) {
+			return;
+		}
 		$graph = new Graph(300,380);
 		$graph->img->SetMargin(40,40,40,170);
 		$graph->img->SetAntiAliasing();
@@ -605,26 +671,29 @@
 		$p1->SetWidth(0.8);
 		$graph->Add($p1);
 
+		if ( ON == config_get( 'show_queries_count' ) ) {
+			$graph->subtitle->Set( db_count_queries() . ' queries (' . db_count_unique_queries() . ' unique)' );
+		}
 		$graph->Stroke();
 
 	}
 
 	# --------------------
 	function create_category_summary() {
-		global 	$g_mantis_bug_table,
-				$g_mantis_project_category_table,
-				$category_name, $category_bug_count;
+		global $category_name, $category_bug_count;
 
 		$t_project_id = helper_get_current_project();
+		$t_cat_table = config_get( 'mantis_project_category_table' );
+		$t_bug_table = config_get( 'mantis_bug_table' );
 
 		if ( ALL_PROJECTS == $t_project_id ) {
 			$specific_where = ' 1=1';
 		} else {
-			$specific_where = " AND project_id='$t_project_id'";
+			$specific_where = " project_id='$t_project_id'";
 		}
 
 		$query = "SELECT DISTINCT category
-				FROM $g_mantis_project_category_table
+				FROM $t_cat_table
 				WHERE $specific_where
 				ORDER BY category";
 		$result = db_query( $query );
@@ -636,7 +705,7 @@
 			$c_category_name = addslashes($category_name[$i]);
 
 			$query = "SELECT COUNT(*)
-					FROM $g_mantis_bug_table
+					FROM $t_bug_table
 					WHERE category='$c_category_name' AND $specific_where";
 			$result2 = db_query( $query );
 			$category_bug_count[] = db_result( $result2, 0, 0 );
@@ -664,6 +733,9 @@
 		$p1->SetWidth(0.8);
 		$graph->Add($p1);
 
+		if ( ON == config_get( 'show_queries_count' ) ) {
+			$graph->subtitle->Set( db_count_queries() . ' queries (' . db_count_unique_queries() . ' unique)' );
+		}
 		$graph->Stroke();
 
 	}
@@ -691,22 +763,23 @@
 
 	# --------------------
 	function create_cumulative_bydate(){
-		global $metrics, $g_mantis_bug_table;
+		global $metrics;
 
 		$t_clo_val = CLOSED;
-		$t_res_val = RESOLVED;
+		$t_res_val = config_get( 'bug_resolved_status_threshold' );
+		$t_bug_table = config_get( 'mantis_bug_table' );
 
 		$t_project_id = helper_get_current_project();
 
 		if ( ALL_PROJECTS == $t_project_id ) {
 			$specific_where = ' 1=1';
 		} else {
-			$specific_where = " AND project_id='$t_project_id'";
+			$specific_where = " project_id='$t_project_id'";
 		}
 
 		# Get all the submitted dates
 		$query = "SELECT date_submitted
-				FROM $g_mantis_bug_table
+				FROM $t_bug_table
 				WHERE $specific_where
 				ORDER BY date_submitted";
 		$result = db_query( $query );
@@ -715,24 +788,19 @@
 		for ($i=0;$i<$bug_count;$i++) {
 			$row = db_fetch_array( $result );
  			$t_date = db_unixtimestamp( $row['date_submitted'] );
-			$t_date_string = date('Y-m-d', $t_date);
 
-			$index = find_date_in_metrics($t_date_string);
-			# Either the date is the same as the last date or it's new
-			if  ($index > -1){
-				$metrics[$index][1]++;
+			if ( isset( $metrics[$t_date] ) ){
+				$metrics[$t_date][0]++;
 			} else {
-				$metrics[] = array($t_date_string, 1, 0, 0);
+				$metrics[$t_date] = array( 1, 0, 0 );
 			}
 		}
 
-		$t_clo_val = CLOSED;
-		$t_res_val = RESOLVED;
 		### Get all the resolved dates
 		$query = "SELECT last_updated
-			FROM $g_mantis_bug_table
+			FROM $t_bug_table
 			WHERE $specific_where AND
-			(status='$t_res_val' OR status='$t_clo_val')
+			status >='$t_res_val'
 			ORDER BY last_updated";
 		$result = db_query( $query );
 		$bug_count = db_num_rows( $result );
@@ -740,37 +808,45 @@
 		for ($i=0;$i<$bug_count;$i++) {
 			$row = db_fetch_array( $result );
 			$t_date = db_unixtimestamp( $row['last_updated'] );
-			$t_date_string = date('Y-m-d', $t_date);
-
-			$index = find_date_in_metrics($t_date_string);
-			# Either the date is the same as a submitted date or it's new
-			if ($index > -1){
-				$metrics[$index][2]++;
+			if ( isset( $metrics[$t_date] ) ){
+				$metrics[$t_date][1]++;
 			} else {
-				$metrics[] = array($t_date_string, 0, 1, 0);
+				$metrics[$t_date] = array( 0, 1, 0 );
 			}
 		}
 
-		usort($metrics, 'cmp_dates');
+		ksort($metrics);
 
 		$metrics_count = count($metrics);
-		for ($i=1;$i<$metrics_count;$i++) {
-			$metrics[$i][1] = $metrics[$i][1] + $metrics[$i-1][1];
-			$metrics[$i][2] = $metrics[$i][2] + $metrics[$i-1][2];
-			$metrics[$i][3] = $metrics[$i][1] - $metrics[$i][2];
+		$t_last_opened = 0;
+		$t_last_resolved = 0;
+		foreach ($metrics as $i=>$vals) {
+			$metrics[$i][0] = $metrics[$i][0] + $t_last_opened;
+			$metrics[$i][1] = $metrics[$i][1] + $t_last_resolved;
+			$metrics[$i][2] = $metrics[$i][0] - $metrics[$i][1];
+		  $t_last_opened = $metrics[$i][0];
+			$t_last_resolved = $metrics[$i][1];
 		}
-
 	}
 
+	function graph_date_format ($p_date) {
+		return strftime( "%D", $p_date );
+	}
+	
 	# --------------------
 	function graph_cumulative_bydate(){
 		global $metrics;
 
-		for ($i=0;$i<count($metrics);$i++) {
-			$plot_date[] = strtotime($metrics[$i][0]);
-			$reported_plot[] = $metrics[$i][1];
-			$resolved_plot[] = $metrics[$i][2];
-			$still_open_plot[] = $metrics[$i][3];
+		if ( 0 == count($metrics) ) {
+			return;
+		}
+		foreach ($metrics as $i=>$vals) {
+			if ( $i > 0 ) {
+				$plot_date[] = $i;
+				$reported_plot[] = $metrics[$i][0];
+				$resolved_plot[] = $metrics[$i][1];
+				$still_open_plot[] = $metrics[$i][2];
+			}
 		}
 
 		$graph = new Graph(300,380);
@@ -780,13 +856,14 @@
 		$graph->SetMarginColor('white');
 		$graph->SetFrame(false);
 		$graph->title->Set( 'cumulative ' . lang_get( 'by_date' ) );
-		$graph->legend->Pos(0.1,0.6,'right','top');
+		$graph->legend->Pos(0.1,0.8,'right','bottom');
 		$graph->legend->SetShadow(false);
 		$graph->legend->SetFillColor('white');
 		$graph->legend->SetLayout(LEGEND_HOR);
-		$graph->xaxis->Hide();
-		$graph->xaxis->SetLabelAngle(90);
 		$graph->yaxis->scale->ticks->SetDirection(-1);
+#		$graph->xaxis->Hide();
+		$graph->xaxis->SetLabelAngle(90);
+		$graph->xaxis->SetLabelFormatCallback('graph_date_format');
 
 		$p1 = new LinePlot($reported_plot, $plot_date);
 		$p1->SetColor('blue');
@@ -806,7 +883,9 @@
 		$p2->SetLegend('Resolved');
 		$graph->Add($p2);
 
-
+		if ( ON == config_get( 'show_queries_count' ) ) {
+			$graph->subtitle->Set( db_count_queries() . ' queries (' . db_count_unique_queries() . ' unique)' );
+		}
 		$graph->Stroke();
 	}
 ?>

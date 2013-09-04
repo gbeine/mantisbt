@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: print_all_bug_page_excel.php,v 1.37 2004-04-15 09:27:30 yarick123 Exp $
+	# $Id: print_all_bug_page_excel.php,v 1.41 2004-08-08 11:39:00 jlatour Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -16,9 +16,9 @@
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'current_user_api.php' );
 	require_once( $t_core_path.'bug_api.php' );
 	require_once( $t_core_path.'string_api.php' );
@@ -36,15 +36,12 @@
 	if ( $f_type_page != 'html' ) {
 		$t_export_title = $g_page_title."_excel";
 		$t_export_title = ereg_replace( '[\/:*?"<>|]', '', $t_export_title );
+
+		# Make sure that IE can download the attachments under https.
+		header( 'Pragma: public' );
+
 		header( 'Content-Type: application/vnd.ms-excel' );
 		header( 'Content-Disposition: attachment; filename="' . $t_export_title . '.xls"' );
-	}
-
-	$t_cookie_value = gpc_get_cookie( config_get( 'view_all_cookie' ), '' );
-
-	# check to see if new cookie is needed
-	if ( ! filter_is_cookie_valid() ) {
-		print_header_redirect( 'view_all_set.php?type=0&amp;print=1' );
 	}
 
 	#settings for choosing the fields to print
@@ -56,8 +53,11 @@
 	$t_per_page = null;
 	$t_bug_count = null;
 	$t_page_count = null;
-	
+
 	$result = filter_get_bug_rows( $t_page_number, $t_per_page, $t_page_count, $t_bug_count );
+	if ( $result === false ) {
+		print_header_redirect( 'view_all_set.php?type=0&amp;print=1' );
+	}
 	$row_count = sizeof( $result );
 
 	#settings for choosing the fields to print
@@ -73,7 +73,7 @@
 
 	$result3 = db_query( $query3 );
 	$row = db_fetch_array( $result3 );
-	$t_prefs = $row[0];
+	$t_prefs = $row['print_pref'];
 ?>
 
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -168,7 +168,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
 		  echo "</td>";
 			}
 	$name_index++;  ?>
-	
+
 	<?php if ( ( $name_index < $field_name_count ) && ( !isset( $t_prefs[$name_index] ) || ( 1 == $t_prefs[$name_index] ) ) ) { ?>
 	<td class=xl2216681 nowrap style='border-top:none;border-left:none'>
 	<?php echo $v_category;
@@ -350,7 +350,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
 					PRINT '&nbsp';
 				} #if
 			} #for loop
-			
+
 			echo "</td>";
 		}# if index
 	$name_index++;
@@ -359,10 +359,12 @@ xmlns="http://www.w3.org/TR/REC-html40">
 <td colspan=3>
 <?php  # print bugnotes
 		# get the bugnote data
+		$t_bugnote_order = current_user_get_pref( 'bugnote_order' );
+		
 		$query6 = "SELECT *,date_submitted
 				FROM $g_mantis_bugnote_table
 				WHERE bug_id='$v_id'
-				ORDER BY date_submitted $g_bugnote_order";
+				ORDER BY date_submitted $t_bugnote_order";
 		$result6 = db_query( $query6 );
 		$num_notes = db_num_rows( $result6 );
 

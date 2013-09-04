@@ -6,39 +6,53 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: login_page.php,v 1.36 2004-04-12 21:04:35 jlatour Exp $
+	# $Id: login_page.php,v 1.42 2004-08-14 15:26:20 thraxisp Exp $
 	# --------------------------------------------------------
-?>
-<?php
+
 	# Login page POSTs results to login.php
 	# Check to see if the user is already logged in
-?>
-<?php
+
 	require_once( 'core.php' );
 
-	html_page_top1();
-	html_page_top2a();
-?>
-
-<br />
-<div align="center">
-<?php
 	$f_error		= gpc_get_bool( 'error' );
 	$f_cookie_error	= gpc_get_bool( 'cookie_error' );
 	$f_return		= gpc_get_string( 'return', '' );
 
+	# Check for HTTP_AUTH. HTTP_AUTH is handled in login.php
+
+	if ( HTTP_AUTH == config_get( 'login_method' ) ) {
+		$t_uri = "login.php";
+
+		if ( !$f_return && ON == config_get( 'allow_anonymous_login' ) ) {
+			$t_uri = "login_anon.php";
+		}
+
+		if ( $f_return ) {
+			$t_uri .= "?return=" . urlencode( $f_return );
+		}
+
+		print_header_redirect( $t_uri );
+		exit;
+	}
+
+	html_page_top1();
+	html_page_top2a();
+
+	echo '<br /><div align="center">';
+
+	# Display short greeting message
+	echo lang_get( 'login_page_info' ) . '<br />';
+
 	# Only echo error message if error variable is set
 	if ( $f_error ) {
-		echo lang_get( 'login_error' ) . '<br />';
+		echo '<font color="red">' . lang_get( 'login_error' ) . '</font>';
 	}
 	if ( $f_cookie_error ) {
 		echo lang_get( 'login_cookies_disabled' ) . '<br />';
 	}
 
-	# Display short greeting message
-	echo lang_get( 'login_page_info' );
+	echo '</div>';
 ?>
-</div>
 
 <!-- Login Form BEGIN -->
 <br />
@@ -50,7 +64,7 @@
 		<?php
 			if ( !is_blank( $f_return ) ) {
 			?>
-				<input type="hidden" name="return" value="<?php echo $f_return ?>" />
+				<input type="hidden" name="return" value="<?php echo htmlspecialchars( $f_return ) ?>" />
 				<?php
 			}
 			echo lang_get( 'login_title' ) ?>
@@ -97,7 +111,11 @@
 </div>
 
 <?php
+	PRINT '<br /><div align="center">';
 	print_signup_link();
+	PRINT '&nbsp;';
+	print_lost_password_link();
+	PRINT '</div>';
 
 	#
 	# Do some checks to warn administrators of possible security holes.
@@ -124,9 +142,9 @@
 	# Check if the admin directory is available and is readable.
 	$t_admin_dir = dirname( __FILE__ ) . DIRECTORY_SEPARATOR . 'admin' . DIRECTORY_SEPARATOR;
 	if ( is_dir( $t_admin_dir ) && is_readable( $t_admin_dir ) ) {
-			echo '<div class="warning" align="center">';
-			echo '<p><font color="red"><strong>WARNING:</strong> Admin directory should be removed.</font></p>';
-			echo '</div>';
+			echo '<div class="warning" align="center">', "\n";
+			echo '<p><font color="red"><strong>WARNING:</strong> Admin directory should be removed.</font></p>', "\n";
+			echo '</div>', "\n";
 	}
 ?>
 

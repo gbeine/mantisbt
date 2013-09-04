@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: error_api.php,v 1.30 2004-04-08 20:52:50 prescience Exp $
+	# $Id: error_api.php,v 1.34 2004-08-22 01:19:30 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### Error API ###
@@ -33,12 +33,16 @@
 	#
 	function error_handler( $p_type, $p_error, $p_file, $p_line, $p_context ) {
 		global $g_error_parameters, $g_error_handled, $g_error_proceed_url;
+		global $g_lang_overrides;
 
 		# check if errors were disabled with @ somewhere in this call chain
 		if ( 0 == error_reporting() ) {
 			return;
 		}
 
+		# flush any language overrides to return to user's natural default
+		lang_push( config_get ( 'default_language' ) );
+		
 		$t_short_file	= basename( $p_file );
 		$t_method		= 'none';
 
@@ -84,7 +88,7 @@
 				$t_error_description = $p_error;
 		}
 
-		$t_error_description = nl2br( htmlentities( $t_error_description ) );
+		$t_error_description = nl2br( $t_error_description );
 
 		if ( 'halt' == $t_method ) {
 			$t_old_contents = ob_get_contents();
@@ -139,6 +143,7 @@
 			# do nothing
 		}
 
+		lang_pop();
 		$g_error_parameters = array();
 		$g_error_handled = true;
 		$g_error_proceed_url = null;

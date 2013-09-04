@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: string_api.php,v 1.46 2004-04-08 20:52:50 prescience Exp $
+	# $Id: string_api.php,v 1.58 2004-08-14 15:26:21 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -25,17 +25,55 @@
 		for ( $i = 0; $i < $line_count; $i++ ) {
 			$count	= 0;
 			$prefix	= '';
-			while ( substr($lines[$i], $count, 1) == ' ' ) {
-			  $count++;
-			}
-			for ( $j = 0; $j < $count; $j++ ) {
-			  $prefix .= '&nbsp;';
-			}
-			$lines[$i] = $prefix . substr( $lines[$i], $count );
 
+			$t_char = substr( $lines[$i], $count, 1 );
+			$spaces = 0;
+			while ( ( $t_char  == ' ' ) || ( $t_char == "\t" ) ) {
+				if ( $t_char == ' ' )
+					$spaces++;
+				else
+					$spaces += 4; // 1 tab = 4 spaces, can be configurable.
+
+				$count++;
+				$t_char = substr( $lines[$i], $count, 1 );
+			}
+
+			for ( $j = 0; $j < $spaces; $j++ ) {
+				$prefix .= '&nbsp;';
+			}
+
+			$lines[$i] = $prefix . substr( $lines[$i], $count );
 		}
 		return implode( "\n", $lines );
 	}
+	# --------------------
+	# Prepare a string to be printed without being broken into multiple lines
+	function string_no_break( $p_string ) {
+		if ( strpos( $p_string, ' ' ) !== false ) {
+			return "<nobr>$p_string</nobr>";
+		} else {
+			return $p_string;
+		}
+	}
+	
+	# --------------------
+	# Similar to nl2br, but fixes up a problem where new lines are doubled between
+	# <pre> tags.
+	function string_nl2br( $p_string, $p_wrap = 100 ) {
+		$p_string = nl2br( $p_string );
+
+		# fix up eols within <pre> tags (#1146)
+		$pre2 = array();
+		preg_match_all("/<pre[^>]*?>(.|\n)*?<\/pre>/", $p_string, $pre1);
+		for ( $x = 0; $x < count($pre1[0]); $x++ ) {
+			$pre2[$x] = preg_replace("/<br[^>]*?>/", "", $pre1[0][$x]);
+			$pre2[$x] = preg_replace("/([^\n]{".$p_wrap."})(?!<\/pre>)/", "$1\n", $pre2[$x]);
+			$pre1[0][$x] = "/" . preg_quote($pre1[0][$x], "/") . "/";
+		}
+
+		return preg_replace( $pre1[0], $pre2, $p_string );
+	}
+
 	# --------------------
 	# Prepare a string for display to HTML
 	function string_display( $p_string ) {
@@ -43,7 +81,7 @@
 		$p_string = htmlspecialchars( $p_string );
 		$p_string = string_restore_valid_html_tags( $p_string );
 		$p_string = string_preserve_spaces_at_bol( $p_string );
-		$p_string = nl2br( $p_string );
+		$p_string = string_nl2br( $p_string );
 
 		return $p_string;
 	}
@@ -187,8 +225,9 @@
 
 		# This is based on the description in RFC 2396 which specifies how
 		#  to match URLs generically without knowing their type
-		$p_string = preg_replace( '/(([[:alpha:]][-+.[:alnum:]]*):\/\/(%[[:digit:]A-Fa-f]{2}|[-_.!~*\';\/?:@&=+$,[:alnum:]])+)/s',
-								'<a href="\1">\1</a>',
+		# vboctor: I added # to hyperlink bookmarks.
+		$p_string = preg_replace( '/(([[:alpha:]][-+.[:alnum:]]*):\/\/(%[[:digit:]A-Fa-f]{2}|[-_.!~*\';\/?:@&=+$#\(\),\[\][:alnum:]])+)/s',
+								'<a href="\1">\1</a> [<a href="\1" target="blank">^</a>]',
 								$p_string);
 
 		# Set up a simple subset of RFC 822 email address parsing
@@ -298,21 +337,29 @@
 	# --------------------
 	# return an href anchor that links to a bug VIEW page for the given bug
 	#  account for the user preference and site override
-	function string_get_bug_view_link( $p_bug_id, $p_user_id = null ) {
+	function string_get_bug_view_link( $p_bug_id, $p_user_id = null, $p_detail_info = true ) {
+		$t_link = "";
+
 		if ( bug_exists( $p_bug_id ) ) {
 			$t_summary	= string_attribute( bug_get_field( $p_bug_id, 'summary' ) );
 			$t_status	= string_attribute( get_enum_element( 'status', bug_get_field( $p_bug_id, 'status' ) ) );
-			return '<a href="' . string_get_bug_view_url( $p_bug_id, $p_user_id ) . '" title="[' . $t_status . '] ' . $t_summary . '">' . bug_format_id( $p_bug_id ) . '</a>';
+			$t_link		= '<a href="' . string_get_bug_view_url( $p_bug_id, $p_user_id ) . '"';
+			if ( $p_detail_info ) {
+				$t_link .=  ' title="[' . $t_status . '] ' . $t_summary . '"';
+			}
+			$t_link .= '>' . bug_format_id( $p_bug_id ) . '</a>';
 		} else {
-			return bug_format_id( $p_bug_id );
+			$t_link = bug_format_id( $p_bug_id );
 		}
+
+		return $t_link;
 	}
 
 	# --------------------
 	# return the name and GET parameters of a bug VIEW page for the given bug
 	#  account for the user preference and site override
 	function string_get_bug_view_url( $p_bug_id, $p_user_id = null ) {
-		return string_get_bug_view_page( $p_user_id ) . '?bug_id=' . bug_format_id( $p_bug_id );
+		return 'view.php?id=' . $p_bug_id;
 	}
 
 	# --------------------
@@ -343,7 +390,7 @@
 	# return the name and GET parameters of a bug UPDATE page for the given bug
 	#  account for the user preference and site override
 	function string_get_bug_update_url( $p_bug_id, $p_user_id = null ) {
-		return string_get_bug_update_page( $p_user_id ) . '?bug_id=' . bug_format_id( $p_bug_id );
+		return string_get_bug_update_page( $p_user_id ) . '?bug_id=' . $p_bug_id;
 	}
 
 	# --------------------
@@ -372,5 +419,27 @@
 	#  account for the user preference and site override
 	function string_get_bug_report_page( $p_user_id = null ) {
 		return string_get_bug_page( 'report', $p_user_id );
+	}
+
+	# --------------------
+	# return the complete url link to checkin using the confirm_hash
+	function string_get_confirm_hash_url( $p_user_id, $p_confirm_hash ) {
+		$t_path = config_get( 'path' );
+		return $t_path . "verify.php?id=" . string_url( $p_user_id ) . "&confirm_hash=" . string_url( $p_confirm_hash );
+	}
+
+	# --------------------
+	# Return a string with the $p_character pattern repeated N times.
+	# $p_character - pattern to repeat
+	# $p_repeats - number of times to repeat.
+	function string_repeat_char( $p_character, $p_repeats ) {
+		return str_pad( '', $p_repeats, $p_character );
+	}
+
+	# --------------------
+	# Format date for display
+	function string_format_complete_date( $p_date ) {
+		$t_timestamp = db_unixtimestamp( $p_date );
+		return date( config_get( 'complete_date_format' ), $t_timestamp );
 	}
 ?>

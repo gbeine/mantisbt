@@ -1,14 +1,229 @@
 Mantis ChangeLog
 
-2004.06.xx  -  0.19.0
+2004.09.12  -  0.19.0
+
+This is a stable release that followed a couple of alpha releases + a release candidate.  Compared to 0.18.3 this release has over 250 enhancements and fixes.  These include some major additions to Mantis including issue relationships, sponsorships, advanced filters, changelog, workflow control, my-view, using ADODB as a database abstraction layer, "forgot password" support, more secure signup with captcha image, security fixes, and various other fixes and enhancements.  All users of previous releases are encouraged to upgrade to this release.
+
+- 0003896: [security] Change default value of $g_view_summary_threshold to MANAGER (vboctor)
+- 0004478: [upgrade] database upgrade from 0.18.3 problem: upgrade-ID "filters-db1" does not work on mySQL4.1.3b-beta (jlatour)
+- 0004435: [other] Auto-preview of attached images is broken (vboctor)
+- 0004470: [other] Strange changes of "Resolution" value (thraxisp)
+- 0004523: [filters] SYSTEM NOTICE: Undefined variable: t_target_field in view_filters_page.php (vboctor)
+- 0004431: [relationships] Relationship removal is always "duplicate of" in history (masc)
+- 0004426: [email] Email notifications to users with language set to "auto" causes errors (thraxisp)
+- 0004448: [email] Custom severity and status shown in mail as code (thraxisp)
+- 0004321: [localization] New german lang strings (bpfennig)
+- 0004423: [localization] Parse error in strings_hungarian.txt line 974 (vboctor)
+- 0004429: [localization] Slovene national characters not displayed correctly (jlatour)
+- 0004445: [localization] New Spanish strings file (Wanderer)
+- 0004458: [localization] Small fixes to the French file (Wanderer)
+- 0004459: [localization] Typos in German and English strings (Wanderer)
+- 0004498: [localization] Swedish translation updated for 0.19.0rc1 (Wanderer)
+- 0004509: [localization] Request rather than "Provide Feedback to Issue" (thraxisp)
+- 0004519: [localization] Updated the Italian language strings file to 0.19.0rc1 (Wanderer)
+- 0004463: [graphs] pie chart of summary graph per category wrong when viewing allprojects) (thraxisp)
+- 0004464: [graphs] Pie graphs display as error if no issue exist for a specific project (thraxisp)
+- 0004481: [graphs] Query counts are incorrect in graphs (thraxisp)
+- 0004507: [graphs] No time-line in the summary for cumulative by days (thraxisp)
+- 0004511: [graphs] Summary Graph "Cumulative by Date" is blank (process expires) (thraxisp)
+- 0004425: [bugtracker] Action group page exceeds max execution time (vboctor)
+- 0004437: [bugtracker] Filenames of uploaded attached files are damaged (thraxisp)
+- 0004479: [bugtracker] Reporters can't close or reopen issues they reported (thraxisp)
+- 0004495: [bugtracker] Warning in bug_actiongroup_page.php when risolving (thraxisp)
+- 0004480: [administration] admin/check.php - Check email failing. (thraxisp)
+- Updated Italian, French, Portuguese Brazil, Lithuanian, Korean, Czech, Swedish, Spanish, German and Dutch translations
+
+2004.08.28  -  0.19.0rc1
+
+This is the first release candidate for 0.19.0, it requires database upgrade.  We consider this release considerably more stable than the 0.19.0a2.  This is a feature complete release, hence, 0.19.0 is not expected to include new features, but only bug fixes.
+
+- 0002416: [security] Block Denied Access (masc)
+- 0003540: [security] Arbitrary code execution through uploads (thraxisp)
+- 0004062: [security] Multiple Cross Site Scripting Vulnerabilities (Victor Boctor)
+- 0004063: [security] Possible E-Mail Bomber (masc)
+- 0004183: [security] another xss issue (Narcissus)
+- 0004239: [security] Remote PHP Code execution (Paul)
+- 0004276: [security] cross site scripting issue (jlatour)
+- 0004277: [security] cross site scripting issue (jlatour)
+- 0000633: [feature] email lost password page (masc)
+- 0003371: [feature] CVS Integration (patch included) (Victor Boctor)
+- 0004137: [feature] Support a simple "view" URL (Victor Boctor)
+- 0004145: [feature] Mantis pages should have descriptive titles (Victor Boctor)
+- 0004266: [feature] Update project documentation file (jlatour)
+- 0004122: [relationships] Upgrade script seems to swap the duplicate relationship (masc)
+- 0004146: [relationships] Summary doesn't unescape(?) characters (masc)
+- 0004161: [relationships] Relations to private issues must only appear to user with appropriate access level (masc)
+- 0004083: [sponsorships] Users without email address must not be able to sponsor issues (thraxisp)
+- 0004185: [customization] Support custom menu options (Victor Boctor)
+- 0004236: [customization] Support of custom_strings_inc.php broken somehow (thraxisp)
+- 0004248: [customization] mantis_project_file_table hardcoded in proj_doc_add.php (Paul)
+- 0004009: [custom fields] New custom field type "multiple select" (Paul)
+- 0004128: [custom fields] Custom field data lost on resolve and close of issue (Paul)
+- 0004381: [custom fields] History updates when custom field unchanged. (Paul)
+- 0003853: [filters] Filters sometime generate an invalid query (Victor Boctor)
+- 0003880: [filters] Ordering doesnt take last_updated into account (Narcissus)
+- 0003945: [filters] Give the ability to "Update Fixed in Version" in view_all_bug_page.php (Narcissus)
+- 0004073: [filters] Edit filter page now too wide. 'Apply filter' button is drawn off screen (Narcissus)
+- 0004093: [filters] Custom field values are a larger type size in view_all_bug_page (Narcissus)
+- 0004108: [filters] "Use Date Filters" in advanced filters (Narcissus)
+- 0004121: [filters] Filters saved while "All Projects" is the active project, should have all projects active (Narcissus)
+- 0004125: [filters] Attempting to filter on issues fixed in version 0.19.0a2 does not work (Narcissus)
+- 0004133: [filters] "Summary stats are links to filters for view_all_bugs" feature is broken (jlatour)
+- 0004140: [filters] Unable to view closed issues in View Issues page (Narcissus)
+- 0004142: [filters] Filter by category results in N pages with 1 issue in each page (Narcissus)
+- 0004150: [filters] Custom field names are not localised in filters (Victor Boctor)
+- 0004156: [filters] Sql error (Paul)
+- 0004204: [filters] Lines per page field left empty (Narcissus)
+- 0004207: [filters] Mantis forgets user filter after logout (Narcissus)
+- 0004212: [filters] Default for Quantity is 0 -> N pages needed to display N issues (Victor Boctor)
+- 0004260: [filters] APPLICATION ERROR #401 when searching (Victor Boctor)
+- 0003344: [email] New Account Emails are being sent even when email notification is off (jlatour)
+- 0003766: [email] status notifications are confused and confusing (thraxisp)
+- 0003877: [email] Upgrade to PHPMailer 1.72 (Victor Boctor)
+- 0004043: [email] Preference to exclude old bugnotes from notification (Bastian Pfennigschmidt)
+- 0004107: [email] email w/o recipient sent (thraxisp)
+- 0004111: [email] Notify admins when new account setup. (masc)
+- 0004139: [email] SYSTEM NOTICE: Undefined index: email_bug_view_url (Paul)
+- 0004147: [email] Receiving emails in foreign languages (thraxisp)
+- 0004367: [email] E-mail notification on relationship deletion results in "relationship added" email (thraxisp)
+- 0004164: [news] Announcement news don't remain on top (masc)
+- 0001146: [bugtracker] PRE tags in text (thraxisp)
+- 0002214: [bugtracker] When Viewing a Bug, window title should change (Paul)
+- 0002861: [bugtracker] misleading 'copyright' at the pages' bottom (Victor Boctor)
+- 0003689: [bugtracker] index.php is sending wrong HTTP header if not logged in. (jlatour)
+- 0003710: [bugtracker] time stats in summary to use resolved (thraxisp)
+- 0003760: [bugtracker] difficult to authenticate from command line script (Victor Boctor)
+- 0003772: [bugtracker] Status updating should be different from bug updating (thraxisp)
+- 0003822: [bugtracker] basedir restriction on some servers (Paul)
+- 0003942: [bugtracker] print_options_page doesn't show real data about selected fields (jlatour)
+- 0003948: [bugtracker] Will not jump to bug when following link in mail (Victor Boctor)
+- 0003970: [bugtracker] Reopen issue logic was broken for ustom reopen statuses (thraxisp)
+- 0003995: [bugtracker] My View: Clickable links for sections. (tazza70)
+- 0004031: [bugtracker] Hiding/removing fixed_in_versions (thraxisp)
+- 0004130: [bugtracker] Viewing bug: JavaScript error pops up (Victor Boctor)
+- 0004131: [bugtracker] Closing bugs when you're not allowed to. (thraxisp)
+- 0004138: [bugtracker] Add validation / notifications hooks for issue create/update/delete (thraxisp)
+- 0004154: [bugtracker] "Product version" and "Fixed in Version" do not get updated on rename (Victor Boctor)
+- 0004157: [bugtracker] allow custom fields to be hidden when reporting/updating bugs (Paul)
+- 0004175: [bugtracker] Links are not hyperlinked properly if containing '[' or ']' (Victor Boctor)
+- 0004193: [bugtracker] Broaden the ldap features to work with (A.D.) - patch included (jlatour)
+- 0004262: [bugtracker] Updating an issue shows the wrong status (thraxisp)
+- 0004269: [bugtracker] cross site scripting issue (jlatour)
+- 0004270: [bugtracker] Change status in mass treatment ignore defined workflow rules (thraxisp)
+- 0004279: [bugtracker] My View makes bad use of available space (tazza70)
+- 0004317: [bugtracker] "Report stay" should print out the submitted bug number together with the "report more bugs" (Bastian Pfennigschmidt)
+- 0004342: [bugtracker] Developers unable to submit bugs (thraxisp)
+- 0004376: [bugtracker]  "assigned to" buttons don't obey $g_set_status_threshold (thraxisp)
+- 0004386: [bugtracker] Changelog doesn't respect user rights (Victor Boctor)
+- 0004397: [bugtracker] broken captcha if ttf not available (Paul)
+- 0004348: [performance] Show queries with runtime (thraxisp)
+- 0003938: [localization] Untranslatable string (jlatour)
+- 0004136: [localization] Updated strings for Korean (Alex Netman)
+- 0004141: [localization] Relationship strings have a useless '%id' string (Paul)
+- 0004237: [localization] s_monitored_by must be in lang-files, otherwise empty string used (Alex Netman)
+- 0004255: [localization] Wrong value of $g_language_auto_map (Victor Boctor)
+- 0004259: [localization] Wrong value for $s_product_build (Alex Netman)
+- 0004293: [localization] Lang variable names broken (thraxisp)
+- 0004343: [localization] german string incorrect (Alex Netman)
+- 0004355: [localization] Incorrect and incomplete Dutch translations (Alex Netman)
+- 0004362: [localization] Section titles are not localized in My View page (Alex Netman)
+- 0004374: [localization] Russian Language parse error (Alex Netman)
+- 0004375: [localization] Russian Language parse error (Alex Netman)
+- 0004402: [localization] String missing in lang/strings_dutch.txt (Alex Netman)
+- 0003904: [sql] cache missing 'user pref' rows (thraxisp)
+- 0004158: [sql] Sql Error in bug_copy (Paul)
+- 0004222: [sql] Should mantis_project_category_table.user_id be UNSIGNED? (Victor Boctor)
+- 0004311: [administration] User deletion confirm page should include user name (Bastian Pfennigschmidt)
+- 0002220: [installation] usage of consistent naming schema for images (Victor Boctor)
+- 0003307: [installation] check.php always checks mail() rather than the config (thraxisp)
+- 0003483: [upgrade] some admin users permissions not completly upgraded from 0.17.5 to 0.18.0 (Victor Boctor)
+- 0003714: [upgrade] Please add in a way to transfer attachments from the database to disk (thraxisp)
+- 0004186: [upgrade] Some upgrade scripts do not read table names from config (jlatour)
+- 0004357: [webpage] added issue ID to summary is a bit confusing (thraxisp)
+- 0003787: [documentation] Stale reference in doc/INSTALL (Paul)
+- 0004163: [other] Unreadable error messages in some languages (Victor Boctor)
+- 0004182: [other] print_all_bug_page should show all issues matching current filter (Victor Boctor)
+- 0004353: [other] "Select all issues" in some clicks (Bastian Pfennigschmidt)
+- New Config: main_menu_custom_options (default empty) - Allow addition of custom menu options to main menu (vboctor)
+- New Config: show_realname (default OFF) - show realname in all places instead of username (thraxisp)
+- New Config: max_failed_login_count -	Max. attempts to login using a wrong password before lock the account.
+- New Config: notify_new_user_created_threshold_min - access level required to be notified when a new user has been created
+- New Config: password_confirm_hash_magic_string - String used to generate the confirm_hash for the 'lost password' feature
+- New Config: signup_use_captcha	- use image to validate subscription
+- New Config: system_font_folder	- absolute path  to folder which contains your TrueType-Font files
+- New Config: font_per_captcha	- font name used to create the captcha image
+- New Config: lost_password_feature - enable lost password feature
+- New Config: max_lost_password_in_progress_count - Max. simultaneous requests of 'lost password'
+- Removed config option (to_mail): no longer required
+- Removed config option (use_bcc): no longer required
+- Updated German, French, Brazilian Portuguese, japanese_euc, japanese_sjis, Korean, Russian and japanese_utf8 language.
+- Added Slovene language.
+
+2004.07.20  -  0.19.0a2
+
+This is the second alpha release for 0.19.0a, if there is not much issues with it then rc1 will probably follow.  The main features in this release are issue relationships and simple workflow control.  Also version handling was almost re-implemented to support released vs. future versions and also allow adding a description to versions.
+
+- 0004018: [security] Real name field allows potentially dangerous HTML (int2str)
+- 0004044: [security] Cross Site Scripting Vulnerability (int2str)
+- 0003969: [feature] Issue Relationships Support (masc)
+- 0003984: [feature] Support definining and enforcing custom workflow (thraxisp)
+- 0004057: [feature] Add "notes" for versions (VictorBoctor)
+- 0003974: [feature] Make Mantis issues searchable by Search Engine (int2str)
+- 0004016: [feature] Automatic language selection based on browser preferences (int2str)
+- 0004066: [feature] Support "future" versions and a description field (VictorBoctor)
+- 0001210: [feature] Project Version could use some more details!!! (VictorBoctor)
+- 0004120: [feature] Add issue id before summary in issue view pages (VictorBoctor)
+- 0004104: [feature] Product Version Field in simple View (VictorBoctor)
+- 0004118: [filters] Make filter display at top of View Issues collapsible (VictorBoctor)
+- 0004071: [filters] advanced filtering with status=any fails (Narcissus)
+- 0003804: [filters] Add ability to filter by view state (private/public) (Narcissus)
+- 0003944: [filters] Give the ability to filter on : Fixed in Version value (Narcissus)
+- 0003805: [filters] Add ability to filter on bugs monitored by a user (Narcissus)
+- 0004027: [filters] Database query error in 0.19 alpha1 (Narcissus)
+- 0004088: [filters] My View: Unassigned block shows assigned items (Narcissus)
+- 0004021: [bugtracker] The filter section is duplicated on the print page (tazza70)
+- 0003993: [bugtracker] String missing in strings_english.txt file (email title on updated bug) (VictorBoctor)
+- 0003275: [bugtracker] Low priority is not marked in list of bugs (VictorBoctor)
+- 0003996: [bugtracker] My View: how about monitored by me? (tazza70)
+- 0004052: [bugtracker] Not all the buttons are marked as class="button" (VictorBoctor)
+- 0004036: [bugtracker] Changelog should not display versions with no issues (VictorBoctor)
+- 0004020: [bugtracker] Database field 'realname' not found after plain installation (VictorBoctor)
+- 0004041: [sponsorships] Empty "Users sponsoring this issue" (VictorBoctor)
+- 0004040: [sponsorships] Sponsorship timestamp is not displayed correctly in sponsorship list (VictorBoctor)
+- 0004038: [sponsorships] Add icon to sponsorships to attract attention (VictorBoctor)
+- 0004053: [localization] Italian - Missing $s_monitored_by (VictorBoctor)
+- 0004014: [localization] Italian Version: Build Translated as Version (VictorBoctor)
+- 0004017: [localization] Random translations popping up (int2str)
+- 0004056: [custom fields] Displaying/Reporting Issue -> Application Warning - lang_exists() missing arg 2 (VictorBoctor)
+- 0004081: [upgrade] mantis_upgrade_table.upgrade_id too small (VictorBoctor)
+- 0004072: [webpage] Make sponsorships and relationships collapsible (int2str)
+- 0004065: [other] Issues are not hyperlinked in Changelog if $g_bug_link_tag is not # (VictorBoctor)
+- 0004064: [other] Links are not hyperlinked properly if containing '(' or ')' (VictorBoctor)
+- 0004005: [other] signup for new account - invalid username generates crash (int2str)
+- New Config: fallback_language (default 'english') - Fallback language for automatic language selection.
+- New Config: status_enum_workflow (default disabled) - Defines the workflow to indicate what are the possible statuses based on the current one.
+- Updated German, Italian, Russian, Czech and Brazilian Portuguese languages.
+
+2004.07.07  -  0.19.0a1
+
+This is an alpha version of 0.19.0, it is not recommended for production use.  Users are encouraged to test it on a backup copy of their data and provide feedback to development team.
+
+Users installing Mantis for the first time should sql/db_generate.sql to create the database, then run the http://www.example.com/mantis/admin and run the upgrade scripts.  Already existing users will need to backup their database, then run upgrade.
+
  * Enh #0000: Change of terminology, replaced "bug" with "issue" [first step in #2710].
  * Enh #0000: Generate one email per user. Stage #2 (minor send mail optimization - used kept alive SMTP connection).
  * Enh #0000: phpMailer 1.71 has been included to Mantis distribution, all the mails are sent now only by phpMailer.
+ * Enh #0000: Mass issue manipulation (move, delete, etc.) page now shows list of selected issues.
  * Enh #2200: Add Version to simple bug pages.
+ * Enh #3152: Adding notes and documents to resolved bugs.
+ * Enh #3164: Added "fixed in version" field, set when resolving a bug.
  * Enh #3300: Add global defaults for priotity and severity of new bugs.
  * Enh #3302: Add global defaults for view state.
+ * Enh #3505: Add a Bugnote to a resolved bug.
+ * Enh #3519: Advanced filtering with multiple selections.
  * Enh #3620: Redesigned filter interface.
  * Enh #3633: Experimental support for MSSQL, PgSQL and other databases using ADODB.
+ * Enh #3638: The bugtracker should be able to produce a changelog.
  * Enh #3662: Provide more config vars to control viewing/downloading/deleting bug attachments.
  * Enh #3663: Remember filter settings for each project.
  * Enh #3676: Use status threshold rather than hide resolved/closed in filter.
@@ -16,14 +231,47 @@ Mantis ChangeLog
  * Enh #3690: Request for directly setting reminders private.
  * Enh #3713: Allow users to set severity levels along with email preferences.
  * Enh #3735: New CSS class for HTML Form Buttons
+ * Enh #3739: Portal for viewing bug status lists and summaries after login.
+ * Enh #3765: Change title on bug details page to bug summary line.
  * Enh #3801: Add "myself" meta filter options.
+ * Enh #3802: Auto-use filter selection on change.
  * Enh #3808: Ability to sponsor (fund) a bug or feature request.
+ * Enh #3811: Allow private flag to be unset on resolved bugs.
+ * Enh #3841: Add real name ability to mantis.
+ * Enh #3867: Give the user control whether to open hyperlink in new or current window.
+ * Enh #3870: Support for custom functions which provides hooks for customizing behaviour.
+ * Enh #3881: Replace "Hide Status" with "Status" in advanced filter.
+ * Enh #3918: Allow restricting filter views to advanced or simple.
+ * Enh #3925: New bug group action: Copy.
  * Fix #3094: Switching projects clears filter values.
+ * Fix #3159: Allow case of user name to be changed. Also fixed bug where database error was displayed when trying to create user "TeSt" when user "Test" already exists.
  * Fix #3397: Delete notification should be off when deleting a project.
+ * Fix #3473: g_bug_resolved_status_threshold variable ignored.
+ * Fix #3504: project cookie not cleared at logout
+ * Fix #3567: Reminders can be added for a readonly bug.
+ * Fix #3578: Word 2000 reports "The dimensions after resizing are too small or too large." trying to open word document from Mantis 
  * Fix #3622: Tweak attachment SQL in print bug pages.
  * Fix #3629: Duplicate Error ID.
  * Fix #3641: 'Date submited' in reports is always '12-31-69'.
  * Fix #3723: No ability to edit or even delete news is associated project was deleted.
+ * Fix #3781: Fixed external URL in admin/check.php
+ * Fix #3806: Timestamp in project management page (Version management section) isn't shown as configured
+ * Fix #3824: Private bug reports and bugnotes are sent out as notifications to everyone.
+ * Fix #3826: Allow case of project name to be changed.
+ * Fix #3837: Bugs can be edited after being closed.
+ * Fix #3840: Why strip the leading spaces from Description? (applied to all multi-line fields in issue + issue notes).
+ * Fix #3851: Ability to change the view status for a group of bugs
+ * Fix #3852: OK button in View Issues page is not localised
+ * Fix #3866: URLs that include bookmark are not hyperlinked correctly.
+ * Fix #3879: Empty entry in project select field can cause bugs to be moved to non-existing project.
+ * Fix #3886: Custom HTML page title not displayed.
+ * Fix #3920: Two missing graphs in advanced summary.
+ * Fix #3923: "By Developer" and "By Reporter" graphs rewritten to reduce SQL impact.
+ * Fix #3924: Graphs did not show query counts when flag was set.
+ * Fix #3937: Custom field filters now only show those values relevant to the selected project.
+ * Fix #3951: Add Bugnote - Link.
+ * Fix #3957: IIS had issues with serialised filters in redirects.
+ * Fix #4012: Problem with Custom Fields in Report.
  * New Config: set_view_status_threshold (default REPORTER) - threshold needed to set the view status while reporting a bug / bugnote.
  * New Config: change_view_status_threshold (default UPDATER) - threshold needed to update the view status while updating a bug / bugnote.
  * New Config: view_handler_threshold (default VIEWER) - threshold needed to view the bug handler (now works for emails only).
@@ -50,11 +298,18 @@ Mantis ChangeLog
  * New Config: assign_sponsored_bugs_threshold (default MANAGER).  Access level required to be able to assign a sponsored issue to a user with access level greater or equal to 'handle_sponsored_bugs_threshold'.
  * New Config: minimum_sponsorship_amount (default 5).  Minimum sponsorship amount. If the user enters a value less than this, an error will be prompted.
  * New Config: mantis_sponsorship_table (default mantis_sponsorship_table).  Name of table containing issue sponsorship information.
+ * New Config: bug_readonly_status_threshold (default RESOLVED).  Status threshold after which the issue is considered readonly.
+ * New Config: update_readonly_bug_threshold (default MANAGER).  Status threshold after which the user is allowed to edit readonly issues.
+ * New Config: view_changelog_threshold (default VIEWER).  Status threshold after which the user is allowed to view the changelog.  The changelog will include private issues only if user has the approach access level.
+ * New Config: view_filters (default SIMPLE_DEFAULT) - Default filter view.
+ * New Config: default_home_page (default my view page): Default page after Login.
+ * New Config: my_view_bug_count (default 10): Number of bugs shown in each box.
+ * New Config: my_view_boxes: My view boxes to be shown and their order.
  * Removed config option (use_phpMailer): phpMailer has always been used
  * Removed config option (phpMailer_path): phpMailer has been included to Mantis distribution
  * Removed config option (use_x_priority): phpMailer always puts X-Priority header
  * Removed config option (hide_closed_default): Replaced by hide_status_default
- * Languages: Updated German, Polish, Czech, Danish, Estonian, Japanese (EUC and SJIS), Serbian and Spanish localisations.
+ * Languages: Updated German, Polish, Czech, Danish, Estonian, Japanese (EUC and SJIS), Serbian, Spanish, Italian, Brazilian Portuguese and Simplified Chinese localisations.
 
 2004.05.12  -  0.18.3
 

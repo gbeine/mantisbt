@@ -6,16 +6,17 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: logout_page.php,v 1.14 2004-01-11 07:16:07 vboctor Exp $
+	# $Id: logout_page.php,v 1.17 2004-05-30 01:49:31 vboctor Exp $
 	# --------------------------------------------------------
 ?>
 <?php
-	# Removes all the cookies and then redirect to the page specified in
-	#  the config option logout_redirect_page
-?>
-<?php require_once( 'core.php' ); ?>
-<?php
+	require_once( 'core.php' );
+
 	auth_logout();
+
+	if ( HTTP_AUTH == config_get( 'login_method' ) ) {
+		auth_http_set_logout_pending( true );
+	}
 
 	print_header_redirect( config_get( 'logout_redirect_page' ) );
 ?>

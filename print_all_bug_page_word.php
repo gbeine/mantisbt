@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: print_all_bug_page_word.php,v 1.45 2004-03-05 02:27:51 jlatour Exp $
+	# $Id: print_all_bug_page_word.php,v 1.52 2004-08-08 11:39:00 jlatour Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -32,21 +32,17 @@
 	$f_offset		= gpc_get_int( 'offset', 0 );
 	$f_export		= gpc_get_string( 'export' );
 	$f_show_flag	= gpc_get_bool( 'show_flag' );
-	$t_project_id 	= helper_get_current_project( );
 
 	# word or html export
 	if ( $f_type_page != 'html' ) {
 		$t_export_title = $g_page_title."_word";
 		$t_export_title = ereg_replace( '[\/:*?"<>|]', '', $t_export_title );
+
+		# Make sure that IE can download the attachments under https.
+		header( 'Pragma: public' );
+		
 		header( 'Content-Type: application/msword' );
 		header( 'Content-Disposition: attachment; filename="' . $t_export_title . '.doc"' );
-	}
-
-	$t_cookie_value = gpc_get_cookie( config_get( 'view_all_cookie' ), '' );
-
-	# check to see if new cookie is needed
-	if ( ! filter_is_cookie_valid() ) {
-		print_header_redirect( 'view_all_set.php?type=0&amp;print=1' );
 	}
 
 	# This is where we used to do the entire actual filter ourselves
@@ -92,7 +88,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
 		$bugnote_count = bug_get_bugnote_count( $v_id );
 
 		# grab the project name
-		$project_name = project_get_field( $v_project_id, 'name' );
+		$t_project_name = project_get_field( $v_project_id, 'name' );
 
 		# bug text infos
 		$query3 = "SELECT *
@@ -123,7 +119,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
 </tr>
 <tr>
 	<td class="print-spacer" colspan="6">
-		<hr size="1" />
+		<hr size="1" width="100%" />
 	</td>
 </tr>
 <tr class="print-category">
@@ -151,7 +147,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
 		<?php echo $v_id ?>
 	</td>
 	<td class="print">
-		<?php echo $v_category ?>
+		<?php echo "[$t_project_name] $v_category" ?>
 	</td>
 	<td class="print">
 		<?php echo get_enum_element( 'severity', $v_severity ) ?>
@@ -168,7 +164,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
 </tr>
 <tr>
 	<td class="print-spacer" colspan="6">
-		<hr size="1" />
+		<hr size="1" width="100%" />
 	</td>
 </tr>
 <tr class="print">
@@ -254,10 +250,18 @@ xmlns="http://www.w3.org/TR/REC-html40">
 		<?php echo get_enum_element( 'projection', $v_projection ) ?>
 	</td>
 	<td class="print-category">
-		<?php echo lang_get( 'duplicate_id' ) ?>:
+		<?php
+			if ( !config_get( 'enable_relationship' ) ) {
+				echo lang_get( 'duplicate_id' );
+			} # MASC RELATIONSHIP
+		?>&nbsp;
 	</td>
 	<td class="print">
-		<?php print_duplicate_id( $v_duplicate_id ) ?>
+		<?php
+			if ( !config_get( 'enable_relationship' ) ) {
+				print_duplicate_id( $v_duplicate_id );
+			} # MASC RELATIONSHIP
+		?>&nbsp;
 	</td>
 	<td class="print" colspan="2">&nbsp;</td>
 </tr>
@@ -271,18 +275,16 @@ xmlns="http://www.w3.org/TR/REC-html40">
 	<td class="print" colspan="4">&nbsp;</td>
 </tr>
 <?php
-$t_related_custom_field_ids = custom_field_get_linked_ids( $t_project_id );
+$t_related_custom_field_ids = custom_field_get_linked_ids( $v_project_id );
 foreach( $t_related_custom_field_ids as $t_id ) {
 	$t_def = custom_field_get_definition( $t_id );
 ?>
 <tr class="print">
 	<td class="print-category">
-		<?php echo $t_def['name'] ?>:
+		<?php echo lang_get_defaulted( $t_def['name'] ) ?>:
 	</td>
 	<td class="print" colspan="5">
-		<?php
-			echo custom_field_get_value( $t_id, $v_id );
-		?>
+		<?php print_custom_field_value( $t_def, $t_id, $v_id ); ?>
 	</td>
 </tr>
 <?php
@@ -290,7 +292,7 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 ?>
 <tr>
 	<td class="print-spacer" colspan="6">
-		<hr size="1" />
+		<hr size="1" width="100%" />
 	</td>
 </tr>
 <tr class="print">
@@ -383,10 +385,12 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 </tr>
 <?php
 	# get the bugnote data
+	$t_bugnote_order = current_user_get_pref( 'bugnote_order' );
+	
 	$query6 = "SELECT *, date_submitted
 			FROM $g_mantis_bugnote_table
 			WHERE bug_id='$v_id'
-			ORDER BY date_submitted $g_bugnote_order";
+			ORDER BY date_submitted $t_bugnote_order";
 	$result6 = db_query( $query6 );
 	$num_notes = db_num_rows( $result6 );
 ?>
@@ -429,7 +433,7 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 	?>
 <tr>
 	<td class="print-spacer" colspan="2">
-		<hr size="1" />
+		<hr size="1" width="100%" />
 	</td>
 </tr>
 <tr>

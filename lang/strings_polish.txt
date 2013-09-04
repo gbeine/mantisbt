@@ -9,11 +9,11 @@
 	# Polish: Jaroslaw Lewandowski <jotel@jotel.net>
 	# Polish: Kacper Kruszewski <kacper@netcetera.pl>
 	# -------------------------------------------------
-	# $Revision: 1.64 $
-	# $Author: vboctor $
-	# $Date: 2004-05-10 11:18:33 $
+	# $Revision: 1.73 $
+	# $Author: bigbadger $
+	# $Date: 2004-08-26 17:40:58 $
 	#
-	# $Id: strings_polish.txt,v 1.64 2004-05-10 11:18:33 vboctor Exp $
+	# $Id: strings_polish.txt,v 1.73 2004-08-26 17:40:58 bigbadger Exp $
 	###########################################################################
 ?>
 <?php
@@ -22,12 +22,15 @@ $s_charset = 'iso-8859-2';
 
 # Group commands menuitems
 $s_actiongroup_menu_move = 'Przenie¶';
+$s_actiongroup_menu_copy = 'Copy';
 $s_actiongroup_menu_assign = 'Przypisz';
 $s_actiongroup_menu_close = 'Zamknij';
 $s_actiongroup_menu_delete = 'Usuñ';
 $s_actiongroup_menu_resolve = 'Rozwi±¿';
 $s_actiongroup_menu_update_priority = 'Aktualizuj priorytet';
 $s_actiongroup_menu_update_status = 'Aktualizuj status';
+$s_actiongroup_menu_update_view_status = 'Update View Status';
+$s_actiongroup_bugs = 'Selected Issues';
 
 # new strings:
 $s_all_projects = 'Wszystkie projekty';
@@ -95,20 +98,26 @@ $s_login_link = 'Zaloguj siê';
 
 # bug_actiongroup_page.php : mass treatment
 $s_bug_actiongroup_failed = 'Nie masz wystarczaj±cych uprawnieñ by wykonaæ t± akcjê na poni¿szych Zagadnieniach: ';
+$s_bug_actiongroup_access = 'You did not have appropriate permissions to perform that action.';
+$s_bug_actiongroup_status = 'This issue cannot be changed to the requested status';
 $s_close_bugs_conf_msg = 'Czy jeste¶ pewny, ¿e chcesz Zamkn±æ te Zagadnienia?';
 $s_delete_bugs_conf_msg = 'Czy jeste¶ pewny, ¿e chesz Usun±æ te Zagadnienia?';
 $s_move_bugs_conf_msg = 'Przenie¶ Zagadnienia do';
+$s_copy_bugs_conf_msg = 'Copy issues to';
 $s_assign_bugs_conf_msg = 'Przypisz Zagadnienia do';
 $s_resolve_bugs_conf_msg = 'Wybierz rozwi±zanie Zagadnieñ';
 $s_priority_bugs_conf_msg = 'Wybierz priorytet Zagadnieñ';
 $s_status_bugs_conf_msg = 'Wybierz status Zagadnieñ';
+$s_view_status_bugs_conf_msg = 'Choose issues view status';
 $s_close_group_bugs_button = 'Zamknij Zagadnienia' ;
 $s_delete_group_bugs_button = 'Usuñ Zagadnienia' ;
 $s_move_group_bugs_button = 'Przenie¶ Zagadnienia' ;
+$s_copy_group_bugs_button = 'Copy Issues' ;
 $s_assign_group_bugs_button = 'Przypisz Zagadnienia' ;
 $s_resolve_group_bugs_button = 'Rozwi±¿ Zagadnienia' ;
 $s_priority_group_bugs_button = 'Aktualizuj Priorytet' ;
 $s_status_group_bugs_button = 'Aktualizuj Status' ;
+$s_view_status_group_bugs_button = 'Update View Status';
 
 # improved JPgraphs strings
 $s_graph_imp_status_title = 'Wykres podsumowuj±cy wg statusu' ;
@@ -160,39 +169,38 @@ $MANTIS_ERROR[ERROR_ACCESS_DENIED]      = 'B£¡D: Brak dostêpu.';
 $MANTIS_ERROR[ERROR_UPLOAD_FAILURE]     = 'B£¡D: Przesy³anie pliku nie powiod³o siê.  Mo¿liwo¶æ publikowania plików mo¿e byæ wy³±czona w PHP.  Nale¿y poprosiæ administratora, aby uruchomi³ skrypt sprawdzaj±cy konfiguracjê serwera.';
 $MANTIS_ERROR[ERROR_FILE_TOO_BIG]       = 'B£¡D: Przesy³anie pliku nie powiod³o siê.  Prawdopodobnie jest to spowodowane rozmiarem pliku przekraczaj±cym maksymalny dozwolony na tym serwerze.';
 $MANTIS_ERROR[ERROR_GPC_VAR_NOT_FOUND]  = 'B£¡D: Nie znaleziono parametru wymaganego przez t± stronê.';
-$MANTIS_ERROR[ERROR_USER_NAME_NOT_UNIQUE]= 'B£¡D: Ta nazwa u¿ytkownika jest ju¿ u¿yeana. Proszê wróciæ i wybraæ inn±.';
-$MANTIS_ERROR[ERROR_CONFIG_OPT_NOT_FOUND]='B£¡D: Nie znaleziono opcji konfiguracyjnej \'%s\'.';
-$MANTIS_ERROR[ERROR_LANG_STRING_NOT_FOUND]='B£¡D: Nie znaleziono tekstu.';
+$MANTIS_ERROR[ERROR_USER_NAME_NOT_UNIQUE] = 'That username is already being used.  Please go back and select another one.';
+$MANTIS_ERROR[ERROR_CONFIG_OPT_NOT_FOUND] = 'Configuration option \'%s\' not found.';
+$MANTIS_ERROR[ERROR_LANG_STRING_NOT_FOUND] = 'String \'%s\' not found.';
 $MANTIS_ERROR[ERROR_BUGNOTE_NOT_FOUND]  = 'B£¡D: Nie znaleziono komentarza.';
 $MANTIS_ERROR[ERROR_PROJECT_NOT_FOUND]  = 'B£¡D: Nie znaleziono projektu.';
 $MANTIS_ERROR[ERROR_DB_FIELD_NOT_FOUND] = 'B£¡D: Nie znaleziono pola \'%s\' w bazie danych.';
 $MANTIS_ERROR[ERROR_FTP_CONNECT_ERROR]	= 'B£¡D: Nie mo¿na nawi±zaæ po³±czenia z serwerem FTP.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_NOT_UNIQUE] = 'B£¡D: Projekt o tej nazwie ju¿ istnieje.  Proszê wróciæ i podaæ inn± nazwê.';
-$MANTIS_ERROR[ERROR_PROJECT_NAME_INVALID]='B£¡D: B³êdna nazwa projektu. Nazwa projektu nie mo¿e byæ pusta.';
+$MANTIS_ERROR[ERROR_PROJECT_NAME_INVALID] = 'Invalid project name specified.  Project names cannot be blank.';
 $MANTIS_ERROR[ERROR_USER_NOT_FOUND]	= 'B£¡D: Nie znaleziono u¿ytkownika.';
-$MANTIS_ERROR[ERROR_AUTH_INVALID_COOKIE]= 'B£¡D: Informacje logowania przechowywane w twojej przegl±darce s± nieprawid³owe.  Czy twoje konto nie zosta³o skasowane?';
-$MANTIS_ERROR[ERROR_USER_PREFS_NOT_FOUND]='B£¡D: Nie znaleziono ustawieñ dla tego u¿ytkownika.';
+$MANTIS_ERROR[ERROR_AUTH_INVALID_COOKIE] = 'The login information stored by your browser is invalid.  Perhaps your account was deleted?';
+$MANTIS_ERROR[ERROR_USER_PREFS_NOT_FOUND] = 'Preferences could not be found for this user.';
 $MANTIS_ERROR[ERROR_NEWS_NOT_FOUND]	= 'B£¡D: Nie znaleziono wiadomo¶ci.';
-$MANTIS_ERROR[ERROR_USER_CREATE_PASSWORD_MISMATCH]='B£¡D: Has³o i potwierdzenie nie zgadzaj± siê.';
+$MANTIS_ERROR[ERROR_USER_CREATE_PASSWORD_MISMATCH] = 'Password does not match verification.';
 $MANTIS_ERROR[ERROR_GPC_ARRAY_EXPECTED]	= 'B£¡D: Ci±g zamiast tablicy.';
-$MANTIS_ERROR[ERROR_GPC_ARRAY_UNEXPECTED]='B£¡D: Tablica zamiast ci±gu.';
+$MANTIS_ERROR[ERROR_GPC_ARRAY_UNEXPECTED] = 'A string was expected but an array was received.';
 $MANTIS_ERROR[ERROR_BUG_NOT_FOUND]	= 'B£¡D: Nie znaleziono Zagadnienia.';
 $MANTIS_ERROR[ERROR_EMAIL_INVALID]	= 'B£¡D: Nieprawid³owy email.';
-$MANTIS_ERROR[ERROR_USER_PROFILE_NOT_FOUND]= 'B£¡D: Nie znaleziono profilu.';
+$MANTIS_ERROR[ERROR_USER_PROFILE_NOT_FOUND] = 'Profile not found.';
 $MANTIS_ERROR[ERROR_FILE_NOT_ALLOWED]	= 'B£¡D: Pliki tego typu nie mog± byæ przesy³ane.';
 $MANTIS_ERROR[ERROR_FILE_DUPLICATE]	= 'B£¡D: Plik o tej nazwie ju¿ istnieje, proszê usun± najpierw plik oryginalny.';
 $MANTIS_ERROR[ERROR_FILE_INVALID_UPLOAD_PATH] = 'B£¡D: B³êdny katalog na pliki.  Katalog nie istnieje lub serwer www nie ma uprawnieñ by do niego zapisywaæ';
 $MANTIS_ERROR[ERROR_BUG_DUPLICATE_SELF]	= 'B£¡D: Nie mo¿na wskazaæ jako duplikat Zagadnienia tego samego Zagadnienia.';
-$MANTIS_ERROR[ERROR_CUSTOM_FIELD_NOT_FOUND]= 'B£¡D: Pole dodatkowe nie znalezione';
-$MANTIS_ERROR[ERROR_CUSTOM_FIELD_NAME_NOT_UNIQUE]= 'B£¡D: Ta nazwa ju¿ istnieje.';
-$MANTIS_ERROR[ERROR_CUSTOM_FIELD_IN_USE]= 'B£¡D: Przynajmniej jeden projekt korysta z tego pola.';
+$MANTIS_ERROR[ERROR_CUSTOM_FIELD_NOT_FOUND] = 'Custom field not found';
+$MANTIS_ERROR[ERROR_CUSTOM_FIELD_NAME_NOT_UNIQUE] = 'This is a duplicate name.';
+$MANTIS_ERROR[ERROR_CUSTOM_FIELD_IN_USE] = 'At least one project still uses this field.';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_INVALID_VALUE] = 'B£¡D: B³êdna warto¶æ dla pola';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_INVALID_DEFINITION] = 'B³êdna definicja pola dodatkowego';
 $MANTIS_ERROR[ERROR_LDAP_AUTH_FAILED]	= 'B£¡D: Autentykacja LDAP nie powiod³a siê.';
-$MANTIS_ERROR[ERROR_LDAP_SERVER_CONNECT_FAILED]= 'B£¡D: Nie mo¿na nawi±zaæ po³±czenia z serwerm LDAP.';
+$MANTIS_ERROR[ERROR_LDAP_SERVER_CONNECT_FAILED] = 'LDAP Server Connection Failed';
 $MANTIS_ERROR[ERROR_LDAP_UPDATE_FAILED]	= 'B£¡D: Nie uda³o siê uaktualniæ rekordu LDAP .';
-$MANTIS_ERROR[ERROR_LDAP_USER_NOT_FOUND]= 'B£¡D: U¿ytkownik LDAP nie zosta³ znaleziony.';
-$MANTIS_ERROR[ERROR_BUG_RESOLVED_ACTION_DENIED]= 'B£¡D: Akcja nie mo¿e byæ wkonana, poniewa¿ Zagadnienie zosta³o ju¿ Rozwi±zane';
+$MANTIS_ERROR[ERROR_LDAP_USER_NOT_FOUND] = 'LDAP User Record Not Found.';
 $MANTIS_ERROR[ERROR_DB_CONNECT_FAILED]	= 'B£¡D: B³±d po³±czenia z baz± danych: #%d: %s';
 $MANTIS_ERROR[ERROR_DB_QUERY_FAILED]	= 'B£¡D: B³±d bazy danych #%d: %s dla zapytania %s.';
 $MANTIS_ERROR[ERROR_DB_SELECT_FAILED]	= 'B£¡D: B³±d bazy danych: #%d: %s';
@@ -203,7 +211,27 @@ $MANTIS_ERROR[ERROR_VERSION_DUPLICATE] = 'B£¡D: Podana wersja ju¿ istnieje.';
 $MANTIS_ERROR[ERROR_VERSION_NOT_FOUND]  = 'B£¡D: Nie znaleziono wersji.';
 $MANTIS_ERROR[ERROR_USER_NAME_INVALID]  = 'B£¡D: Nieprawid³owa nazwa u¿ytkownika.';
 $MANTIS_ERROR[ERROR_USER_DOES_NOT_HAVE_REQ_ACCESS] = 'B£¡D: U¿ytkownik nie posiada wymaganego poziomu dostêpu';
+$MANTIS_ERROR[ERROR_USER_REAL_MATCH_USER] = 'The "Real Name" chosen matches another user\'s login name. Please choose another.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_NOT_ENABLED] = 'Sponsorship support not enabled.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_NOT_FOUND] = 'Sponsorship %d not found.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_AMOUNT_TOO_LOW] = 'Sponsorship (%s) is below minimum amount (%s).';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_HANDLER_ACCESS_LEVEL_TOO_LOW] = 'Handler does not have the required access level to handle sponsored issues.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_ASSIGNER_ACCESS_LEVEL_TOO_LOW] = 'Access Denied: Assigning sponsored issues requires higher access level.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_SPONSOR_NO_EMAIL] = 'Sponsor has not provided an email address. Please update your profile.';
+$MANTIS_ERROR[ERROR_CONFIG_OPT_INVALID] = 'Configuration option \'%s\' has invalid value \'%s\'';
+$MANTIS_ERROR[ERROR_BUG_READ_ONLY_ACTION_DENIED] = 'The action cannot be performed because issue \'%d\' is read-only';
+$MANTIS_ERROR[ERROR_RELATIONSHIP_ALREADY_EXISTS] = "ERROR: There is already a relationship between these two issues.";
+$MANTIS_ERROR[ERROR_RELATIONSHIP_NOT_FOUND] = "ERROR: Relationship not found.";
+$MANTIS_ERROR[ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_BUG_TOO_LOW] = "Access denied: The issue %d requires higher access level.";
+$MANTIS_ERROR[ERROR_RELATIONSHIP_SAME_BUG] = "An issue can't be related to itself.";
+$MANTIS_ERROR[ERROR_SIGNUP_NOT_MATCHING_CAPTCHA] = 'Confirmation hash does not match. Please retry.';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_ENABLED] = 'The \'lost your password\' feature is not available.';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_NO_EMAIL_SPECIFIED] = 'You must provide an e-mail address in order to reset the password';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_MATCHING_DATA] = 'The provided information doesn\'t match any registered account!';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_CONFIRM_HASH_INVALID] = 'The confirmation URL is invalid or has already been used. Please signup again.';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_MAX_IN_PROGRESS_ATTEMPTS_REACHED] = 'Max. number of in-progress requests reached. Please contact the system administrator';
 
+#$s_login_error = 'Your account may be disabled or blocked (due to too many failed login attempts) or the username/password you entered is incorrect.';
 $s_login_error = 'B£¡D: Twoje konto mo¿e byæ wy³±czone lub nazwa u¿ytkownika/has³o nie s± poprawne.';
 $s_login_cookies_disabled = 'B£¡D: Twoja przegl±darka nie obs³uguje cookies lub ich obs³uga zosta³a wy³±czona.';
 
@@ -234,17 +262,18 @@ $s_projection_enum_string         = '10:brak,30:poprawka,50:wiêksza poprawka,70:
 $s_eta_enum_string                = '10:¿aden,20:< 1 dzieñ,30:2-3 dni,40:< 1 tydzieñ,50:< 1 miesi±c,60:> 1 miesi±c';
 
 # Email Strings
-$s_new_account_subject = 'Twoje nowe konto';
-$s_new_account_greeting = 'Witamy w programie wspieraj±cym rozwi±zywanie i dyskutowanie na temat Zagadnieñ. Oto informacja potrzebna do zalogowania siê' . "\n\n";
-$s_new_account_url = 'Tutaj mo¿esz siê zalogowaæ: ';
+$s_new_account_subject = 'Account registration';
+$s_new_account_greeting = 'Thank you for registering. You have account with username \'';
+$s_new_account_greeting2 = '\'. In order to complete your registration, visit the following URL (make sure it is entered as the single line) and set your own access password:';
 $s_new_account_username = 'Nazwa u¿ytkownika: ';
-$s_new_account_password = 'Has³o: ';
-$s_new_account_message = 'Po zalogowaniu siê, prosimy o zmianê swojego has³a. Pamiêtaj, tylko Ty znasz swoje has³o!  Administrator nie mo¿e odzyskaæ twojego has³a. Je¶li zapomnisz has³a, musi byæ przypisane nowe has³o.' . "\n\n";
-$s_new_account_do_not_reply = 'Nie wysy³aj odpowiedzi na ten list.' . "\n";
+$s_new_account_message = 'If you didn\'t request any registraion, ignore this message and nothing will happen.' . "\n\n";
+$s_new_account_do_not_reply = 'DO NOT REPLY TO THIS MESSAGE';
+$s_new_account_email = 'E-mail: ';
+$s_new_account_IP = 'Remote IP address: ';
+$s_new_account_signup_msg = 'The following account has been created:';
 
-$s_reset_request_msg = 'To jest odpowied¼ na Twoj± pro¶bê o nowe has³o.';
-$s_account_name_msg = 'Twoje konto to ';
-$s_news_password_msg = 'To jest twoje nowe has³o';
+$s_reset_request_msg = 'Someone (presumably you) requested a password change through email verification. If this was not you, ignore this message and nothing will happen.' . "\n\n" . 'If you requested this verification, visit the following URL to change your password:';
+$s_reset_request_in_progress_msg = 'If you supplied the correct username and email address for your account, we will now have sent a confirmation message to that email address. Once the message has been received, follow the instructions provided to change the password on your account.';
 
 $s_email_notification_title_for_status_bug_feedback = 'Nastêpuj±ce Zagadnienie zosta³o ZWRÓCONE.';
 $s_email_notification_title_for_status_bug_acknowledged = 'Nastêpuj±ce Zagadnienie zosta³o UZNANE.';
@@ -257,8 +286,16 @@ $s_email_notification_title_for_action_bug_submitted = 'Nastêpuj±ce Zagadnienie 
 $s_email_notification_title_for_action_bug_assigned = 'Nastêpuj±ce Zagadnienie zosta³o PRZYPISANE.';
 $s_email_notification_title_for_action_bug_reopened = 'Nastêpuj±ce Zagadnienie zosta³o PONOWNIE OTWARTE.';
 $s_email_notification_title_for_action_bug_deleted = 'Nastêpuj±ce Zagadnienie zosta³o SKASOWANE.';
+$s_email_notification_title_for_action_bug_updated = 'The following issue has been UPDATED.';
+$s_email_notification_title_for_action_sponsorship_added = 'The following issue has been SPONSORED.';
+$s_email_notification_title_for_action_sponsorship_updated = 'A sponsorship of the following issue was modified.';
+$s_email_notification_title_for_action_sponsorship_deleted = 'A sponsorship of the following issue was withdrawn.';
 
 $s_email_notification_title_for_action_bugnote_submitted = 'Do nastêpuj±cego Zagadnienia DODANO KOMENTARZ.';
+$s_email_notification_title_for_action_relationship_added = "A new RELATIONSHIP has been added to the following issue.";
+$s_email_notification_title_for_action_relationship_deleted = "A RELATIONSHIP has been deleted from the following issue.";
+$s_email_notification_title_for_action_relationship_child_resolved = "A RELATED issue has been RESOLVED.";
+$s_email_notification_title_for_action_relationship_child_closed = "A RELATED issue has been CLOSED.";
 
 $s_email_reporter = 'Zg³aszaj±cy';
 $s_email_handler = 'Operator';
@@ -271,6 +308,7 @@ $s_email_priority = 'Priorytet';
 $s_email_status = 'Status';
 $s_email_resolution = 'Rozwi±zanie';
 $s_email_duplicate = 'Duplikat Zagadnienia';
+$s_email_fixed_in_version = 'Fixed in Version';
 $s_email_date_submitted = 'Data zg³oszenia';
 $s_email_last_modified = 'Data modyfikacji';
 $s_email_summary =  'Podsumowanie';
@@ -289,6 +327,7 @@ $s_manage_profiles_link = 'Profile';
 $s_change_preferences_link = 'Preferencje';
 $s_edit_account_title = 'Edytycja konta';
 $s_username = 'Nazwa u¿ytkownika';
+$s_realname = 'Real Name';
 $s_email = 'Email';
 $s_password = 'Has³o';
 $s_confirm_password  = 'Potwierd¼ has³o';
@@ -304,6 +343,9 @@ $s_advanced_update = 'Aktualizacja zaawansowana';
 $s_refresh_delay = 'Opóznienie od¶wie¿ania';
 $s_redirect_delay = 'Opóznienie przekierowania';
 $s_with_minimum_severity = 'Z minimaln± wa¿no¶ci± ';
+$s_bugnote_order = 'Bugnotes Sort Order';
+$s_bugnote_order_asc = 'Ascending';
+$s_bugnote_order_desc = 'Descending';
 $s_email_on_new = 'List gdy NOWE';
 $s_email_on_assigned = 'List gdy PRZYPISANE';
 $s_email_on_feedback = 'List gdy ZWRÓCONE';
@@ -313,6 +355,7 @@ $s_email_on_reopened = 'List gdy PONOWNIE OTWARTE';
 $s_email_on_bugnote_added = 'List gdy DODANO KOMENTARZ';
 $s_email_on_status_change = 'List gdy ZMIENIONO STATUS';
 $s_email_on_priority_change = 'List gdy ZMIENIONO PRIORYTET';
+$s_email_bugnote_limit = 'Email Bugnotes Limit';
 $s_language = 'Jêzyk';
 $s_update_prefs_button = 'Aktualizuj';
 $s_reset_prefs_button = 'Przywróæ ustawienia';
@@ -355,17 +398,31 @@ $s_profile_updated_msg = 'Profil zosta³ zaktualizowany...';
 # account_update.php
 $s_account_updated_msg = 'Twoje konto zosta³o zaktualizowane...';
 $s_email_updated = 'Adres email zosta³ zaktualizowany';
+$s_realname_duplicated = 'Real name is used by another user';
+$s_realname_updated = 'Real name successfully updated';
 $s_password_updated = 'Has³o zosta³o zaktualizowane';
 
 # bug_assign.php
 $s_bug_assign_msg       = 'Zagadnienie zosta³o pomy¶lnie przypisane...';
+
+# bug_change_status_page.php
+$s_new_bug_title = 'New Issue';
+$s_feedback_bug_title = 'Provide Feedback to Issue';
+$s_acknowledged_bug_title = 'Acknowledge Issue';
+$s_confirmed_bug_title = 'Confirm Issue';
+$s_assigned_bug_title = 'Assign Issue';
+$s_new_bug_button = 'New Issue';
+$s_feedback_bug_button = 'Provide Feedback';
+$s_acknowledged_bug_button = 'Acknowledge Issue';
+$s_confirmed_bug_button = 'Confirm Issue';
+$s_assigned_bug_button = 'Assign Issue';
 
 # bug_close.php
 $s_bug_close_msg       = 'Zagadnienie zosta³o zamkniête...';
 $s_close_immediately   = 'Zamknij natychmiast:';
 
 # bug_close_page.php
-$s_close_bug_title = 'Zamykanie Zagadnienia';
+$s_closed_bug_title = 'Zamykanie Zagadnienia';
 
 # bug_delete.php
 $s_bug_deleted_msg = 'Zagadnienie zosta³o usuniête...';
@@ -393,8 +450,8 @@ $s_reopen_add_bugnote_title = 'Dodaj komentarz z wyja¶nieniem powodu, dla któreg
 $s_bugnote_add_reopen_button = 'Dodaj komentarz i ponownie otwórz Zagadnienie';
 
 # bug_resolve_page.php
-$s_resolve_bug_title = 'Rozwi±zanie Zagadnienia';
-$s_resolve_bug_button = 'Rozwi±¿ Zagadnienie';
+$s_resolved_bug_title = 'Rozwi±zanie Zagadnienia';
+$s_resolved_bug_button = 'Rozwi±¿ Zagadnienie';
 
 # bug_resolve_page2.php
 $s_bug_resolved_msg = 'Zagadnienie zosta³o rozwi±zane. Poni¿ej wprowad¼ komentarz...';
@@ -436,12 +493,11 @@ $s_os_version = 'Wersja systemu';
 $s_eta = 'Szacowany termin rozwi±zania';
 $s_product_version = 'Wersja produktu';
 $s_build = 'Kompilacja';
+$s_fixed_in_version = 'Fixed in Version';
 $s_votes = 'G³osy';
 $s_summary = 'Podsumowanie';
 $s_description = 'Opis';
 $s_steps_to_reproduce = 'Kroki, by powtórzyæ';
-$s_additional = 'Dodatkowe';
-$s_information = 'Informacja';
 $s_update_information_button = 'Aktualizuj informacjê';
 
 # bug_update_page.php
@@ -467,7 +523,7 @@ $s_delete_link = 'Usuñ';
 $s_add_bugnote_title = 'Dodawanie komentarza';
 $s_add_bugnote_button = 'Dodaj komentarz';
 $s_bugnote_edit_link = 'Edytuj';
-$s_close_bug_button = 'Zamknij Zagadnienie';
+$s_closed_bug_button = 'Zamknij Zagadnienie';
 
 # bugnote_update.php
 $s_bugnote_updated_msg = 'Komentarz zosta³ pomy¶lnie zaktualizowany...';
@@ -479,12 +535,14 @@ $s_click_to_login = 'Kilknij tutaj, aby siê zalogowaæ';
 # login.php
 
 # login_page.php
+#@@@ should the following string be related to $g_window_title?
 $s_login_page_info = 'Witaj w programie do zarz±dzania i rozwi±zywania Zagadnieñ.';
 $s_login_title = 'Logowanie';
 $s_save_login = 'Zapamiêtaj has³o';
 $s_choose_project = 'Wybierz projekt';
 $s_login_button = 'Zaloguj siê';
 $s_signup_link = 'Za³ó¿ nowe konto';
+$s_lost_password_link = 'Lost your password?';
 
 # login_select_proj_page.php
 $s_select_project_button = 'Wybierz projekt';
@@ -493,6 +551,12 @@ $s_select_project_button = 'Wybierz projekt';
 $s_logged_out_title = 'Wylogowany...';
 $s_redirecting = '...Przekierowujê';
 $s_here = 'Tutaj';
+# lost_pwd_page.php
+$s_lost_password_title = "Password Reset";
+$s_lost_password_done_title = "Password Message Sent";
+$s_lost_password_subject = "Password Reset";
+$s_lost_password_info = "To reinstate your lost password, please supply the name and email address for the account.<br/><br/>If the data corresponds to a valid account, you will be sent a special URL via email that contains a validation code for your account. Please follow this link to change your password.";
+$s_lost_password_confirm_hash_OK = "Your confirmation has been accepted. Please update your password.";
 
 # main_page.php
 $s_open_and_assigned_to_me = 'Otwarte i przypisane do mnie';
@@ -602,6 +666,7 @@ $s_delete_version_button = 'Usuñ wersjê';
 # manage_proj_version_edit_page.php
 $s_edit_project_version_title = 'Edycja wersji projektu';
 $s_update_version_button = 'Aktualizuj wersjê';
+$s_released = 'Released';
 
 # manage_proj_version_update.php
 $s_version_updated_msg = 'Wersja zosta³a pomy¶lnie zaktualizowana...';
@@ -622,13 +687,13 @@ $s_confirm_account_pruning = 'Czy jeste¶ pewien, ¿e chcesz usun±æ stare konta na
 $s_edit_user_title = 'Edycja U¿ytkownika';
 $s_reset_password_button = 'Nowe has³o';
 $s_delete_user_button = 'Usuñ U¿ytkownika';
-$s_reset_password_msg = 'Operacja \'Nowe has³o\' ustawia losowo wygenerowane has³o';
+$s_reset_password_msg = 'Reset Password sends the confirmation URL via email.';
 $s_reset_password_msg2 = 'Po operacji \'Nowe has³o\' u¿ytkownik nie bêdzie musia³ podawaæ has³a przy logowaniu.';
 $s_show_all_users = 'WSZYSCY';
 
 # manage_user_reset.php
 $s_account_reset_protected_msg = 'Konto jest zabezpieczone. Nie mo¿na przypisaæ nowego has³a.';
-$s_account_reset_msg = 'Nowe has³o zosta³o przypisane...';
+$s_account_reset_msg = 'Confirmation message has been sent to your email address...';
 $s_account_reset_msg2 = 'Konto nie wymaga podawania has³a...';
 
 # manage_user_update.php
@@ -639,6 +704,7 @@ $s_manage_user_updated_msg = 'Konto zosta³o zaktualizowane...';
 $s_main_link = 'G³ówna';
 $s_view_bugs_link = 'Zobacz';
 $s_report_bug_link = 'Dodaj';
+$s_changelog_link = 'Change Log';
 $s_summary_link = 'Statystyki';
 $s_account_link = 'Twoje konto';
 $s_users_link = 'U¿ytkownicy';
@@ -646,8 +712,17 @@ $s_manage_link = 'Zarz±dzanie';
 $s_edit_news_link = 'Wiadomo¶ci';
 $s_docs_link = 'Dokumentacja';
 $s_logout_link = 'Wyloguj';
+$s_my_view_link = 'My View';
 
 # meta_inc.php
+
+# my_view_page.php
+$s_my_view_title_unassigned = 'Unassigned';
+$s_my_view_title_recent_mod = 'Recently Modified';
+$s_my_view_title_reported = 'Reported by Me';
+$s_my_view_title_assigned = 'Assigned to Me (Unresolved)';
+$s_my_view_title_resolved = 'Resolved';
+$s_my_view_title_monitored = 'Monitored by Me';
 
 # news_add.php
 $s_news_added_msg = 'Nowa wiadomo¶æ zosta³a dodana...';
@@ -756,15 +831,13 @@ $s_selected_project = 'Wybrany projekt';
 $s_valid_project_msg = 'Musisz wybraæ prawid³owy projekt';
 
 # signup.php
-$s_invalid_email = 'NIE JEST PRAWID£OWYM ADRESEM EMAIL';
-$s_duplicate_username = 'JU¯ ISTNIEJE.  WYBIERZ INN¡ NAZWÊ U¯YTKOWNIKA';
-$s_account_create_fail = 'STWORZENIE KONTA NIE POWIOD£O SIÊ';
-$s_account_added = 'Konto zosta³o pomy¶lnie dodane.';
-$s_password_emailed_msg = 'Twoje has³o zostanie wys³ane na podany adres email.';
-$s_no_reponse_msg = 'Je¿eli nie zalogujesz siê w przeci±gu tygodnia, twoje konto mo¿e zostaæ skasowane.';
+$s_signup_done_title = 'Account registration processed';
+$s_password_emailed_msg = 'Congratulations. You have registered successfully. You are now being sent a confirmation email to verify your email address. Visiting the link sent to you in this email will activate your account.';
+$s_no_reponse_msg = 'You will have seven days to complete the account confirmation process; if you fail to complete account confirmation within seven days, this newly-registered account may be purged.';
 
 # signup_page.php
-$s_signup_info = 'Wybierz nazwê u¿ytkownika i podaj prawid³owy adres email. Losowo wygenerowane has³o zostanie wys³ane na podany adres email.';
+$s_signup_captcha_request = 'Enter the code as it is shown in the box on the right';
+$s_signup_info = 'On completion of this form and verification of your answers, you will be sent a confirmation email to the email address you specified.<br/>Using the confirmation email, you will be able activate your account. If you fail to activate your account within seven days, it will be purged.<br/>You must specify a valid email address in order to receive the account confirmation email.';
 $s_signup_title = 'Zapisywanie siê';
 $s_signup_button = 'Zapisz siê';
 
@@ -831,6 +904,8 @@ $s_yes = 'Tak';
 $s_no = 'Nie';
 $s_open_filters = 'Zmieñ filtr';
 $s_or_unassigned = 'lub nieprzypisane';
+$s_ok = 'OK';
+$s_select_all = 'Select All';
 
 # stored query strings
 $s_use_query = 'U¿yj filtru';
@@ -853,7 +928,9 @@ $s_product_build = 'Kompilacja produktu';
 $s_system_profile = 'Opis systemu';
 $s_update_bug_button = 'Aktualizuj Zagadnienie';
 $s_bug_assign_to_button = 'Przypisz do:';
+$s_bug_status_to_button = 'Change Status To:';
 $s_reopen_bug_button = 'Otwórz Ponownie Zagadnienie';
+$s_move_bug_button = 'Move Issue';
 $s_attached_files = 'Do³±czone Pliki';
 $s_publish = 'Opublikuj';
 $s_cached = 'Przechowywany';
@@ -868,6 +945,13 @@ $s_viewing_bug_simple_details_title = 'Widok prosty';
 $s_no_users_monitoring_bug = '.¯aden u¿ytkownik nie monitoruje tego Zagadnienia.';
 $s_users_monitoring_bug = 'U¿ytkownicy monitoruj±cy to Zagadnienie';
 $s_monitoring_user_list = 'Lista u¿ytkowników';
+
+# bug_sponsorship_list_view_inc.php
+$s_no_users_sponsoring_bug = 'There are no users sponsoring this issue.';
+$s_users_sponsoring_bug = 'Users sponsoring this issue';
+$s_sponsors_list = 'Sponsors List';
+$s_total_sponsorship_amount = 'Total Sponsorship = %s';
+$s_sponsor_issue = 'Sponsor Issue';
 
 # custom field strings
 $s_add_custom_field_button = 'Nowe \'Dodatkowe pole\'';
@@ -889,8 +973,17 @@ $s_custom_field_access_level_rw = 'Prawo zapisu';
 $s_custom_field_length_min = 'Min. d³ugo¶æ';
 $s_custom_field_length_max = 'Maks. d³ugo¶æ';
 $s_custom_field_advanced = 'Zaawansowane';
+$s_custom_field_display_report = 'Display When Reporting Issues';
+$s_custom_field_display_update = 'Display When Updating Issues';
+$s_custom_field_display_resolved = 'Display When Resolving Issues';
+$s_custom_field_display_closed = 'Display When Closing Issues';
+$s_custom_field_require_report = 'Required On Report';
+$s_custom_field_require_update = 'Required On Update';
+$s_custom_field_require_resolved = 'Required On Resolve';
+$s_custom_field_require_closed = 'Required On Close';
+
 $s_custom_field_sequence = 'Sekwencja';
-$s_custom_field_type_enum_string = '0:£añcuch znaków,1:Liczba ca³kowita,2:Liczba zmiennoprzecinkowa,3:Wyliczenie,4:Email';
+$s_custom_field_type_enum_string = '0:£añcuch znaków,1:Liczba ca³kowita,2:Liczba zmiennoprzecinkowa,3:Wyliczenie,4:Email,5:Checkbox,6:List,7:Multiselection list';
 
 $s_confirm_used_custom_field_deletion = 'To pole jest aktualnie po³±czone z co najmniej jednym projektem.  Je¿eli je usuniesz, wszystkie warto¶ci zostan± skasowane. Nie bêdzie te¿ mo¿liwo¶ci odzyskania danych.  Je¿eli nie chcesz usun±æ tego pola, kliknij Wstecz w przegl±darce.  By kontynuowaæ, kliknij przycik poni¿ej';
 $s_confirm_custom_field_deletion = 'Czy jeste¶ pewien, ¿e chcesz usun±æ to dodatkowe pole i wszystkie powi±zane z nim wartoci?';
@@ -901,10 +994,49 @@ $s_filter_closed = "Zamkniête";
 $s_filter_resolved = "Rozwi±zane";
 $s_hide_closed = "Ukryj Zamkniête";
 $s_hide_resolved = "Ukryj Rozwi±zane";
+$s_and_above = 'And Above';
+$s_advanced_filters = 'Advanced Filters';
+$s_simple_filters = 'Simple Filters';
+$s_monitored_by = 'Monitored By';
 
 $s_attachments = "za³±cznik (-i)";
 $s_attachment_alt = "A";
 
 # PHPMailer
 $s_phpmailer_language = 'en';
+
+# Sponsorship Strings
+$s_sponsors = '%d sponsor(s)';
+$s_sponsorship_added = 'Sponsorship Added';
+$s_sponsorship_updated = 'Sponsorship Updated';
+$s_sponsorship_deleted = 'Sponsorship Deleted';
+$s_sponsorship_more_info = 'More information about sponsorship';
+
+# URL explaining the process of sponsoring an issue.  This is defined here rather than
+# in the config to allow for a URL per language.  This can be set to an empty string if there
+# is not need to provide such process information.
+$s_sponsorship_process_url = '';
+
+# Changelog
+$s_changelog = 'Change Log';
+
+# Http auth
+$s_http_auth_realm = "Mantis Login";
+
+$s_bug = "issue";
+$s_add_new_relationship = "New relationship";
+$s_add_new_relationship_button = "Add";
+$s_this_bug = "Current issue";
+$s_relationship_added = "Relationship added";
+$s_relationship_deleted = "Relationship deleted";
+$s_delete_relationship_button = "Delete";
+$s_delete_relationship_sure_msg = "Are you sure you wish to delete this relationship?";
+$s_relationship_warning_blocking_bugs_not_resolved = "Not all the children of this issue are yet resolved or closed.";
+$s_relationship_warning_blocking_bugs_not_resolved_2 = "<b>ATTENTION</b>. Not all the children of this issue are yet resolved or closed.<br>Before <b>resolving/closing</b> a parent issue, all the issues related as child with this one should be resolved or closed.";
+$s_create_child_bug_button = "Create Child";
+$s_bug_cloned_to = "Issue cloned";
+$s_bug_created_from = "Issue generated from";
+
+# Source Control Integration
+$s_checkin = 'Checkin';
 ?>

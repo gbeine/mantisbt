@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_update_page.php,v 1.67 2004-04-12 21:04:35 jlatour Exp $
+	# $Id: bug_update_page.php,v 1.81 2004-08-27 00:29:54 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -14,9 +14,9 @@
 ?>
 <?php
 	require_once( 'core.php' );
-	
+
 	$t_core_path = config_get( 'core_path' );
-	
+
 	require_once( $t_core_path.'bug_api.php' );
 	require_once( $t_core_path.'custom_field_api.php' );
 	require_once( $t_core_path.'date_api.php' );
@@ -28,11 +28,16 @@
 		print_header_redirect ( 'bug_update_advanced_page.php?bug_id=' . $f_bug_id );
 	}
 
+	if ( bug_is_readonly( $f_bug_id ) ) {
+		error_parameters( $f_bug_id );
+		trigger_error( ERROR_BUG_READ_ONLY_ACTION_DENIED, ERROR );
+	}
+
 	access_ensure_bug_level( config_get( 'update_bug_threshold' ), $f_bug_id );
 
 	$t_bug = bug_prepare_edit( bug_get( $f_bug_id, true ) );
 ?>
-<?php html_page_top1() ?>
+<?php html_page_top1( bug_format_summary( $f_bug_id, SUMMARY_CAPTION ) ) ?>
 <?php html_page_top2() ?>
 
 <br />
@@ -44,6 +49,7 @@
 <tr>
 	<td class="form-title" colspan="3">
 		<input type="hidden" name="bug_id"			value="<?php echo $f_bug_id ?>" />
+		<input type="hidden" name="update_mode"			value="1" />
 		<?php echo lang_get( 'updating_bug_simple_title' ) ?>
 	</td>
 	<td class="right" colspan="3">
@@ -81,7 +87,7 @@
 
 
 <tr <?php echo helper_alternate_class() ?>>
-	
+
 	<!-- Bug ID -->
 	<td>
 		<?php echo bug_format_id( $f_bug_id ) ?>
@@ -213,36 +219,57 @@
 		<?php echo lang_get( 'status' ) ?>
 	</td>
 	<td bgcolor="<?php echo get_status_color( $t_bug->status ) ?>">
-		<select name="status">
-			<?php print_enum_string_option_list( 'status', $t_bug->status ) ?>
-		</select>
+		<?php print_status_option_list( 'status', $t_bug->status ) ?>
 	</td>
 
-	<!-- Duplicate ID -->
-	<td class="category">
-		<?php echo lang_get( 'duplicate_id' ) ?>
-	</td>
-	<td>
-		<input type="text" name="duplicate_id" value="<?php echo $t_bug->duplicate_id ?>" maxlength="7" />
-	</td>
+	<?php
+		# Duplicate Id
 
-	<!-- spacer -->
-	<td colspan="2">&nbsp;</td>
-
-</tr>
-
-
-<tr <?php echo helper_alternate_class() ?>>
+		# MASC RELATIONSHIP
+		if ( OFF == config_get( 'enable_relationship' ) ) {
+			# Duplicate ID
+			echo '<td class="category">', lang_get( 'duplicate_id' ), '&nbsp;</td>';
+			echo '<td>';
+			echo '<input type="text" name="duplicate_id" value="', $t_bug->duplicate_id, '" maxlength="7" />&nbsp;';
+			echo '</td>';
+		} else {
+			# spacer
+			echo '<td colspan="2">&nbsp;</td>';
+		}
+	?>
+<?php
+	$t_show_version = ( ON == config_get( 'show_product_version' ) ) 
+			|| ( ( AUTO == config_get( 'show_product_version' ) ) 
+						&& ( count( version_get_all_rows( $t_bug->project_id ) ) > 0 ) );
+	if ( $t_show_version ) { 
+?>
 	<!-- Product Version -->
 	<td class="category">
 		<?php echo lang_get( 'product_version' ) ?>
 	</td>
-	<td colspan="5">
+	<td>
 		<select name="version">
-			<?php print_version_option_list( $t_bug->version, $t_bug->project_id ) ?>
+			<?php print_version_option_list( $t_bug->version, $t_bug->project_id, VERSION_RELEASED ) ?>
 		</select>
 	</td>
 </tr>
+
+<?php
+	}
+?>
+<?php /*
+<tr <?php echo helper_alternate_class() ?>>
+	<!-- Fixed in Version -->
+	<td class="category">
+		<?php echo lang_get( 'fixed_in_version' ) ?>
+	</td>
+	<td colspan="5">
+		<select name="fixed_in_version">
+			<?php print_version_option_list( $t_bug->fixed_in_version, $t_bug->project_id, VERSION_ALL ) ?>
+		</select>
+	</td>
+</tr>
+*/ ?>
 
 <!-- spacer -->
 <tr>
@@ -294,12 +321,12 @@
 	$t_related_custom_field_ids = custom_field_get_linked_ids( $t_bug->project_id );
 	foreach( $t_related_custom_field_ids as $t_id ) {
 		$t_def = custom_field_get_definition( $t_id );
-		if( !$t_def['advanced'] && custom_field_has_write_access( $t_id, $f_bug_id ) ) {
+		if( ( ( $t_def['display_update'] && !$t_def['advanced'] ) || $t_def['require_update']) && custom_field_has_write_access( $t_id, $f_bug_id ) ) {
 			$t_custom_fields_found = true;
 ?>
 <tr <?php echo helper_alternate_class() ?>>
 	<td class="category">
-		<?php echo lang_get_defaulted( $t_def['name'] ) ?>
+		<?php if($t_def['require_update']) {?><span class="required">*</span><?php } ?><?php echo lang_get_defaulted( $t_def['name'] ) ?>
 	</td>
 	<td colspan="5">
 		<?php

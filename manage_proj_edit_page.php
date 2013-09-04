@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: manage_proj_edit_page.php,v 1.74 2004-04-12 21:04:35 jlatour Exp $
+	# $Id: manage_proj_edit_page.php,v 1.79 2004-07-14 22:16:34 vboctor Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -26,7 +26,8 @@
 	access_ensure_project_level( config_get( 'manage_project_threshold' ), $f_project_id );
 
 	$row = project_get_row( $f_project_id );
-    $mail = mail_get_account_data( $f_project_id );
+	$mail = mail_get_account_data( $f_project_id );
+
 ?>
 <?php html_page_top1() ?>
 <?php html_page_top2() ?>
@@ -271,6 +272,7 @@ if ( access_has_global_level ( config_get( 'delete_project_threshold' ) ) ) { ?>
 	foreach ( $t_versions as $t_version ) {
 		$t_name = $t_version['version'];
 		$t_date_order = $t_version['date_order'];
+		$t_date_formatted = string_format_complete_date( $t_version['date_order'] );
 ?>
 <!-- Repeated Info Rows -->
 		<tr <?php echo helper_alternate_class() ?>>
@@ -278,16 +280,15 @@ if ( access_has_global_level ( config_get( 'delete_project_threshold' ) ) ) { ?>
 				<?php echo string_display( $t_name ) ?>
 			</td>
 			<td class="center">
-				<?php echo $t_date_order ?>
+				<?php echo $t_date_formatted ?>
 			</td>
 			<td class="center">
 				<?php
-					$t_name = urlencode( $t_name );
-					$t_date_order = urlencode( $t_date_order );
+					$t_version_id = version_get_id( $t_name, $f_project_id );
 
-					print_bracket_link( 'manage_proj_ver_edit_page.php?project_id=' . $f_project_id . '&amp;version=' . $t_name . '&amp;date_order=' . $t_date_order, lang_get( 'edit_link' ) );
+					print_bracket_link( 'manage_proj_ver_edit_page.php?version_id=' . $t_version_id, lang_get( 'edit_link' ) );
 					echo '&nbsp;';
-					print_bracket_link( 'manage_proj_ver_delete.php?project_id=' . $f_project_id . '&amp;version=' . $t_name . '&amp;date_order=' . $t_date_order, lang_get( 'delete_link' ) );
+					print_bracket_link( 'manage_proj_ver_delete.php?version_id=' . $t_version_id, lang_get( 'delete_link' ) );
 				?>
 			</td>
 		</tr>
@@ -440,13 +441,16 @@ if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_projec
 				<td class="category">
 					<?php echo lang_get( 'username' ) ?>
 				</td>
+				<td class="category">
+					<?php echo lang_get( 'access_level' ) ?>
+				</td>
+				<td class="category"> &nbsp; </td>
+			</tr>
+			<tr class="row-1" valign="top">
 				<td>
 					<select name="user_id[]" multiple="multiple" size="10">
 						<?php print_project_user_list_option_list( $f_project_id ) ?>
 					</select>
-				</td>
-				<td class="category">
-					<?php echo lang_get( 'access_level' ) ?>
 				</td>
 				<td>
 					<select name="access_level">
@@ -499,7 +503,12 @@ if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_projec
 ?>
 		<tr <?php echo helper_alternate_class() ?>>
 			<td>
-				<?php echo $t_user['username'] ?>
+				<?php
+					echo $t_user['username'];
+					if ( isset( $t_user['realname'] ) && $t_user['realname'] > "" ) {
+						echo " (" . $t_user['realname'] . ")";
+					}
+				?>
 			</td>
 			<td>
 			<?php 
@@ -528,7 +537,8 @@ if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_projec
 	</table>
 </div>
 
-<!-- MAIL ACCOUNT RESET -->
+<?php  if ( ! $mail['pop3_categories'] ) { ?>
+<!-- MAIL ACCOUNT CHANGE -->
 <br />
 <div align="center">
 	<form method="post" action="manage_proj_mail_update.php">
@@ -578,5 +588,23 @@ if ( access_has_project_level( config_get( 'project_user_threshold' ), $f_projec
 		<input type="submit" value="<?php echo 'Delete Mail Account Data' ?>" />
 	</form>
 </div>
-
+<br />
+<!-- MAIL ACCOUNT CATEGORIES -->
+<div class="border-center">
+	<form method="post" action="manage_proj_mail_categories.php">
+		<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
+		<input type="hidden" name="categories" value="On" />
+		<input type="submit" value="<?php echo 'Activate Mail Account per Category' ?>" />
+	</form>
+</div>
+<?php } else { ?>
+<!-- MAIL ACCOUNT CATEGORIES -->
+<div class="border-center">
+	<form method="post" action="manage_proj_mail_categories.php">
+		<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
+		<input type="hidden" name="categories" value="Off" />
+		<input type="submit" value="<?php echo 'Deactivate Mail Account per Category' ?>" />
+	</form>
+</div>
+<?php } ?>
 <?php html_page_bottom1( __FILE__ ) ?>

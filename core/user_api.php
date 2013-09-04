@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: user_api.php,v 1.70 2004-05-09 02:24:19 vboctor Exp $
+	# $Id: user_api.php,v 1.79 2004-08-23 14:13:34 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -121,8 +121,7 @@
 		$result = db_query( $query, 1 );
 
 		if ( db_num_rows( $result ) > 0 ) {
-			$row = db_fetch_array( $result );
-			return (strcmp($row['username'], $p_username) != 0);  # Xyz & xyz shouldn't match
+			return false;
 		} else {
 			return true;
 		}
@@ -137,7 +136,54 @@
 	}
 
 	# --------------------
-	# Check if the username is a valid username (does not account for uniqueness)
+	# Check if the realname is a valid username (does not account for uniqueness)
+	# Return 0 if it is invalid, The number of matches + 1 
+	function user_is_realname_unique( $p_username, $p_realname ) {
+		if ( is_blank( $p_realname ) ) { # don't bother checking if realname is blank
+			return 1;
+		}
+		
+		$c_realname = db_prepare_string( $p_realname );
+		# allow realname to match username
+		if ( $p_realname <> $p_username ) {
+			# check realname does not match an existing username
+			if ( user_get_id_by_name( $p_realname ) ) {
+				return 0;
+			}
+
+			# check to see if the realname is unique
+			$t_user_table 		= config_get( 'mantis_user_table' );
+			$query = "SELECT id
+				FROM $t_user_table
+				WHERE realname='$c_realname'";
+			$result = db_query( $query );
+			$t_count = db_num_rows( $result );
+			if ( $t_count > 0 ) {
+				# set flags for non-unique realnames
+				if ( config_get( 'differentiate_duplicates' ) ) {
+					user_set_field( $t_user_id, 'duplicate_realname', ON );
+					for ( $i=0 ; $i < $count ; $i++ ) {
+						$t_id = db_result( $result, $i );
+						user_set_field( $t_id, 'duplicate_realname', ON );
+					}
+				}
+			}
+		}
+		return $t_count + 1;
+	}
+
+	# --------------------
+	# Check if the realname is a unique
+	# Trigger an error if the username is not valid
+	function user_ensure_realname_unique( $p_username, $p_realname ) {
+		if ( 0 == user_is_name_valid( $p_username, $p_realname ) ) {
+			trigger_error( ERROR_USER_REAL_MATCH_USER, ERROR );
+		}
+	}
+
+	# --------------------
+	# Check if the username is a valid username (does not account for uniqueness) 
+	#  realname can match
 	# Return true if it is, false otherwise
 	function user_is_name_valid( $p_username ) {
 		# The DB field is only 32 characters
@@ -161,7 +207,7 @@
 		if ( !user_is_name_valid( $p_username ) ) {
 			trigger_error( ERROR_USER_NAME_INVALID, ERROR );
 		}
-	}
+	}	
 
 	# --------------------
 	# return whether user is monitoring bug for the user id and bug id
@@ -231,7 +277,7 @@
 	# --------------------
 	# Create a user.
 	# returns false if error, the generated cookie string if ok
-	function user_create( $p_username, $p_password, $p_email='', $p_access_level=null, $p_protected=false, $p_enabled=true ) {
+	function user_create( $p_username, $p_password, $p_email='', $p_access_level=null, $p_protected=false, $p_enabled=true, $p_realname='' ) {
 		if ( null === $p_access_level ) {
 			$p_access_level = config_get( 'default_new_account_access_level');
 		}
@@ -239,6 +285,7 @@
 		$t_password = auth_process_plain_password( $p_password );
 
 		$c_username		= db_prepare_string( $p_username );
+		$c_realname		= db_prepare_string( $p_realname );
 		$c_password		= db_prepare_string( $t_password );
 		$c_email		= db_prepare_string( $p_email );
 		$c_access_level	= db_prepare_int( $p_access_level );
@@ -247,6 +294,7 @@
 
 		user_ensure_name_valid( $p_username );
 		user_ensure_name_unique( $p_username );
+		user_ensure_realname_unique( $p_username, $p_realname );
 		email_ensure_valid( $p_email );
 
 		$t_seed				= $p_email . $p_username;
@@ -255,10 +303,10 @@
 
 		$query = "INSERT INTO $t_user_table
 				    ( username, email, password, date_created, last_visit,
-				     enabled, access_level, login_count, cookie_string )
+				     enabled, access_level, login_count, cookie_string, realname )
 				  VALUES
 				    ( '$c_username', '$c_email', '$c_password', " . db_now() . "," . db_now() . ",
-				     $c_enabled, $c_access_level, 0, '$t_cookie_string')";
+				     $c_enabled, $c_access_level, 0, '$t_cookie_string', '$c_realname')";
 		db_query( $query );
 
 		# Create preferences for the user
@@ -273,7 +321,8 @@
 
 		# Send notification email
 		if ( !is_blank( $p_email ) ) {
-			email_signup( $t_user_id, $p_password );
+			$t_confirm_hash = auth_generate_confirm_hash( $t_user_id );
+			email_signup( $t_user_id, $p_password, $t_confirm_hash );
 		}
 
 		return $t_cookie_string;
@@ -364,6 +413,7 @@
 	# returns true when the account was successfully deleted
 	function user_delete( $p_user_id ) {
 		$c_user_id 					= db_prepare_int($p_user_id);
+		$t_user_table = config_get('mantis_user_table');
 
 		user_ensure_unprotected( $p_user_id );
 
@@ -376,9 +426,25 @@
 		# Remove project specific access levels
 		user_delete_project_specific_access_levels( $p_user_id );
 
-		user_clear_cache( $p_user_id );
+		#unset non-unique realname flags if necessary
+		if ( config_get( 'differentiate_duplicates' ) ) {
+			$c_realname = db_prepare_string( user_get_field( $p_user_id, 'realname' ) );
+			$query = "SELECT id
+					FROM $t_user_table
+					WHERE realname='$c_realname'";
+			$result = db_query( $query );
+			$t_count = db_num_rows( $result );
 
-		$t_user_table = config_get('mantis_user_table');
+			if ( $t_count == 2 ) {
+				# unset flags if there are now only 2 unique names
+				for ( $i=0 ; $i < $t_count ; $i++ ) {
+					$t_user_id = db_result( $result, $i );
+					user_set_field( $t_user_id, 'duplicate_realname', OFF );
+				}
+			}
+		}
+
+		user_clear_cache( $p_user_id );
 
 		# Remove account
 		$query = "DELETE FROM $t_user_table
@@ -414,14 +480,15 @@
 	# --------------------
 	# get a user id from an mail address
 	#  return false if the mail address does not exist
-	function user_get_id_by_mail( $p_mailadress ) {
-		$c_mailadress = db_prepare_string( $p_mailadress );
+	function user_get_id_by_mail( $p_mailaddress ) {
+		
+		$c_mailaddress = db_prepare_string( $p_mailaddress );
 
 		$t_user_table = config_get( 'mantis_user_table' );
 
 		$query = "SELECT id
 				  FROM $t_user_table
-				  WHERE email='$c_mailadress'";
+				  WHERE email='$c_mailaddress'";
 		$result = db_query( $query );
 
 		if ( 0 == db_num_rows( $result ) ) {
@@ -485,14 +552,35 @@
 	}
 
 	# --------------------
+	# lookup the user's realname
+	function user_get_realname( $p_user_id ) {
+		$t_realname = user_get_field( $p_user_id, 'realname' );
+
+		return $t_realname;
+	}
+
+	# --------------------
 	# return the username or a string "user<id>" if the user does not exist
+	# if show_realname is set, replace the name with a realname (if set)
 	function user_get_name( $p_user_id ) {
 		$row = user_cache_row( $p_user_id, false );
 
 		if ( false == $row ) {
 			return lang_get( 'prefix_for_deleted_users' ) . (int)$p_user_id;
 		} else {
-			return $row['username'];
+			if ( ON == config_get( 'show_realname' ) ) {
+				if ( is_blank( $row['realname'] ) ) {
+					return $row['username'];
+				}else{
+					if ( isset( $row['duplicate_realname'] ) && ( ON == $row['duplicate_realname'] ) ) {
+						return $row['realname'] . ' (' . $row['username'] . ')';
+					}else{
+						return $row['realname'];
+					}
+				}
+			}else{
+				return $row['username'];
+			}
 		}
 	}
 
@@ -636,6 +724,27 @@
 		return $row;
 	}
 
+	# --------------------
+	# Get failed login attempts
+	function user_is_login_request_allowed( $p_user_id ) {
+		$t_max_failed_login_count = config_get( 'max_failed_login_count' );
+		$t_failed_login_count = user_get_field( $p_user_id, 'failed_login_count' );
+		return ( $t_failed_login_count < $t_max_failed_login_count 
+							|| OFF == $t_max_failed_login_count);
+	}
+
+	# --------------------
+	# Get 'lost password' in progress attempts
+	function user_is_lost_password_request_allowed( $p_user_id ) {
+		if( OFF == config_get( 'lost_password_feature' ) ) {
+			return false;
+		}
+		$t_max_lost_password_in_progress_count = config_get( 'max_lost_password_in_progress_count' );
+		$t_lost_password_in_progress_count = user_get_field( $p_user_id, 'lost_password_in_progress_count' );
+		return ( $t_lost_password_in_progress_count < $t_max_lost_password_in_progress_count 
+							|| OFF == $t_max_lost_password_in_progress_count );
+	}
+
 	#===================================
 	# Data Modification
 	#===================================
@@ -676,6 +785,70 @@
 		user_clear_cache( $p_user_id );
 
 		#db_query() errors on failure so:
+		return true;
+	}
+
+	# --------------------
+	# Reset to zero the failed login attempts
+	function user_reset_failed_login_count_to_zero( $p_user_id ) {
+		$c_user_id = db_prepare_int( $p_user_id );
+		$t_user_table = config_get( 'mantis_user_table' );
+
+		$query = "UPDATE $t_user_table
+				SET failed_login_count=0
+				WHERE id='$c_user_id'";
+		db_query( $query );
+
+		user_clear_cache( $p_user_id );
+
+		return true;
+	}
+
+	# --------------------
+	# Increment the failed login count by 1
+	function user_increment_failed_login_count( $p_user_id ) {
+		$c_user_id = db_prepare_int( $p_user_id );
+		$t_user_table = config_get( 'mantis_user_table' );
+
+		$query = "UPDATE $t_user_table
+				SET failed_login_count=failed_login_count+1
+				WHERE id='$c_user_id'";
+		db_query( $query );
+
+		user_clear_cache( $p_user_id );
+
+		return true;
+	}
+
+	# --------------------
+	# Reset to zero the 'lost password' in progress attempts
+	function user_reset_lost_password_in_progress_count_to_zero( $p_user_id ) {
+		$c_user_id = db_prepare_int( $p_user_id );
+		$t_user_table = config_get( 'mantis_user_table' );
+
+		$query = "UPDATE $t_user_table
+				SET lost_password_in_progress_count=0
+				WHERE id='$c_user_id'";
+		db_query( $query );
+
+		user_clear_cache( $p_user_id );
+
+		return true;
+	}
+
+	# --------------------
+	# Increment the failed login count by 1
+	function user_increment_lost_password_in_progress_count( $p_user_id ) {
+		$c_user_id = db_prepare_int( $p_user_id );
+		$t_user_table = config_get( 'mantis_user_table' );
+
+		$query = "UPDATE $t_user_table
+				SET lost_password_in_progress_count=lost_password_in_progress_count+1
+				WHERE id='$c_user_id'";
+		db_query( $query );
+
+		user_clear_cache( $p_user_id );
+
 		return true;
 	}
 
@@ -739,6 +912,14 @@
 	}
 
 	# --------------------
+	# Set the user's realname to the given string after checking validity
+	function user_set_realname( $p_user_id, $p_realname ) {
+		# @@@ TODO:	ensure_realname_valid( $p_realname );
+
+		return user_set_field( $p_user_id, 'realname', $p_realname );
+	}
+
+	# --------------------
 	# Set the user's username to the given string after checking that it is valid
 	function user_set_name( $p_user_id, $p_username ) {
 		user_ensure_name_valid( $p_username );
@@ -779,12 +960,15 @@
 
 			# Send notification email
 			if ( $p_send_email ) {
-				email_reset( $p_user_id, $t_password );
+				$t_confirm_hash = auth_generate_confirm_hash( $p_user_id );
+				email_send_confirm_hash_url( $p_user_id, $t_confirm_hash );
 			}
-		} else { # use blank password, no emailing
+		} else {
+			# use blank password, no emailing
 			$t_password = auth_process_plain_password( '' );
-
 			user_set_field( $p_user_id, 'password', $t_password );
+			# reset the failed login count because in this mode there is no emailing
+			user_reset_failed_login_count_to_zero( $p_user_id );
 		}
 
 		return true;

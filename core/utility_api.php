@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: utility_api.php,v 1.13 2004-04-08 20:52:50 prescience Exp $
+	# $Id: utility_api.php,v 1.15 2004-08-16 02:14:55 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### Utility API ###
@@ -162,5 +162,22 @@
 		if( array_key_exists( $key, $p_arr_src ) ) {
 			$p_arr_dst[$key] = $p_arr_src[$key];
 		}
+	}
+
+	# --------------------
+	# Return GD version
+	# It doesn't use gd_info() so it works with PHP < 4.3.0 as well
+	function get_gd_version()
+	{
+    $t_GDfuncList = get_extension_funcs('gd');
+    if( ! is_array( $t_GDfuncList ) ) {
+    	return 0;
+    } else {
+	    if( in_array('imagegd2',$t_GDfuncList) ) {
+	    	return 2;
+	   	} else {
+	   		return 1;
+	   	}
+	  }
 	}
 ?>

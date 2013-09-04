@@ -6,12 +6,14 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: filter_api.php,v 1.32 2004-05-08 23:25:12 narcissus Exp $
+	# $Id: filter_api.php,v 1.57 2004-08-21 13:07:14 prichards Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
 
 	require_once( $t_core_dir . 'current_user_api.php' );
+	require_once( $t_core_dir . 'bug_api.php' );
+	require_once( $t_core_dir . 'collapse_api.php' );
 
 	###########################################################################
 	# Filter API
@@ -35,17 +37,23 @@
 	# $p_bug_count
 	#   - you don't need to give a value here, the number of bugs will be
 	#     stored here on return
-	function filter_get_bug_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p_bug_count ) {
+	function filter_get_bug_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p_bug_count, $custom_filter = null ) {
 		$t_bug_table			= config_get( 'mantis_bug_table' );
 		$t_bug_text_table		= config_get( 'mantis_bug_text_table' );
 		$t_bugnote_table		= config_get( 'mantis_bugnote_table' );
 		$t_custom_field_string_table	= config_get( 'mantis_custom_field_string_table' );
 		$t_bugnote_text_table	= config_get( 'mantis_bugnote_text_table' );
 		$t_project_table		= config_get( 'mantis_project_table' );
+		$t_bug_monitor_table	= config_get( 'mantis_bug_monitor_table' );
 		$t_limit_reporters		= config_get( 'limit_reporters' );
 		$t_report_bug_threshold		= config_get( 'report_bug_threshold' );
 
-		$t_filter = current_user_get_bug_filter();
+		if ( $custom_filter == null ) {
+			$t_filter = current_user_get_bug_filter();
+		} else {
+			$t_filter = $custom_filter;
+		}
+		$t_filter = filter_ensure_valid_filter( $t_filter );
 
 		if ( false === $t_filter ) {
 			return false; # signify a need to create a cookie
@@ -58,18 +66,19 @@
 		$t_where_clauses = array( "$t_project_table.enabled = 1", "$t_project_table.id = $t_bug_table.project_id" );
 		$t_select_clauses = array( "$t_bug_table.*" );
 		$t_join_clauses = array();
+		$t_from_clauses = array();
 
 		if ( ALL_PROJECTS == $t_project_id ) {
 			if ( !current_user_is_administrator() ) {
 				$t_projects = current_user_get_accessible_projects();
 
-				if ( 0 == sizeof( $t_projects ) ) {
+				if ( 0 == count( $t_projects ) ) {
 					return array();  # no accessible projects, return an empty array
 				} else {
 					$t_clauses = array();
 
 					#@@@ use project_id IN (1,2,3,4) syntax if we can
-					for ( $i=0 ; $i < sizeof( $t_projects ) ; $i++) {
+					for ( $i=0 ; $i < count( $t_projects ) ; $i++) {
 						array_push( $t_clauses, "($t_bug_table.project_id='$t_projects[$i]')" );
 					}
 
@@ -86,19 +95,39 @@
 		if ( !access_has_project_level( config_get( 'private_bug_threshold' ) ) ) {
 			$t_public = VS_PUBLIC;
 			array_push( $t_where_clauses, "($t_bug_table.view_state='$t_public' OR $t_bug_table.reporter_id='$t_user_id')" );
+		} else {
+			$t_view_state = db_prepare_int( $t_filter['view_state'] );
+			if ( ( $t_view_state != 'any' ) && ( !is_blank( $t_view_state ) ) ) {
+				array_push( $t_where_clauses, "($t_bug_table.view_state='$t_view_state')" );
+			}
 		}
 
 		# reporter
-		if ( 'any' != $t_filter['reporter_id'] ) {
-			$c_reporter_id = db_prepare_int( $t_filter['reporter_id'] );
-			if ( META_FILTER_MYSELF == $c_reporter_id ) {
-				if ( access_has_project_level( config_get( 'report_bug_threshold' ) ) ) { 
-					$c_reporter_id = auth_get_current_user_id();
-					array_push( $t_where_clauses, "($t_bug_table.reporter_id='$c_reporter_id')" );
-				}
-			} else {
-				array_push( $t_where_clauses, "($t_bug_table.reporter_id='$c_reporter_id')" );
+		$t_any_found = false;
+
+		foreach( $t_filter['reporter_id'] as $t_filter_member ) {
+			if ( 'any' == $t_filter_member ) {
+				$t_any_found = true;
 			}
+		}
+		if ( count( $t_filter['reporter_id'] ) == 0 ) {
+			$t_any_found = true;
+		}
+		if ( !$t_any_found ) {
+			$t_clauses = array();
+
+			foreach( $t_filter['reporter_id'] as $t_filter_member ) {
+				$c_reporter_id = db_prepare_int( $t_filter_member );
+				if ( META_FILTER_MYSELF == $c_reporter_id ) {
+					if ( access_has_project_level( config_get( 'report_bug_threshold' ) ) ) {
+						$c_reporter_id = auth_get_current_user_id();
+						array_push( $t_clauses, "($t_bug_table.reporter_id='$c_reporter_id')" );
+					}
+				} else {
+					array_push( $t_clauses, "($t_bug_table.reporter_id='$c_reporter_id')" );
+				}
+			}
+			array_push( $t_where_clauses, '('. implode( ' OR ', $t_clauses ) .')' );
 		}
 
 		# limit reporter
@@ -108,73 +137,200 @@
 		}
 
 		# handler
-		if ( 'none' == $t_filter['handler_id'] ) {
-			array_push( $t_where_clauses, "$t_bug_table.handler_id=0" );
-		} else if ( 'any' != $t_filter['handler_id'] ) {
-			$c_handler_id = db_prepare_int( $t_filter['handler_id'] );
-			if ( META_FILTER_MYSELF == $c_handler_id ) {
-				if ( access_has_project_level( config_get( 'handle_bug_threshold' ) ) ) { 
-					$c_handler_id = auth_get_current_user_id();
-					if ( 'on' != $t_filter['and_not_assigned'] ) {
-						array_push( $t_where_clauses, "($t_bug_table.handler_id='$c_handler_id')" );
-					} else {
-						array_push( $t_where_clauses, "(($t_bug_table.handler_id='$c_handler_id') OR ($t_bug_table.handler_id=0))" );
-					}
-				}
-			} else {
-				if ( 'on' != $t_filter['and_not_assigned'] ) {
-					array_push( $t_where_clauses, "($t_bug_table.handler_id='$c_handler_id')" );
-				} else {
-					array_push( $t_where_clauses, "(($t_bug_table.handler_id='$c_handler_id') OR ($t_bug_table.handler_id=0))" );
-				}
+		$t_any_found = false;
+
+		foreach( $t_filter['handler_id'] as $t_filter_member ) {
+			if ( 'any' == $t_filter_member ) {
+				$t_any_found = true;
 			}
 		}
-
-		# hide status
-		if ( ( 'any' != $t_filter['show_status'] ) && ( $t_filter['hide_status'] <= $t_filter['show_status'] ) ) {
-			$t_show_status = $t_filter['show_status'];
-			array_push( $t_where_clauses, "($t_bug_table.status='$t_show_status')" );
-		} else {
-			if ( 'none' != $t_filter['hide_status'] ) {
-				$t_hide_status = $t_filter['hide_status'];
-				array_push( $t_where_clauses, "($t_bug_table.status<'$t_hide_status')" );
+		if ( count( $t_filter['handler_id'] ) == 0 ) {
+			$t_any_found = true;
+		}
+		if ( !$t_any_found ) {
+			$t_clauses = array();
+			if ( !isset( $t_filter['and_not_assigned'] ) ) {
+				$t_filter['and_not_assigned'] = '';
 			}
+
+			foreach( $t_filter['handler_id'] as $t_filter_member ) {
+				if ( 'none' == $t_filter_member ) {
+					array_push( $t_clauses, "$t_bug_table.handler_id=0" );
+				} else {
+					$c_handler_id = db_prepare_int( $t_filter_member );
+					if ( META_FILTER_MYSELF == $c_handler_id ) {
+						if ( access_has_project_level( config_get( 'handle_bug_threshold' ) ) ) {
+							$c_handler_id = auth_get_current_user_id();
+							if ( 'on' != $t_filter['and_not_assigned'] ) {
+								array_push( $t_clauses, "($t_bug_table.handler_id='$c_handler_id')" );
+							} else {
+								array_push( $t_clauses, "(($t_bug_table.handler_id='$c_handler_id') OR ($t_bug_table.handler_id=0))" );
+							}
+						}
+					} else {
+						if ( 'on' != $t_filter['and_not_assigned'] ) {
+							array_push( $t_clauses, "($t_bug_table.handler_id='$c_handler_id')" );
+						} else {
+							array_push( $t_clauses, "(($t_bug_table.handler_id='$c_handler_id') OR ($t_bug_table.handler_id=0))" );
+						}
+					}
+				}
+			}
+			array_push( $t_where_clauses, '('. implode( ' OR ', $t_clauses ) .')' );
 		}
 
 		# category
-		if ( 'any' != $t_filter['show_category'] ) {
-			$c_show_category = db_prepare_string( $t_filter['show_category'] );
-			array_push( $t_where_clauses, "($t_bug_table.category='$c_show_category')" );
+		$t_any_found = false;
+
+		foreach( $t_filter['show_category'] as $t_filter_member ) {
+			if ( 'any' == $t_filter_member ) {
+				$t_any_found = true;
+			}
+		}
+		if ( count( $t_filter['show_category'] ) == 0 ) {
+			$t_any_found = true;
+		}
+		if ( !$t_any_found ) {
+			$t_clauses = array();
+
+			foreach( $t_filter['show_category'] as $t_filter_member ) {
+				$c_show_category = db_prepare_string( $t_filter_member );
+				array_push( $t_clauses, "($t_bug_table.category='$c_show_category')" );
+			}
+			array_push( $t_where_clauses, '('. implode( ' OR ', $t_clauses ) .')' );
 		}
 
 		# severity
-		if ( 'any' != $t_filter['show_severity'] ) {
-			$c_show_severity = db_prepare_string( $t_filter['show_severity'] );
-			array_push( $t_where_clauses, "($t_bug_table.severity='$c_show_severity')" );
+		$t_any_found = false;
+		foreach( $t_filter['show_severity'] as $t_filter_member ) {
+			if ( 'any' == $t_filter_member ) {
+				$t_any_found = true;
+			}
+		}
+		if ( count( $t_filter['show_severity'] ) == 0 ) {
+			$t_any_found = true;
+		}
+		if ( !$t_any_found ) {
+			$t_clauses = array();
+
+			foreach( $t_filter['show_severity'] as $t_filter_member ) {
+				$c_show_severity = db_prepare_int( $t_filter_member );
+				array_push( $t_clauses, "($t_bug_table.severity='$c_show_severity')" );
+			}
+			array_push( $t_where_clauses, '('. implode( ' OR ', $t_clauses ) .')' );
 		}
 
-		# status
-		if ( 'any' != $t_filter['show_status'] ) {
-			$c_show_status = db_prepare_string( $t_filter['show_status'] );
-			array_push( $t_where_clauses, "($t_bug_table.status='$c_show_status')" );
+		# show / hide status
+		# take a list of all available statuses then remove the ones that we want hidden, then make sure
+		# the ones we want shown are still available
+		$t_status_arr = explode_enum_string( config_get( 'status_enum_string' ) );
+		$t_available_statuses = array();
+		$t_desired_statuses = array();
+		foreach( $t_status_arr as $t_this_status ) {
+			$t_this_status_arr = explode_enum_arr( $t_this_status );
+			$t_available_statuses[] = $t_this_status_arr[0];
+		}
+
+		if ( 'simple' == $t_filter['_view_type'] ) {
+			# simple filtering: if showing any, restrict by the hide status value, otherwise ignore the hide
+			$t_any_found = false;
+			$t_this_status = $t_filter['show_status'][0];
+			$t_this_hide_status = $t_filter['hide_status'][0];
+
+			if ( ( 'any' == $t_this_status ) || ( is_blank( $t_this_status ) ) ) {
+				$t_any_found = true;
+			}
+			if ( $t_any_found ) {
+				foreach( $t_available_statuses as $t_this_available_status ) {
+					if ( $t_this_hide_status > $t_this_available_status ) {
+						$t_desired_statuses[] = $t_this_available_status;
+					}
+				}
+			} else {
+				$t_desired_statuses[] = $t_this_status;
+			}
+		} else {
+			# advanced filtering: ignore the hide
+			$t_any_found = false;
+			foreach( $t_filter['show_status'] as $t_this_status ) {
+				$t_desired_statuses[] = $t_this_status;
+				if ( ( 'any' == $t_this_status ) || ( is_blank( $t_this_status ) ) ) {
+					$t_any_found = true;
+				}
+			}
+			if ( $t_any_found ) {
+				$t_desired_statuses = array();
+			}
+		}
+
+		if ( count( $t_desired_statuses ) > 0 ) {
+			$t_clauses = array();
+
+			foreach( $t_desired_statuses as $t_filter_member ) {
+				$c_show_status = db_prepare_int( $t_filter_member );
+				array_push( $t_clauses, "($t_bug_table.status='$c_show_status')" );
+			}
+			array_push( $t_where_clauses, '('. implode( ' OR ', $t_clauses ) .')' );
 		}
 
 		# resolution
-		if ( 'any' != $t_filter['show_resolution'] ) {
-			$c_show_resolution = db_prepare_string( $t_filter['show_resolution'] );
-			array_push( $t_where_clauses, "($t_bug_table.resolution='$c_show_resolution')" );
+		$t_any_found = false;
+		foreach( $t_filter['show_resolution'] as $t_filter_member ) {
+			if ( 'any' == $t_filter_member ) {
+				$t_any_found = true;
+			}
+		}
+		if ( count( $t_filter['show_resolution'] ) == 0 ) {
+			$t_any_found = true;
+		}
+		if ( !$t_any_found ) {
+			$t_clauses = array();
+
+			foreach( $t_filter['show_resolution'] as $t_filter_member ) {
+				$c_show_resolution = db_prepare_int( $t_filter_member );
+				array_push( $t_clauses, "($t_bug_table.resolution='$c_show_resolution')" );
+			}
+			array_push( $t_where_clauses, '('. implode( ' OR ', $t_clauses ) .')' );
 		}
 
 		# product build
-		if ( 'any' != $t_filter['show_build'] ) {
-			$c_show_build = db_prepare_string( $t_filter['show_build'] );
-			array_push( $t_where_clauses, "($t_bug_table.build='$c_show_build')" );
+		$t_any_found = false;
+		foreach( $t_filter['show_build'] as $t_filter_member ) {
+			if ( 'any' == $t_filter_member ) {
+				$t_any_found = true;
+			}
+		}
+		if ( count( $t_filter['show_build'] ) == 0 ) {
+			$t_any_found = true;
+		}
+		if ( !$t_any_found ) {
+			$t_clauses = array();
+
+			foreach( $t_filter['show_build'] as $t_filter_member ) {
+				$c_show_build = db_prepare_string( $t_filter_member );
+				array_push( $t_clauses, "($t_bug_table.build='$c_show_build')" );
+			}
+			array_push( $t_where_clauses, '('. implode( ' OR ', $t_clauses ) .')' );
 		}
 
 		# product version
-		if ( 'any' != $t_filter['show_version'] ) {
-			$c_show_version = db_prepare_string( $t_filter['show_version'] );
-			array_push( $t_where_clauses, "($t_bug_table.version='$c_show_version')" );
+		$t_any_found = false;
+		foreach( $t_filter['show_version'] as $t_filter_member ) {
+			if ( 'any' == $t_filter_member ) {
+				$t_any_found = true;
+			}
+		}
+		if ( count( $t_filter['show_version'] ) == 0 ) {
+			$t_any_found = true;
+		}
+		if ( !$t_any_found ) {
+			$t_clauses = array();
+
+			foreach( $t_filter['show_version'] as $t_filter_member ) {
+				$c_show_version = db_prepare_string( $t_filter_member );
+				array_push( $t_clauses, "($t_bug_table.version='$c_show_version')" );
+			}
+			array_push( $t_where_clauses, '('. implode( ' OR ', $t_clauses ) .')' );
 		}
 
 		# date filter
@@ -193,33 +349,109 @@
 			array_push( $t_where_clauses, "($t_bug_table.date_submitted BETWEEN '$t_start_string' AND '$t_end_string' )" );
 		}
 
+		# fixed in version
+		$t_any_found = false;
+		foreach( $t_filter['fixed_in_version'] as $t_filter_member ) {
+			if ( 'any' == $t_filter_member ) {
+				$t_any_found = true;
+			}
+		}
+		if ( count( $t_filter['fixed_in_version'] ) == 0 ) {
+			$t_any_found = true;
+		}
+		if ( !$t_any_found ) {
+			$t_clauses = array();
+
+			foreach( $t_filter['fixed_in_version'] as $t_filter_member ) {
+				$c_fixed_in_version = db_prepare_string( $t_filter_member );
+				array_push( $t_clauses, "($t_bug_table.fixed_in_version='$c_fixed_in_version')" );
+			}
+			array_push( $t_where_clauses, '('. implode( ' OR ', $t_clauses ) .')' );
+		}
+
+		# users monitoring a bug
+		$t_any_found = false;
+		foreach( $t_filter['user_monitor'] as $t_filter_member ) {
+			if ( 'any' == $t_filter_member ) {
+				$t_any_found = true;
+			}
+		}
+		if ( count( $t_filter['user_monitor'] ) == 0 ) {
+			$t_any_found = true;
+		}
+		if ( !$t_any_found ) {
+			$t_clauses = array();
+			$t_table_name = 'user_monitor';
+			array_push( $t_from_clauses, $t_bug_monitor_table );
+			array_push( $t_join_clauses, "LEFT JOIN $t_bug_monitor_table as $t_table_name ON $t_table_name.bug_id = $t_bug_table.id" );
+
+			foreach( $t_filter['user_monitor'] as $t_filter_member ) {
+				$c_user_monitor = db_prepare_int( $t_filter_member );
+				if ( META_FILTER_MYSELF == $c_user_monitor ) {
+					if ( access_has_project_level( config_get( 'monitor_bug_threshold' ) ) ) {
+						$c_user_monitor = auth_get_current_user_id();
+						array_push( $t_clauses, "($t_table_name.user_id='$c_user_monitor')" );
+					}
+				} else {
+					array_push( $t_clauses, "($t_table_name.user_id='$c_user_monitor')" );
+				}
+			}
+			array_push( $t_where_clauses, '('. implode( ' OR ', $t_clauses ) .')' );
+		}
+
+		# custom field filters
 		if( ON == config_get( 'filter_by_custom_fields' ) ) {
 			# custom field filtering
 			$t_custom_fields = custom_field_get_ids();
-			$t_first_time = true;
-			$t_custom_where_clause = '';
 
 			foreach( $t_custom_fields as $t_cfid ) {
+			$t_first_time = true;
+			$t_custom_where_clause = '';
 				# Ignore all custom filters that are not set, or that are set to '' or "any"
-				if ( isset( $t_filter['custom_fields'][$t_cfid] ) &&
-					( 'any' != strtolower( $t_filter['custom_fields'][$t_cfid] ) ) &&
-					( !is_blank( trim( $t_filter['custom_fields'][$t_cfid] ) ) ) ) {
-
-					if( $t_first_time ) {
-						$t_first_time = false;
-						$t_custom_where_clause = '(';
-					} else {
-						$t_custom_where_clause .= ' AND ';
+				$t_any_found = false;
+				foreach( $t_filter['custom_fields'][$t_cfid] as $t_filter_member ) {
+					if ( 'any' == $t_filter_member ) {
+						$t_any_found = true;
 					}
-
+				}
+				if ( !isset( $t_filter['custom_fields'][$t_cfid] ) ) {
+					$t_any_found = true;
+				}
+				if ( !$t_any_found ) {
+					$t_def = custom_field_get_definition( $t_cfid );				
 					$t_table_name = $t_custom_field_string_table . '_' . $t_cfid;
 					array_push( $t_join_clauses, "LEFT JOIN $t_custom_field_string_table as $t_table_name ON $t_table_name.bug_id = $t_bug_table.id" );
-					$t_custom_where_clause .= "(  $t_table_name.field_id = $t_cfid AND $t_table_name.value = '";
-					$t_custom_where_clause .= db_prepare_string( trim( $t_filter['custom_fields'][$t_cfid] ) )  . "' )";
+					foreach( $t_filter['custom_fields'][$t_cfid] as $t_filter_member ) {
+						if ( isset( $t_filter_member ) &&
+							( 'any' != strtolower( $t_filter_member ) ) &&
+							( !is_blank( trim( $t_filter_member ) ) ) ) {
+
+							if( $t_first_time ) {
+								$t_first_time = false;
+								$t_custom_where_clause = '(';
+							} else {
+								$t_custom_where_clause .= ' OR ';
+							}
+
+							$t_custom_where_clause .= "(  $t_table_name.field_id = $t_cfid AND $t_table_name.value ";
+							switch( $t_def['type'] ) {
+							case CUSTOM_FIELD_TYPE_MULTILIST:
+							case CUSTOM_FIELD_TYPE_CHECKBOX:
+								$t_custom_where_clause .= "LIKE '%|";
+								$t_custom_where_clause_closing = "|%' )";
+								break;
+							default:
+								$t_custom_where_clause .= "= '";
+								$t_custom_where_clause_closing = "' )";
+							}
+							$t_custom_where_clause .= db_prepare_string( trim( $t_filter_member ) );
+							$t_custom_where_clause .= $t_custom_where_clause_closing;
+						}
+					}
+					if ( !is_blank( $t_custom_where_clause ) ) {
+						array_push( $t_where_clauses, $t_custom_where_clause . ')' );
+					}
 				}
-			}
-			if ( !is_blank( $t_custom_where_clause ) ) {
-				array_push( $t_where_clauses, $t_custom_where_clause . ')' );
 			}
 		}
 
@@ -231,24 +463,19 @@
 							 OR ($t_bug_text_table.description LIKE '%$c_search%')
 							 OR ($t_bug_text_table.steps_to_reproduce LIKE '%$c_search%')
 							 OR ($t_bug_text_table.additional_information LIKE '%$c_search%')
-							 OR ($t_bug_table.id LIKE '%$c_search%')
-							 OR ($t_bugnote_text_table.note LIKE '%$c_search%'))" );
+							 OR ($t_bug_table.id LIKE '%$c_search%'))" );
 			array_push( $t_where_clauses, "($t_bug_text_table.id = $t_bug_table.bug_text_id)" );
 
-			$t_from_clauses = array( $t_bug_text_table, $t_project_table );
-
-			array_push( $t_join_clauses, ",($t_bug_table LEFT JOIN $t_bugnote_table ON $t_bugnote_table.bug_id = $t_bug_table.id)" );
-
-			array_push( $t_join_clauses, "LEFT JOIN $t_bugnote_text_table ON $t_bugnote_text_table.id = $t_bugnote_table.bugnote_text_id" );
+			$t_from_clauses = array( $t_bug_text_table, $t_project_table, $t_bug_table );
 		} else {
-			$t_from_clauses = array( $t_bug_table, $t_project_table );
+			$t_from_clauses = array( $t_project_table, $t_bug_table );
 		}
 
 
 		$t_select	= implode( ', ', array_unique( $t_select_clauses ) );
 		$t_from		= 'FROM ' . implode( ', ', array_unique( $t_from_clauses ) );
 		$t_join		= implode( ' ', $t_join_clauses );
-		if ( sizeof( $t_where_clauses ) > 0 ) {
+		if ( count( $t_where_clauses ) > 0 ) {
 			$t_where	= 'WHERE ' . implode( ' AND ', $t_where_clauses );
 		} else {
 			$t_where	= '';
@@ -305,6 +532,14 @@
 		# Now add the rest of the criteria i.e. sorting, limit.
 		$c_sort = db_prepare_string( $t_filter['sort'] );
 
+		# if sort is blank then default the sort and direction.  This is to fix the
+		# symptoms of #3953.  Note that even if the main problem is fixed, we may
+		# have to keep this code for a while to handle filters saved with this blank field.
+		if ( is_blank( $c_sort ) ) {
+			$c_sort = 'last_updated';
+			$t_filter['dir'] = 'DESC';
+		}
+
 		if ( 'DESC' == $t_filter['dir'] ) {
 			$c_dir = 'DESC';
 		} else {
@@ -312,6 +547,12 @@
 		}
 
 		$query2 .= " ORDER BY $c_sort $c_dir";
+		if ( $c_sort != 'last_updated' ) {
+            $query2 .= ', last_updated DESC, date_submitted DESC';
+        }
+        else {
+            $query2 .= ', date_submitted DESC';
+        }
 
 		# Figure out the offset into the db query
 		#
@@ -334,7 +575,9 @@
 			$row = db_fetch_array( $result2 );
 			$row['date_submitted'] = db_unixtimestamp ( $row['date_submitted'] );
 			$row['last_updated'] = db_unixtimestamp ( $row['last_updated'] );
+	
 			array_push( $rows, $row );
+			bug_add_to_cache( $row );
 		}
 
 		return $rows;
@@ -377,16 +620,32 @@
 	}
 
 	# --------------------
+	# Mainly based on filter_draw_selection_area2() but adds the support for the collapsible
+	# filter display.
+	function filter_draw_selection_area( $p_page_number, $p_for_screen = true )
+	{
+		collapse_open( 'filter' );
+		filter_draw_selection_area2( $p_page_number, $p_for_screen, true );
+		collapse_closed( 'filter' );
+		filter_draw_selection_area2( $p_page_number, $p_for_screen, false );
+		collapse_end( 'filter' );
+	}
+
+	# --------------------
 	# Will print the filter selection area for both the bug list view screen, as well
 	# as the bug list print screen. This function was an attempt to make it easier to
 	# add new filters and rearrange them on screen for both pages.
-	function filter_draw_selection_area( $p_page_number, $p_for_screen = true )
+	function filter_draw_selection_area2( $p_page_number, $p_for_screen = true, $p_expanded = true )
 	{
+		$t_form_name_suffix = $p_expanded ? '_open' : '_closed';
+
 		$t_filter = current_user_get_bug_filter();
+		$t_filter = filter_ensure_valid_filter( $t_filter );
 		$t_project_id = helper_get_current_project();
 
 		$t_sort = $t_filter['sort'];
 		$t_dir = $t_filter['dir'];
+		$t_view_type = $t_filter['_view_type'];
 
 		$t_tdclass = 'small-caption';
 		$t_trclass = 'row-category2';
@@ -400,7 +659,7 @@
 ?>
 		<br />
 		<form method="post" name="filters" action="<?php PRINT $t_action; ?>">
-		<input type="hidden" name="type" value="1" />
+		<input type="hidden" name="type" value="5" />
 		<?php
 			if ( $p_for_screen == false ) {
 				PRINT '<input type="hidden" name="print" value="1" />';
@@ -410,11 +669,13 @@
 		<input type="hidden" name="sort" value="<?php PRINT $t_sort ?>" />
 		<input type="hidden" name="dir" value="<?php PRINT $t_dir ?>" />
 		<input type="hidden" name="page_number" value="<?php PRINT $p_page_number ?>" />
-		<table class="width100" cellspacing="0">
+		<input type="hidden" name="view_type" value="<?php PRINT $t_view_type ?>" />
+		<table class="width100" cellspacing="1">
 
 		<?php
-			$t_filter_cols = 8;
-			$t_custom_cols = 1;
+		if ( $p_expanded ) {
+			$t_filter_cols = 7;
+			$t_custom_cols = $t_filter_cols;
 			if ( ON == config_get( 'filter_by_custom_fields' ) ) {
 				$t_custom_cols = config_get( 'filter_custom_fields_per_row' );
 			}
@@ -438,263 +699,647 @@
 					}
 				}
 
-				if ( sizeof( $t_accessible_custom_fields_ids ) > 0 ) {
+				if ( count( $t_accessible_custom_fields_ids ) > 0 ) {
 					$t_per_row = config_get( 'filter_custom_fields_per_row' );
-					$t_num_custom_rows = ceil( sizeof( $t_accessible_custom_fields_ids ) / $t_per_row );
+					$t_num_custom_rows = ceil( count( $t_accessible_custom_fields_ids ) / $t_per_row );
 				}
 			}
 
-			$t_filters_url = config_get( 'path' ) . 'view_filters_page.php?for_screen=' . $p_for_screen . '&amp;target_field=';
+			$t_filters_url = 'view_filters_page.php?for_screen=' . $p_for_screen;
+			if ( 'advanced' == $t_view_type ) {
+				$t_filters_url = $t_filters_url . '&amp;view_type=advanced';
+			}
+			$t_filters_url = $t_filters_url . '&amp;target_field=';
 		?>
 
-		<input type="hidden" name="reporter_id" value="<?php PRINT $t_filter['reporter_id'] ?>">
-		<input type="hidden" name="handler_id" value="<?php PRINT $t_filter['handler_id'] ?>">
-		<input type="hidden" name="show_category" value="<?php PRINT $t_filter['show_category'] ?>">
-		<input type="hidden" name="show_severity" value="<?php PRINT $t_filter['show_severity'] ?>">
-		<input type="hidden" name="show_status" value="<?php PRINT $t_filter['show_status'] ?>">
-		<input type="hidden" name="per_page" value="<?php PRINT $t_filter['per_page'] ?>">
-		<input type="hidden" name="highlight_changed" value="<?php PRINT $t_filter['highlight_changed'] ?>">
-		<input type="hidden" name="hide_status" value="<?php PRINT $t_filter['hide_status'] ?>">
-		<input type="hidden" name="and_not_assigned" value="<?php PRINT $t_filter['and_not_assigned'] ?>">
-		<input type="hidden" name="show_build" value="<?php PRINT $t_filter['show_build'] ?>">
-		<input type="hidden" name="show_resolution" value="<?php PRINT $t_filter['show_resolution'] ?>">
-		<input type="hidden" name="show_version" value="<?php PRINT $t_filter['show_version'] ?>">
-		<input type="hidden" name="start_month" value="<?php PRINT $t_filter['start_month'] ?>">
-		<input type="hidden" name="start_day" value="<?php PRINT $t_filter['start_day'] ?>">
-		<input type="hidden" name="start_year" value="<?php PRINT $t_filter['start_year'] ?>">
-		<input type="hidden" name="end_month" value="<?php PRINT $t_filter['end_month'] ?>">
-		<input type="hidden" name="end_day" value="<?php PRINT $t_filter['end_day'] ?>">
-		<input type="hidden" name="end_year" value="<?php PRINT $t_filter['end_year'] ?>">
-		<input type="hidden" name="do_filter_by_date" value="<?php PRINT $t_filter['do_filter_by_date'] ?>">
-		<?php
-			for ( $i = 0; $i < sizeof( $t_accessible_custom_fields_ids ); $i++ ) {
-				PRINT '<input type="hidden" name="custom_field_';
-				PRINT $t_accessible_custom_fields_ids[$i];
-				PRINT '" value="';
-				if ( !isset( $t_filter['custom_fields'][$t_accessible_custom_fields_ids[$i]] ) ) {
-					$t_filter['custom_fields'][$t_accessible_custom_fields_ids[$i]] = 'any';
-				}
-				PRINT $t_filter['custom_fields'][$t_accessible_custom_fields_ids[$i]];
-				PRINT "\">\n";
-			}
-		?>
 		<tr <?php PRINT "class=\"" . $t_trclass . "\""; ?>>
-			<td class="small-caption" colspan="<?php PRINT ( 1 * $t_custom_cols ); ?>">
-				<a href="<?php PRINT $t_filters_url . 'reporter_id'; ?>"><?php PRINT lang_get( 'reporter' ) ?>:</a>
-				<?php
-					if ( $t_filter['reporter_id'] == 0 ) {
-						PRINT lang_get( 'any' );
-					} else if ( META_FILTER_MYSELF == $t_filter['reporter_id'] ) {
-						if ( access_has_project_level( config_get( 'report_bug_threshold' ) ) ) { 
-							PRINT '[' . lang_get( 'myself' ) . ']';
-						} else {
-							PRINT lang_get( 'any' );
-						}
-					} else {
-						PRINT user_get_field( $t_filter['reporter_id'], 'username' );
-					}
-				?>
+			<td class="small-caption" valign="top">
+				<a href="<?php PRINT $t_filters_url . 'reporter_id[]'; ?>"><?php PRINT lang_get( 'reporter' ) ?>:</a>
 			</td>
-			<td class="small-caption" colspan="<?php PRINT ( 1 * $t_custom_cols ); ?>">
-				<a href="<?php PRINT $t_filters_url . 'handler_id'; ?>"><?php PRINT lang_get( 'assigned_to' ) ?>:</a>
-				<?php
-					if ( $t_filter['handler_id'] == 0 ) {
-						PRINT lang_get( 'any' );
-					} else if ( META_FILTER_MYSELF == $t_filter['handler_id'] ) {
-						if ( access_has_project_level( config_get( 'handle_bug_threshold' ) ) ) { 
-							PRINT '[' . lang_get( 'myself' ) . ']';
-						} else {
-							PRINT lang_get( 'any' );
-						}
-					} else {
-						PRINT user_get_field( $t_filter['handler_id'], 'username' );
-					}
-					if ( 'on' == $t_filter['and_not_assigned'] ) {
-						PRINT ' (' . lang_get( 'or_unassigned' ) . ')';
-					}
-				?>
+			<td class="small-caption" valign="top">
+				<a href="<?php PRINT $t_filters_url . 'user_monitor[]'; ?>"><?php PRINT lang_get( 'monitored_by' ) ?>:</a>
 			</td>
-			<td class="small-caption" colspan="<?php PRINT ( 2 * $t_custom_cols ); ?>">
-				<a href="<?php PRINT $t_filters_url . 'show_category'; ?>"><?php PRINT lang_get( 'category' ) ?>:</a>
-				<?php
-					if ( is_blank( $t_filter['show_category'] ) ) {
-						PRINT lang_get( 'any' );
-					} else {
-						PRINT $t_filter['show_category'];
-					}
-				?>
+			<td class="small-caption" valign="top">
+				<a href="<?php PRINT $t_filters_url . 'handler_id[]'; ?>"><?php PRINT lang_get( 'assigned_to' ) ?>:</a>
 			</td>
-			<td class="small-caption" colspan="<?php PRINT ( 1 * $t_custom_cols ); ?>">
-				<a href="<?php PRINT $t_filters_url . 'show_severity'; ?>"><?php PRINT lang_get( 'severity' ) ?>:</a>
-				<?php
-					if ( ( $t_filter['show_severity'] == 'any' ) || ( is_blank( $t_filter['show_severity'] ) ) ) {
-						PRINT lang_get( 'any' );
-					} else {
-						PRINT get_enum_element( 'severity', $t_filter['show_severity'] );
-					}
-				?>
+			<td colspan="2" class="small-caption" valign="top">
+				<a href="<?php PRINT $t_filters_url . 'show_category[]'; ?>"><?php PRINT lang_get( 'category' ) ?>:</a>
 			</td>
-			<td class="small-caption" colspan="<?php PRINT ( 1 * $t_custom_cols ); ?>">
-				<a href="<?php PRINT $t_filters_url . 'show_status'; ?>"><?php PRINT lang_get( 'status' ) ?>:</a>
-				<?php
-					if ( ( $t_filter['show_status'] == 'any' ) || ( is_blank( $t_filter['show_status'] ) ) ) {
-						PRINT lang_get( 'any' );
-					} else {
-						PRINT get_enum_element( 'status', $t_filter['show_status'] );
-					}
-				?>
+			<td class="small-caption" valign="top">
+				<a href="<?php PRINT $t_filters_url . 'show_severity[]'; ?>"><?php PRINT lang_get( 'severity' ) ?>:</a>
 			</td>
-			<td class="small-caption" colspan="<?php PRINT ( 1 * $t_custom_cols ); ?>">
-				<a href="<?php PRINT $t_filters_url . 'show_resolution'; ?>"><?php PRINT lang_get( 'resolution' ) ?>:</a>
-				<?php
-					if ( ( $t_filter['show_resolution'] == 'any' ) || ( is_blank( $t_filter['show_resolution'] ) ) ) {
-						PRINT lang_get( 'any' );
-					} else {
-						PRINT get_enum_element( 'resolution', $t_filter['show_resolution'] );
-					}
-				?>
+			<td class="small-caption" valign="top">
+				<a href="<?php PRINT $t_filters_url . 'show_resolution[]'; ?>"><?php PRINT lang_get( 'resolution' ) ?>:</a>
 			</td>
-			<td class="small-caption" colspan="<?php PRINT ( 1 * $t_custom_cols ); ?>">
-				<a href="<?php PRINT $t_filters_url . 'hide_status'; ?>"><?php PRINT lang_get( 'hide_status' ) ?>:</a>
-				<?php
-					if ( ( $t_filter['hide_status'] == 'none' ) || ( is_blank( $t_filter['hide_status'] ) ) ) {
-						PRINT lang_get( 'none' );
-					} else {
-						$t_status_string = get_enum_element( 'status', $t_filter['hide_status'] );
-						PRINT $t_status_string . ' (' . lang_get( 'and_above' ) . ')';
-					}
-				?>
+
+			<?php 
+				if ( $t_custom_cols > $t_filter_cols ) {
+					echo '<td colspan="' . ($t_custom_cols - $t_filter_cols) . '">&nbsp;</td>';
+				}
+			?>
+		</tr>
+
+		<tr class="row-1">
+			<td class="small-caption" valign="top">
+							<?php
+								$t_output = '';
+								$t_any_found = false;
+								if ( count( $t_filter['reporter_id'] ) == 0 ) {
+									PRINT lang_get( 'any' );
+								} else {
+									$t_first_flag = true;
+									foreach( $t_filter['reporter_id'] as $t_current ) {
+										$t_this_name = '';
+										if ( ( $t_current == 0 ) || ( is_blank( $t_current ) ) ) {
+											$t_any_found = true;
+										} else if ( META_FILTER_MYSELF == $t_current ) {
+											if ( access_has_project_level( config_get( 'report_bug_threshold' ) ) ) {
+												$t_this_name = '[' . lang_get( 'myself' ) . ']';
+											} else {
+												$t_any_found = true;
+											}
+										} else {
+											$t_this_name = user_get_name( $t_current );
+										}
+										if ( $t_first_flag != true ) {
+											$t_output = $t_output . '<br>';
+										} else {
+											$t_first_flag = false;
+										}
+										$t_output = $t_output . $t_this_name;
+									}
+									if ( true == $t_any_found ) {
+										PRINT lang_get( 'any' );
+									} else {
+										PRINT $t_output;
+									}
+								}
+							?>
+			</td>
+			<td class="small-caption" valign="top">
+							<?php
+								$t_output = '';
+								$t_any_found = false;
+								if ( count( $t_filter['user_monitor'] ) == 0 ) {
+									PRINT lang_get( 'any' );
+								} else {
+									$t_first_flag = true;
+									foreach( $t_filter['user_monitor'] as $t_current ) {
+										$t_this_name = '';
+										if ( ( $t_current == 0 ) || ( is_blank( $t_current ) ) ) {
+											$t_any_found = true;
+										} else if ( META_FILTER_MYSELF == $t_current ) {
+											if ( access_has_project_level( config_get( 'monitor_bug_threshold' ) ) ) {
+												$t_this_name = '[' . lang_get( 'myself' ) . ']';
+											} else {
+												$t_any_found = true;
+											}
+										} else {
+											$t_this_name = user_get_name( $t_current );
+										}
+										if ( $t_first_flag != true ) {
+											$t_output = $t_output . '<br>';
+										} else {
+											$t_first_flag = false;
+										}
+										$t_output = $t_output . $t_this_name;
+									}
+									if ( true == $t_any_found ) {
+										PRINT lang_get( 'any' );
+									} else {
+										PRINT $t_output;
+									}
+								}
+							?>
+			</td>
+			<td class="small-caption" valign="top">
+							<?php
+								$t_output = '';
+								$t_any_found = false;
+								if ( count( $t_filter['handler_id'] ) == 0 ) {
+									PRINT lang_get( 'any' );
+								} else {
+									$t_first_flag = true;
+									foreach( $t_filter['handler_id'] as $t_current ) {
+										$t_this_name = '';
+										if ( 'none' == $t_current ) {
+											$t_this_name = lang_get( 'none' );
+										} else if ( ( $t_current == 0 ) || ( is_blank( $t_current ) ) ) {
+											$t_any_found = true;
+										} else if ( META_FILTER_MYSELF == $t_current ) {
+											if ( access_has_project_level( config_get( 'handle_bug_threshold' ) ) ) {
+												$t_this_name = '[' . lang_get( 'myself' ) . ']';
+											} else {
+												$t_any_found = true;
+											}
+										} else {
+											$t_this_name = user_get_name( $t_current );
+										}
+										if ( $t_first_flag != true ) {
+											$t_output = $t_output . '<br>';
+										} else {
+											$t_first_flag = false;
+										}
+										$t_output = $t_output . $t_this_name;
+									}
+									if ( true == $t_any_found ) {
+										PRINT lang_get( 'any' );
+									} else {
+										PRINT $t_output;
+									}
+								}
+								if ( 'on' == $t_filter['and_not_assigned'] ) {
+									PRINT ' (' . lang_get( 'or_unassigned' ) . ')';
+								}
+							?>
+			</td>
+			<td colspan="2" class="small-caption" valign="top">
+							<?php
+								$t_output = '';
+								$t_any_found = false;
+								if ( count( $t_filter['show_category'] ) == 0 ) {
+									PRINT lang_get( 'any' );
+								} else {
+									$t_first_flag = true;
+									foreach( $t_filter['show_category'] as $t_current ) {
+										$t_this_string = '';
+										if ( ( $t_current == 'any' ) || ( is_blank( $t_current ) ) ) {
+											$t_any_found = true;
+										} else {
+											$t_this_string = $t_current;
+										}
+										if ( $t_first_flag != true ) {
+											$t_output = $t_output . '<br>';
+										} else {
+											$t_first_flag = false;
+										}
+										$t_output = $t_output . $t_this_string;
+									}
+									if ( true == $t_any_found ) {
+										PRINT lang_get( 'any' );
+									} else {
+										PRINT $t_output;
+									}
+								}
+							?>
+			</td>
+			<td class="small-caption" valign="top">
+							<?php
+								$t_output = '';
+								$t_any_found = false;
+								if ( count( $t_filter['show_severity'] ) == 0 ) {
+									PRINT lang_get( 'any' );
+								} else {
+									$t_first_flag = true;
+									foreach( $t_filter['show_severity'] as $t_current ) {
+										$t_this_string = '';
+										if ( ( $t_current == 'any' ) || ( is_blank( $t_current ) ) ) {
+											$t_any_found = true;
+										} else {
+											$t_this_string = get_enum_element( 'severity', $t_current );
+										}
+										if ( $t_first_flag != true ) {
+											$t_output = $t_output . '<br>';
+										} else {
+											$t_first_flag = false;
+										}
+										$t_output = $t_output . $t_this_string;
+									}
+									if ( true == $t_any_found ) {
+										PRINT lang_get( 'any' );
+									} else {
+										PRINT $t_output;
+									}
+								}
+							?>
+			</td>
+			<td class="small-caption" valign="top">
+							<?php
+								$t_output = '';
+								$t_any_found = false;
+								if ( count( $t_filter['show_resolution'] ) == 0 ) {
+									PRINT lang_get( 'any' );
+								} else {
+									$t_first_flag = true;
+									foreach( $t_filter['show_resolution'] as $t_current ) {
+										$t_this_string = '';
+										if ( ( $t_current == 'any' ) || ( is_blank( $t_current ) ) ) {
+											$t_any_found = true;
+										} else {
+											$t_this_string = get_enum_element( 'resolution', $t_current );
+										}
+										if ( $t_first_flag != true ) {
+											$t_output = $t_output . '<br>';
+										} else {
+											$t_first_flag = false;
+										}
+										$t_output = $t_output . $t_this_string;
+									}
+									if ( true == $t_any_found ) {
+										PRINT lang_get( 'any' );
+									} else {
+										PRINT $t_output;
+									}
+								}
+							?>
+			</td>
+			<?php 
+				if ( $t_custom_cols > $t_filter_cols ) {
+					echo '<td colspan="' . ($t_custom_cols - $t_filter_cols) . '">&nbsp;</td>';
+				}
+			?>
+		</tr>
+
+		<tr <?php PRINT "class=\"" . $t_trclass . "\""; ?>>
+			<td class="small-caption" valign="top">
+				<a href="<?php PRINT $t_filters_url . 'show_status[]'; ?>"><?php PRINT lang_get( 'status' ) ?>:</a>
+			</td>
+			<td class="small-caption" valign="top">
+				<a href="<?php PRINT $t_filters_url . 'hide_status[]'; ?>"><?php PRINT lang_get( 'hide_status' ) ?>:</a>
+			</td>
+			<td class="small-caption" valign="top">
+				<a href="<?php PRINT $t_filters_url . 'show_build[]'; ?>"><?php PRINT lang_get( 'product_build' ) ?>:</a>
+			</td>
+			<td colspan="2" class="small-caption" valign="top">
+				<a href="<?php PRINT $t_filters_url . 'show_version[]'; ?>"><?php PRINT lang_get( 'product_version' ) ?>:</a>
+			</td>
+			<td colspan="2" class="small-caption" valign="top">
+				<a href="<?php PRINT $t_filters_url . 'fixed_in_version[]'; ?>"><?php PRINT lang_get( 'fixed_in_version' ) ?>:</a>
+			</td>
+		</tr>
+
+		<tr class="row-1">
+			<td class="small-caption" valign="top">
+							<?php
+								$t_output = '';
+								$t_any_found = false;
+								if ( count( $t_filter['show_status'] ) == 0 ) {
+									PRINT lang_get( 'any' );
+								} else {
+									$t_first_flag = true;
+									foreach( $t_filter['show_status'] as $t_current ) {
+										$t_this_string = '';
+										if ( ( $t_current == 'any' ) || ( is_blank( $t_current ) ) ) {
+											$t_any_found = true;
+										} else {
+											$t_this_string = get_enum_element( 'status', $t_current );
+										}
+										if ( $t_first_flag != true ) {
+											$t_output = $t_output . '<br>';
+										} else {
+											$t_first_flag = false;
+										}
+										$t_output = $t_output . $t_this_string;
+									}
+									if ( true == $t_any_found ) {
+										PRINT lang_get( 'any' );
+									} else {
+										PRINT $t_output;
+									}
+								}
+							?>
+			</td>
+			<td class="small-caption" valign="top">
+							<?php
+								$t_output = '';
+								$t_none_found = false;
+								if ( count( $t_filter['hide_status'] ) == 0 ) {
+									PRINT lang_get( 'none' );
+								} else {
+									$t_first_flag = true;
+									foreach( $t_filter['hide_status'] as $t_current ) {
+										$t_this_string = '';
+										if ( ( $t_current == 'none' ) || ( is_blank( $t_current ) ) ) {
+											$t_none_found = true;
+										} else {
+											$t_this_string = get_enum_element( 'status', $t_current );
+										}
+										if ( $t_first_flag != true ) {
+											$t_output = $t_output . '<br>';
+										} else {
+											$t_first_flag = false;
+										}
+										$t_output = $t_output . $t_this_string;
+									}
+									$t_hide_status_post = '';
+									if ( count( $t_filter['hide_status'] ) == 1 ) {
+										$t_hide_status_post = ' (' . lang_get( 'and_above' ) . ')';
+									}
+									if ( true == $t_none_found ) {
+										PRINT lang_get( 'none' );
+									} else {
+										PRINT $t_output . $t_hide_status_post;
+									}
+								}
+							?>
+			</td>
+			<td class="small-caption" valign="top">
+							<?php
+								$t_output = '';
+								$t_any_found = false;
+								if ( count( $t_filter['show_build'] ) == 0 ) {
+									PRINT lang_get( 'any' );
+								} else {
+									$t_first_flag = true;
+									foreach( $t_filter['show_build'] as $t_current ) {
+										$t_this_string = '';
+										if ( ( $t_current == 'any' ) || ( is_blank( $t_current ) ) ) {
+											$t_any_found = true;
+										} else {
+											$t_this_string = $t_current;
+										}
+										if ( $t_first_flag != true ) {
+											$t_output = $t_output . '<br>';
+										} else {
+											$t_first_flag = false;
+										}
+										$t_output = $t_output . $t_this_string;
+									}
+									if ( true == $t_any_found ) {
+										PRINT lang_get( 'any' );
+									} else {
+										PRINT $t_output;
+									}
+								}
+							?>
+			</td>
+			<td colspan="2" class="small-caption" valign="top">
+							<?php
+								$t_output = '';
+								$t_any_found = false;
+								if ( count( $t_filter['show_version'] ) == 0 ) {
+									PRINT lang_get( 'any' );
+								} else {
+									$t_first_flag = true;
+									foreach( $t_filter['show_version'] as $t_current ) {
+										$t_this_string = '';
+										if ( ( $t_current == 'any' ) || ( is_blank( $t_current ) ) ) {
+											$t_any_found = true;
+										} else {
+											$t_this_string = $t_current;
+										}
+										if ( $t_first_flag != true ) {
+											$t_output = $t_output . '<br>';
+										} else {
+											$t_first_flag = false;
+										}
+										$t_output = $t_output . $t_this_string;
+									}
+									if ( true == $t_any_found ) {
+										PRINT lang_get( 'any' );
+									} else {
+										PRINT $t_output;
+									}
+								}
+							?>
+			</td>
+			<td colspan="2" class="small-caption" valign="top">
+							<?php
+								$t_output = '';
+								$t_any_found = false;
+								if ( count( $t_filter['fixed_in_version'] ) == 0 ) {
+									PRINT lang_get( 'any' );
+								} else {
+									$t_first_flag = true;
+									foreach( $t_filter['fixed_in_version'] as $t_current ) {
+										$t_this_string = '';
+										if ( ( $t_current == 'any' ) || ( is_blank( $t_current ) ) ) {
+											$t_any_found = true;
+										} else {
+											$t_this_string = $t_current;
+										}
+										if ( $t_first_flag != true ) {
+											$t_output = $t_output . '<br>';
+										} else {
+											$t_first_flag = false;
+										}
+										$t_output = $t_output . $t_this_string;
+									}
+									if ( true == $t_any_found ) {
+										PRINT lang_get( 'any' );
+									} else {
+										PRINT $t_output;
+									}
+								}
+							?>
 			</td>
 		</tr>
 
 		<tr <?php PRINT "class=\"" . $t_trclass . "\""; ?>>
-			<td class="small-caption" colspan="<?php PRINT ( 2 * $t_custom_cols ); ?>">
-				<a href="<?php PRINT $t_filters_url . 'do_filter_by_date'; ?>"><?php PRINT lang_get( 'use_date_filters' ) ?>:</a>
-				<?php
-				if ( 'on' == $t_filter['do_filter_by_date'] ) {
-					$t_chars = preg_split( '//', config_get( 'short_date_format' ), -1, PREG_SPLIT_NO_EMPTY );
-					$t_time = mktime( 0, 0, 0, $t_filter['start_month'], $t_filter['start_day'], $t_filter['start_year'] );
-					foreach( $t_chars as $t_char ) {
-						if ( strcasecmp( $t_char, "M" ) == 0 ) {
-							PRINT ' ';
-							PRINT date( 'F', $t_time );
-						}
-						if ( strcasecmp( $t_char, "D" ) == 0 ) {
-							PRINT ' ';
-							PRINT date( 'd', $t_time );
-						}
-						if ( strcasecmp( $t_char, "Y" ) == 0 ) {
-							PRINT ' ';
-							PRINT date( 'Y', $t_time );
-						}
-					}
-
-					PRINT ' - ';
-
-					$t_time = mktime( 0, 0, 0, $t_filter['end_month'], $t_filter['end_day'], $t_filter['end_year'] );
-					foreach( $t_chars as $t_char ) {
-						if ( strcasecmp( $t_char, "M" ) == 0 ) {
-							PRINT ' ';
-							PRINT date( 'F', $t_time );
-						}
-						if ( strcasecmp( $t_char, "D" ) == 0 ) {
-							PRINT ' ';
-							PRINT date( 'd', $t_time );
-						}
-						if ( strcasecmp( $t_char, "Y" ) == 0 ) {
-							PRINT ' ';
-							PRINT date( 'Y', $t_time );
-						}
-					}
-				} else {
-					PRINT lang_get( 'no' );
-				}
-				?>
-			</td>
-			<td class="small-caption" colspan="<?php PRINT ( 1 * $t_custom_cols ); ?>">
-				<a href="<?php PRINT $t_filters_url . 'show_build'; ?>"><?php PRINT lang_get( 'product_build' ) ?>:</a>
-				<?php
-				if ( 'any' == $t_filter['show_build'] ) {
-					PRINT lang_get( 'any' );
-				} else {
-					PRINT $t_filter['show_build'];
-				}
-				?>
-			</td>
-			<td class="small-caption" colspan="<?php PRINT ( 1 * $t_custom_cols ); ?>">
-				<a href="<?php PRINT $t_filters_url . 'show_version'; ?>"><?php PRINT lang_get( 'product_version' ) ?>:</a>
-				<?php
-				if ( 'any' == $t_filter['show_version'] ) {
-					PRINT lang_get( 'any' );
-				} else {
-					PRINT $t_filter['show_version'];
-				}
-				?>
-			</td>
-			<td class="small-caption" colspan="<?php PRINT ( 1 * $t_custom_cols ); ?>">
+			<td class="small-caption" valign="top">
 				<a href="<?php PRINT $t_filters_url . 'per_page'; ?>"><?php PRINT lang_get( 'show' ) ?>:</a>
+			</td>
+			<td class="small-caption" valign="top">
+				<a href="<?php PRINT $t_filters_url . 'view_state'; ?>"><?php PRINT lang_get( 'view_status' ) ?>:</a>
+			</td>
+			<td class="small-caption" valign="top">
+				<a href="<?php PRINT $t_filters_url . 'highlight_changed'; ?>"><?php PRINT lang_get( 'changed' ) ?>:</a>
+			</td>
+			<td class="small-caption" valign="top" colspan="4">
+				<a href="<?php PRINT $t_filters_url . 'do_filter_by_date'; ?>"><?php PRINT lang_get( 'use_date_filters' ) ?>:</a>
+			</td>
+			<?php 
+				if ( $t_custom_cols > $t_filter_cols ) {
+					echo '<td colspan="' . ($t_custom_cols - $t_filter_cols) . '">&nbsp;</td>';
+				}
+			?>
+		</tr>
+		<tr class="row-1">
+			<td class="small-caption" valign="top">
 				<?php PRINT $t_filter['per_page']; ?>
 			</td>
-			<td class="small-caption" colspan="<?php PRINT ( 1 * $t_custom_cols ); ?>">
-				<a href="<?php PRINT $t_filters_url . 'highlight_changed'; ?>"><?php PRINT lang_get( 'changed' ) ?>:</a>
+			<td class="small-caption" valign="top">
+				<?php
+				if ( VS_PUBLIC == $t_filter['view_state'] ) {
+					PRINT lang_get( 'public' );
+				} else if ( VS_PRIVATE == $t_filter['view_state'] ) {
+					PRINT lang_get( 'private' );
+				} else {
+					PRINT lang_get( 'any' );
+				}
+				?>
+			</td>
+			<td class="small-caption" valign="top">
 				<?php PRINT $t_filter['highlight_changed']; ?>
 			</td>
-			<td class="small-caption" colspan="<?php PRINT ( 1 * $t_custom_cols ); ?>"></td>
-			<td class="small-caption" colspan="<?php PRINT ( 1 * $t_custom_cols ); ?>"></td>
+			<td class="small-caption" valign="top" colspan="4">
+							<?php
+							if ( 'on' == $t_filter['do_filter_by_date'] ) {
+								$t_chars = preg_split( '//', config_get( 'short_date_format' ), -1, PREG_SPLIT_NO_EMPTY );
+								$t_time = mktime( 0, 0, 0, $t_filter['start_month'], $t_filter['start_day'], $t_filter['start_year'] );
+								foreach( $t_chars as $t_char ) {
+									if ( strcasecmp( $t_char, "M" ) == 0 ) {
+										PRINT ' ';
+										PRINT date( 'F', $t_time );
+									}
+									if ( strcasecmp( $t_char, "D" ) == 0 ) {
+										PRINT ' ';
+										PRINT date( 'd', $t_time );
+									}
+									if ( strcasecmp( $t_char, "Y" ) == 0 ) {
+										PRINT ' ';
+										PRINT date( 'Y', $t_time );
+									}
+								}
+
+								PRINT ' - ';
+
+								$t_time = mktime( 0, 0, 0, $t_filter['end_month'], $t_filter['end_day'], $t_filter['end_year'] );
+								foreach( $t_chars as $t_char ) {
+									if ( strcasecmp( $t_char, "M" ) == 0 ) {
+										PRINT ' ';
+										PRINT date( 'F', $t_time );
+									}
+									if ( strcasecmp( $t_char, "D" ) == 0 ) {
+										PRINT ' ';
+										PRINT date( 'd', $t_time );
+									}
+									if ( strcasecmp( $t_char, "Y" ) == 0 ) {
+										PRINT ' ';
+										PRINT date( 'Y', $t_time );
+									}
+								}
+							} else {
+								PRINT lang_get( 'no' );
+							}
+							?>
+			</td>
+			<?php 
+				if ( $t_custom_cols > $t_filter_cols ) {
+					echo '<td colspan="' . ($t_custom_cols - $t_filter_cols) . '">&nbsp;</td>';
+				}
+			?>
 		</tr>
 		<?php
-		if ( ON == config_get( 'filter_by_custom_fields' ) ) {
-		?>
-			<?php # -- Custom Field Searching -- ?>
-			<?php
-			if ( sizeof( $t_accessible_custom_fields_ids ) > 0 ) {
-				$t_per_row = config_get( 'filter_custom_fields_per_row' );
-				$t_num_rows = ceil( sizeof( $t_accessible_custom_fields_ids ) / $t_per_row );
-				$t_base = 0;
 
-				for ( $i = 0; $i < $t_num_rows; $i++ ) {
-					?>
-					<tr <?php PRINT "class=\"" . $t_trclass . "\""; ?>>
-					<?php
-					for( $j = 0; $j < $t_per_row; $j++ ) {
-						PRINT '<td class="small-caption" colspan="' . ( 1 * $t_filter_cols ) . '">';
-						if ( isset( $t_accessible_custom_fields_names[$t_base + $j] ) ) {
-							PRINT "<a href=\"" . $t_filters_url . 'custom_field_' . $t_accessible_custom_fields_ids[$t_base + $j] . "\">";
-							PRINT $t_accessible_custom_fields_names[$t_base + $j] . ":</a> ";
-							PRINT $t_filter['custom_fields'][$t_accessible_custom_fields_ids[$t_base + $j]];
-						} else {
-							PRINT '&nbsp;';
-						}
-						PRINT '</td>';
+		if ( ON == config_get( 'filter_by_custom_fields' ) ) {
+
+			# -- Custom Field Searching --
+
+			if ( count( $t_accessible_custom_fields_ids ) > 0 ) {
+				$t_per_row = config_get( 'filter_custom_fields_per_row' );
+				$t_num_fields = count( $t_accessible_custom_fields_ids ) ;
+				$t_row_idx = 0;
+				$t_col_idx = 0;
+
+				$t_fields = "";
+				$t_values = "";
+
+				for ( $i = 0; $i < $t_num_fields; $i++ ) {
+					if ( $t_col_idx == 0 ) {
+						$t_fields = '<tr class="' . $t_trclass . '">';
+						$t_values = '<tr class="row-1">';
 					}
-					?>
-					</tr>
-					<?php
-					$t_base += $t_per_row;
+
+					if ( isset( $t_accessible_custom_fields_names[ $i ] ) ) {
+						$t_fields .= '<td class="small-caption" valign="top"> ';
+						$t_fields .= '<a href="' . $t_filters_url . 'custom_field_' . $t_accessible_custom_fields_ids[$i] . '[]">';
+						$t_fields .= string_display( lang_get_defaulted( $t_accessible_custom_fields_names[$i] ) );
+						$t_fields .= '</a> </td> ';
+					}
+					$t_output = '';
+					$t_any_found = false;
+
+					$t_values .= '<td class="small-caption" valign="top"> ' ; 
+					if ( !isset( $t_filter['custom_fields'][$t_accessible_custom_fields_ids[$i]] ) ) {
+						$t_values .= lang_get( 'any' );
+					} else {
+						$t_first_flag = true;
+						foreach( $t_filter['custom_fields'][$t_accessible_custom_fields_ids[$i]] as $t_current ) {
+							$t_this_string = '';
+							if ( ( $t_current == 'any' ) || ( is_blank( $t_current ) ) ) {
+								$t_any_found = true;
+							} else {
+								$t_this_string = $t_current;
+							}
+
+							if ( $t_first_flag != true ) {
+								$t_output = $t_output . '<br>';
+							} else {
+								$t_first_flag = false;
+							}
+
+							$t_output = $t_output . $t_this_string;
+						}
+
+						if ( true == $t_any_found ) {
+							$t_values .= lang_get( 'any' );
+						} else {
+							$t_values .= $t_output;
+						}
+					}
+					$t_values .= ' </td>';
+
+					$t_col_idx++;
+
+					if ( $t_col_idx == $t_per_row ) {
+						if ( $t_filter_cols > $t_per_row ) {
+							$t_fields .= '<td colspan="' . ($t_filter_cols - $t_per_row ) . '">&nbsp</td> ';
+							$t_values .= '<td colspan="' . ($t_filter_cols - $t_per_row) . '">&nbsp</td> ';
+						}
+
+						$t_fields .= '</tr>' . "\n";
+						$t_values .= '</tr>' . "\n";
+
+						echo $t_fields;
+						echo $t_values; 
+
+						$t_col_idx = 0;
+						$t_row_idx++;
+					}
+				}
+
+
+				if ( $t_col_idx > 0 ) {
+					if ( $t_col_idx < $t_per_row ) {
+						$t_fields .= '<td colspan="' . ($t_per_row - $t_col_idx) . '">&nbsp</td> ';
+						$t_values .= '<td colspan="' . ($t_per_row - $t_col_idx) . '">&nbsp</td> ';
+					}
+
+					if ( $t_filter_cols > $t_per_row ) {
+						$t_fields .= '<td colspan="' . ($t_filter_cols - $t_per_row ) . '">&nbsp</td> ';
+						$t_values .= '<td colspan="' . ($t_filter_cols - $t_per_row) . '">&nbsp</td> ';
+					}
+
+					$t_fields .= '</tr>' . "\n";
+					$t_values .= '</tr>' . "\n";
+
+					echo $t_fields;
+					echo $t_values; 
 				}
 			}
 		}
+		} // expanded
 		?>
 
 		<tr>
-			<td colspan="<?php PRINT ( 1 * $t_custom_cols ); ?>"><?php PRINT lang_get( 'search' ) ?>: <input type="text" size="16" name="search" value="<?php PRINT $t_filter['search']; ?>" /></td>
-			<!-- SUBMIT button -->
-			<td class="left" colspan="<?php PRINT ( 1 * $t_custom_cols ); ?>">
+			<td colspan="3">
+				<?php
+					collapse_icon( 'filter' );
+					echo lang_get( 'search' );
+				?>: 
+				<input type="text" size="16" name="search" value="<?php PRINT htmlspecialchars( $t_filter['search'] ); ?>" />
+
 				<input type="submit" name="filter" class="button" value="<?php PRINT lang_get( 'search' ) ?>" />
 			</td>
 			</form>
-			<td colspan="<?php PRINT ( 2 * $t_custom_cols ); ?>"></td>
 
+			<td class="right" colspan="4">
 			<?php
 			$t_stored_queries_arr = array();
 			$t_stored_queries_arr = filter_db_get_available_queries();
 
-			if ( sizeof( $t_stored_queries_arr ) > 0 ) {
+			if ( count( $t_stored_queries_arr ) > 0 ) {
 				?>
-				<td class="right" colspan="<?php PRINT ( 3 * $t_custom_cols ); ?>">
-					<form method="get" name="list_queries" action="view_all_set.php">
+					<form method="get" name="list_queries<?php echo $t_form_name_suffix; ?>" action="view_all_set.php">
 					<input type="hidden" name="type" value="3" />
-					<select name="source_query_id">
+					<?php
+					if ( ON == config_get( 'use_javascript' ) ) {
+						echo "<select name=\"source_query_id\" onchange=\"document.forms.list_queries$t_form_name_suffix.submit();\">";
+					} else {
+						PRINT '<select name="source_query_id">';
+					}
+					?>
 					<option value="-1"><?php PRINT '[' . lang_get( 'reset_query' ) . ']' ?></option>
 					<option value="-1"></option>
 					<?php
@@ -708,35 +1353,29 @@
 					<form method="post" name="open_queries" action="query_view_page.php">
 					<input type="submit" name="switch_to_query_button" class="button" value="<?php PRINT lang_get( 'open_queries' ) ?>" />
 					</form>
-				</td>
 				<?php
 			} else {
 				?>
-				<td class="right" colspan="<?php PRINT ( 3 * $t_custom_cols ); ?>">
 					<form method="get" name="reset_query" action="view_all_set.php">
 					<input type="hidden" name="type" value="3" />
 					<input type="hidden" name="source_query_id" value="-1" />
 					<input type="submit" name="reset_query_button" class="button" value="<?php PRINT lang_get( 'reset_query' ) ?>" />
 					</form>
-				</td>
 				<?php
 			}
 
 			if ( access_has_project_level( config_get( 'stored_query_create_threshold' ) ) ) {
 			?>
-				<td class="left" colspan="<?php PRINT ( 1 * $t_custom_cols ); ?>">
 					<form method="post" name="save_query" action="query_store_page.php">
 					<input type="submit" name="save_query_button" class="button" value="<?php PRINT lang_get( 'save_query' ) ?>" />
 					</form>
-				</td>
 			<?php
 			} else {
 			?>
-				<td colspan="<?php PRINT ( 1 * $t_custom_cols ); ?>">&nbsp;</td>
 			<?php
 			}
 			?>
-
+			</td>
 		</tr>
 		</table>
 <?php
@@ -983,5 +1622,129 @@
 		asort( $t_overall_query_arr );
 
 		return $t_overall_query_arr;
+	}
+
+	# Make sure that our filters are entirely correct and complete (it is possible that they are not).
+	# We need to do this to cover cases where we don't have complete control over the filters given.
+	function filter_ensure_valid_filter( $p_filter_arr ) {
+		if ( !isset( $p_filter_arr['_version'] ) ) {
+			$p_filter_arr['_version'] = config_get( 'cookie_version' );
+		}
+		if ( !isset( $p_filter_arr['_view_type'] ) ) {
+			$p_filter_arr['_view_type'] = gpc_get_string( 'view_type', 'simple' );
+		}
+		if ( !isset( $p_filter_arr['per_page'] ) ) {
+			$p_filter_arr['per_page'] = gpc_get_int( 'per_page', config_get( 'default_limit_view' ) );
+		}
+		if ( !isset( $p_filter_arr['highlight_changed'] ) ) {
+			$p_filter_arr['highlight_changed'] = config_get( 'default_show_changed' );
+		}
+		if ( !isset( $p_filter_arr['sort'] ) ) {
+			$p_filter_arr['sort'] = "last_updated";
+		}
+		if ( !isset( $p_filter_arr['dir'] ) ) {
+			$p_filter_arr['dir'] = "DESC";
+		}
+		if ( !isset( $p_filter_arr['start_month'] ) ) {
+			$p_filter_arr['start_month'] = gpc_get_string( 'start_month', date( 'm' ) );
+		}
+		if ( !isset( $p_filter_arr['start_day'] ) ) {
+			$p_filter_arr['start_day'] = gpc_get_string( 'start_day', 1 );
+		}
+		if ( !isset( $p_filter_arr['start_year'] ) ) {
+			$p_filter_arr['start_year'] = gpc_get_string( 'start_year', date( 'Y' ) );
+		}
+		if ( !isset( $p_filter_arr['end_month'] ) ) {
+			$p_filter_arr['end_month'] = gpc_get_string( 'end_month', date( 'm' ) );
+		}
+		if ( !isset( $p_filter_arr['end_day'] ) ) {
+			$p_filter_arr['end_day'] = gpc_get_string( 'end_day', date( 'd' ) );
+		}
+		if ( !isset( $p_filter_arr['end_year'] ) ) {
+			$p_filter_arr['end_year'] = gpc_get_string( 'end_year', date( 'Y' ) );
+		}
+		if ( !isset( $p_filter_arr['search'] ) ) {
+			$p_filter_arr['search'] = '';
+		}
+		if ( !isset( $p_filter_arr['and_not_assigned'] ) ) {
+			$p_filter_arr['and_not_assigned'] = gpc_get_bool( 'and_not_assigned' );
+		}
+		if ( !isset( $p_filter_arr['do_filter_by_date'] ) ) {
+			$p_filter_arr['do_filter_by_date'] = gpc_get_bool( 'do_filter_by_date' );
+		}
+		if ( !isset( $p_filter_arr['view_state'] ) ) {
+			$p_filter_arr['view_state'] = gpc_get_int( 'view_state', '' );
+		}
+
+		$t_custom_fields 		= custom_field_get_ids();
+		$f_custom_fields_data 	= array();
+		if ( is_array( $t_custom_fields ) && ( sizeof( $t_custom_fields ) > 0 ) ) {
+			foreach( $t_custom_fields as $t_cfid ) {
+				if ( is_array( gpc_get( 'custom_field_' . $t_cfid, null ) ) ) {
+					$f_custom_fields_data[$t_cfid] = gpc_get_string_array( 'custom_field_' . $t_cfid, 'any' );
+				} else {
+					$f_custom_fields_data[$t_cfid] = gpc_get_string( 'custom_field_' . $t_cfid, 'any' );
+					$f_custom_fields_data[$t_cfid] = array( $f_custom_fields_data[$t_cfid] );
+				}
+			}
+		}
+
+		$t_multi_select_list = array( 'show_category' => 'string',
+									  'show_severity' => 'int',
+									  'show_status' => 'int',
+									  'reporter_id' => 'int',
+									  'handler_id' => 'string',
+									  'show_resolution' => 'int',
+									  'show_build' => 'string',
+									  'show_version' => 'string',
+									  'hide_status' => 'int',
+									  'fixed_in_version' => 'string',
+									  'user_monitor' => 'int' );
+		foreach( $t_multi_select_list as $t_multi_field_name => $t_multi_field_type ) {
+			if ( !isset( $p_filter_arr[$t_multi_field_name] ) ) {
+				if ( 'hide_status' == $t_multi_field_name ) {
+					$p_filter_arr[$t_multi_field_name] = array( config_get( 'hide_status_default' ) );
+				} else if ( 'custom_fields' == $t_multi_field_name ) {
+					$p_filter_arr[$t_multi_field_name] = array( $f_custom_fields_data );
+				} else {
+					$p_filter_arr[$t_multi_field_name] = array( "any" );
+				}
+			} else {
+				if ( !is_array( $p_filter_arr[$t_multi_field_name] ) ) {
+					$p_filter_arr[$t_multi_field_name] = array( $p_filter_arr[$t_multi_field_name] );
+				}
+				$t_checked_array = array();
+				foreach ( $p_filter_arr[$t_multi_field_name] as $t_filter_value ) {
+					if ( 'string' == $t_multi_field_type ) {
+						$t_checked_array[] = db_prepare_string( $t_filter_value );
+					} else if ( 'int' == $t_multi_field_type ) {
+						$t_checked_array[] = db_prepare_int( $t_filter_value );
+					} else if ( 'array' == $t_multi_field_type ) {
+						$t_checked_array[] = $t_filter_value;
+					}
+				}
+				$p_filter_arr[$t_multi_field_name] = $t_checked_array;
+			}
+		}
+
+		if ( is_array( $t_custom_fields ) && ( sizeof( $t_custom_fields ) > 0 ) ) {
+			foreach( $t_custom_fields as $t_cfid ) {
+				if ( !isset( $p_filter_arr['custom_fields'][$t_cfid] ) ) {
+					$p_filter_arr['custom_fields'][$t_cfid] = array( "any" );
+				} else {
+					if ( !is_array( $p_filter_arr['custom_fields'][$t_cfid] ) ) {
+						$p_filter_arr['custom_fields'][$t_cfid] = array( $p_filter_arr['custom_fields'][$t_cfid] );
+					}
+					$t_checked_array = array();
+					foreach ( $p_filter_arr['custom_fields'][$t_cfid] as $t_filter_value ) {
+						$t_checked_array[] = db_prepare_string( $t_filter_value );
+					}
+					$p_filter_arr['custom_fields'][$t_cfid] = $t_checked_array;
+				}
+			}
+		}
+		# all of our filter values are now guaranteed to be there, and correct.
+
+		return $p_filter_arr;
 	}
 ?>

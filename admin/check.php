@@ -6,14 +6,15 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: check.php,v 1.7 2004-03-18 14:02:28 vboctor Exp $
+	# $Id: check.php,v 1.13 2004-09-06 00:33:38 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
 	error_reporting( E_ALL );
 
 	$g_skip_open_db = true;  # don't open the database in database_api.php
-	@require_once( '../core.php' );
+	require_once ( dirname( dirname( __FILE__ ) ) . DIRECTORY_SEPARATOR . 'core.php' );
+	require_once ( dirname( dirname( __FILE__ ) ) . DIRECTORY_SEPARATOR . 'core/email_api.php' );
 
 	$t_core_path = config_get( 'core_path' );
 
@@ -132,7 +133,7 @@
 <tr>
 	<td bgcolor="#f0f0ff">
 		<span class="title">Version</span>
-		<p>Mantis requires at least <b>PHP <?php echo PHP_MIN_VERSION ?></b>.  If you are not running this version you or your administrator will need to upgrade your build of PHP.  We recommend 4.0.6 or 4.1.2 at the moment.</p>
+		<p>Mantis requires at least <b>PHP <?php echo PHP_MIN_VERSION ?></b>.  If you are not running this version or above, you or your administrator will need to upgrade your build of PHP.</p>
 		<p>You are running <b>PHP <?php echo $version ?></b></p>
 	</td>
 </tr>
@@ -239,6 +240,56 @@ if ( substr( php_uname(), 0, 7 ) == 'Windows' ) {
 	test_bug_download_threshold();
 	test_bug_attachments_allow_flags();
 ?>
+<tr>
+	<td bgcolor="#ffffff">
+		check mail configuration: send_reset_password = ON requires allow_blank_email = OFF
+	</td>
+	<?php
+		if ( ( ON == config_get( 'send_reset_password' ) ) &&
+				( OFF != config_get( 'allow_blank_email' ) ) ) {
+			print_test_result( BAD );
+		} else {
+			print_test_result( GOOD );
+		}
+	?>
+<tr>
+	<td bgcolor="#ffffff">
+		check mail configuration: send_reset_password = ON requires enable_email_notification = ON
+	</td>
+	<?php
+		if ( ( ON == config_get( 'send_reset_password' ) ) &&
+				( ON != config_get( 'enable_email_notification' ) ) ) {
+			print_test_result( BAD );
+		} else {
+			print_test_result( GOOD );
+		}
+	?>
+<tr>
+	<td bgcolor="#ffffff">
+		check mail configuration: allow_signup = ON requires enable_email_notification = ON
+	</td>
+	<?php
+		if ( ( ON == config_get( 'allow_signup' ) ) &&
+				( ON != config_get( 'enable_email_notification' ) ) ) {
+			print_test_result( BAD );
+		} else {
+			print_test_result( GOOD );
+		}
+	?>
+<tr>
+	<td bgcolor="#ffffff">
+		check mail configuration: allow_signup = ON requires send_reset_password = ON
+	</td>
+	<?php
+		if ( ( ON == config_get( 'allow_signup' ) ) &&
+				( ON != config_get( 'send_reset_password' ) ) ) {
+			print_test_result( BAD );
+		} else {
+			print_test_result( GOOD );
+		}
+	?>
+</tr>
+
 </table>
 
 
@@ -252,7 +303,7 @@ if ( substr( php_uname(), 0, 7 ) == 'Windows' ) {
 			<td bgcolor="#ffcc22">
 				<span class="title">WARNING - register_globals - WARNING</span><br /><br />
 
-				You have register_globals enabled in PHP, which is considered a security risk.  Since version 0.18, Mantis has no longer relied on register_globals being enabled.  PHP versions later that 4.2.0 have this option disabled by default.  For more information on the security issues associated with enabling register_globals, see <a href="http://www.php.net/manual/en/security.registerglobals.php">this page</a>.
+				You have register_globals enabled in PHP, which is considered a security risk.  Since version 0.18, Mantis has no longer relied on register_globals being enabled.  PHP versions later that 4.2.0 have this option disabled by default.  For more information on the security issues associated with enabling register_globals, see <a href="http://www.php.net/manual/en/security.globals.php">this page</a>.
 
 				If you have no other PHP applications that rely on register_globals, you should add the line <pre>register_globals = Off</pre> to your php.ini file;  if you do have other applications that require register_globals, you could consider disabling it for your Mantis installation by adding the line <pre>php_value register_globals off</pre> to a <tt>.htaccess</tt> file or a <tt>&lt;Directory&gt;</tt> or <tt>&lt;Location&gt;</tt> block in your apache configuration file.  See the apache documentation if you require more information.
 			</td>
@@ -342,9 +393,11 @@ if ( substr( php_uname(), 0, 7 ) == 'Windows' ) {
 		<p>You can test the mail() function with this form.  Just check the recipient and click submit.  If the page takes a very long time to reappear or results in an error then you will need to investigate your php/mail server settings.  Note that errors can also appear in the server error log.  More help can be found at the <a href="http://www.php.net/manual/en/ref.mail.php">PHP website</a>.</p>
 		<?php
 		if ( $f_mail_test ) {
-			echo '<b><font color="#ff0000">Mail sent</font></b> - ';
-			
-			$result = mail( config_get( 'administrator_email' ), 'Testing PHP mail() function', 'Your PHP mail settings appear to be correctly set.', 'From: ' . config_get( 'administrator_email' ) . "\n" );
+			echo '<b><font color="#ff0000">Testing Mail</font></b> - ';
+ # @@@ thraxisp - workaround to ensure a language is set without authenticating			
+ #  will disappear when this is properly localized
+			lang_push( 'english' );
+			$result = email_send( config_get( 'administrator_email' ), 'Testing PHP mail() function',	'Your PHP mail settings appear to be correctly set.');
 
 			if ( !$result ) {
 				echo ' PROBLEMS SENDING MAIL TO: ' . config_get( 'administrator_email' ) . '. Please check your php/mail server settings.<br />';

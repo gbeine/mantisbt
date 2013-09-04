@@ -9,11 +9,11 @@
 	###########################################################################
 	# Latvian strings for Mantis
 	# -------------------------------------------------
-	# $Revision: 1.9 $
-	# $Author: jlatour $
-	# $Date: 2004-03-14 20:10:48 $
+	# $Revision: 1.18 $
+	# $Author: bigbadger $
+	# $Date: 2004-08-26 17:40:58 $
 	#
-	# $Id: strings_latvian.txt,v 1.9 2004-03-14 20:10:48 jlatour Exp $
+	# $Id: strings_latvian.txt,v 1.18 2004-08-26 17:40:58 bigbadger Exp $
 	###########################################################################
 ?>
 <?php
@@ -22,12 +22,15 @@ $s_charset = 'Windows-1257';
 
 # Group commands menuitems
 $s_actiongroup_menu_move = 'Pârvietot';
+$s_actiongroup_menu_copy = 'Copy';
 $s_actiongroup_menu_assign = 'Pieðíirt';
 $s_actiongroup_menu_close = 'Aizvçrt';
 $s_actiongroup_menu_delete = 'Dzçst';
 $s_actiongroup_menu_resolve = 'Atrisinât';
 $s_actiongroup_menu_update_priority = 'Labot prioritâti';
 $s_actiongroup_menu_update_status = 'Labot statusu';
+$s_actiongroup_menu_update_view_status = 'Update View Status';
+$s_actiongroup_bugs = 'Selected Issues';
 
 # new strings:
 $s_all_projects = "visi projekti";
@@ -95,20 +98,26 @@ $s_login_link = 'Pieslçgties';
 
 # bug_actiongroup_page.php : mass treatment
 $s_bug_actiongroup_failed = 'Jums nav tiesîbu veukt darbîbas ar sekojoðiem bugiem: ';
+$s_bug_actiongroup_access = 'You did not have appropriate permissions to perform that action.';
+$s_bug_actiongroup_status = 'This issue cannot be changed to the requested status';
 $s_close_bugs_conf_msg = 'Vai jûs esat pârliecinâti, ka vçlaties aizvçrt visus ðos bugus ?';
 $s_delete_bugs_conf_msg = 'Vai jûs esat pârliecinâti, ka vçlaties dzçst visus ðos bugus ?';
 $s_move_bugs_conf_msg = 'Pârvietot uz';
+$s_copy_bugs_conf_msg = 'Copy issues to';
 $s_assign_bugs_conf_msg = 'Pieðíirt..';
 $s_resolve_bugs_conf_msg = 'Izvçlçties buga atrisinâjumu';
 $s_priority_bugs_conf_msg = 'Izvçlçties buga prioritâti';
 $s_status_bugs_conf_msg = 'Izvçlçties buga statusu';
+$s_view_status_bugs_conf_msg = 'Choose issues view status';
 $s_close_group_bugs_button = 'Aizvçrt Bugus' ;
 $s_delete_group_bugs_button = 'Dzçst Bugus' ;
 $s_move_group_bugs_button = 'Pârvietot Bugus' ;
+$s_copy_group_bugs_button = 'Copy Issues' ;
 $s_assign_group_bugs_button = 'Pieðíirt Bugus' ;
 $s_resolve_group_bugs_button = 'Atrisinât Bugus' ;
 $s_priority_group_bugs_button = 'Labot Prioritâti' ;
 $s_status_group_bugs_button = 'Labot Statusu' ;
+$s_view_status_group_bugs_button = 'Update View Status';
 
 # improved JPgraphs strings
 $s_graph_imp_status_title = 'Synthesis graphs by status' ;
@@ -160,39 +169,38 @@ $MANTIS_ERROR[ERROR_ACCESS_DENIED]      = 'KÏÛDA: Pieeja liegta.';
 $MANTIS_ERROR[ERROR_UPLOAD_FAILURE]     = 'KÏÛDA: File upload failed.  Ask your admin to run the admin_check script to debug this problem.';
 $MANTIS_ERROR[ERROR_FILE_TOO_BIG]       = 'KÏÛDA: File upload failed.  This is likely because the filesize was larger than is currently allowed by this PHP installation.';
 $MANTIS_ERROR[ERROR_GPC_VAR_NOT_FOUND]  = 'KÏÛDA: A required parameter to this page was not found.';
-$MANTIS_ERROR[ERROR_USER_NAME_NOT_UNIQUE]= 'KÏÛDA: That username is already being used.  Please go back and select another one.';
-$MANTIS_ERROR[ERROR_CONFIG_OPT_NOT_FOUND]='KÏÛDA: Configuration option not found.';
-$MANTIS_ERROR[ERROR_LANG_STRING_NOT_FOUND]='KÏÛDA: String not found.';
+$MANTIS_ERROR[ERROR_USER_NAME_NOT_UNIQUE] = 'That username is already being used.  Please go back and select another one.';
+$MANTIS_ERROR[ERROR_CONFIG_OPT_NOT_FOUND] = 'Configuration option \'%s\' not found.';
+$MANTIS_ERROR[ERROR_LANG_STRING_NOT_FOUND] = 'String \'%s\' not found.';
 $MANTIS_ERROR[ERROR_BUGNOTE_NOT_FOUND]  = 'KÏÛDA: Bugnote not found.';
 $MANTIS_ERROR[ERROR_PROJECT_NOT_FOUND]  = 'KÏÛDA: Project not found.';
 $MANTIS_ERROR[ERROR_DB_FIELD_NOT_FOUND] = 'KÏÛDA: Database field not found.';
 $MANTIS_ERROR[ERROR_FTP_CONNECT_ERROR]	= 'KÏÛDA: Unable to connect to FTP server.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_NOT_UNIQUE] = 'KÏÛDA: A project with that name already exists.  Please go back and enter a different name.';
-$MANTIS_ERROR[ERROR_PROJECT_NAME_INVALID]='KÏÛDA: Invalid project name specified.  Project names cannot be blank.';
+$MANTIS_ERROR[ERROR_PROJECT_NAME_INVALID] = 'Invalid project name specified.  Project names cannot be blank.';
 $MANTIS_ERROR[ERROR_USER_NOT_FOUND]	= 'KÏÛDA: User not found.';
-$MANTIS_ERROR[ERROR_AUTH_INVALID_COOKIE]= 'KÏÛDA: The login information stored by your browser is invalid.  Perhaps your account was deleted?';
-$MANTIS_ERROR[ERROR_USER_PREFS_NOT_FOUND]='KÏÛDA: Preferences could not be found for this user.';
+$MANTIS_ERROR[ERROR_AUTH_INVALID_COOKIE] = 'The login information stored by your browser is invalid.  Perhaps your account was deleted?';
+$MANTIS_ERROR[ERROR_USER_PREFS_NOT_FOUND] = 'Preferences could not be found for this user.';
 $MANTIS_ERROR[ERROR_NEWS_NOT_FOUND]	= 'KÏÛDA: News item not found.';
-$MANTIS_ERROR[ERROR_USER_CREATE_PASSWORD_MISMATCH]='KÏÛDA: Password does not match verification.';
+$MANTIS_ERROR[ERROR_USER_CREATE_PASSWORD_MISMATCH] = 'Password does not match verification.';
 $MANTIS_ERROR[ERROR_GPC_ARRAY_EXPECTED]	= 'KÏÛDA: An array was expected but a string was received.';
-$MANTIS_ERROR[ERROR_GPC_ARRAY_UNEXPECTED]='KÏÛDA: A string was expected but an array was received.';
+$MANTIS_ERROR[ERROR_GPC_ARRAY_UNEXPECTED] = 'A string was expected but an array was received.';
 $MANTIS_ERROR[ERROR_BUG_NOT_FOUND]	= 'KÏÛDA: Bug not found.';
 $MANTIS_ERROR[ERROR_EMAIL_INVALID]	= 'KÏÛDA: Invalid email.';
-$MANTIS_ERROR[ERROR_USER_PROFILE_NOT_FOUND]= 'KÏÛDA: Profile not found.';
+$MANTIS_ERROR[ERROR_USER_PROFILE_NOT_FOUND] = 'Profile not found.';
 $MANTIS_ERROR[ERROR_FILE_NOT_ALLOWED]	= 'KÏÛDA: File type not allowed for uploads.';
 $MANTIS_ERROR[ERROR_FILE_DUPLICATE]	= 'KÏÛDA: This is a duplicate file.  Please delete the file first.';
 $MANTIS_ERROR[ERROR_FILE_INVALID_UPLOAD_PATH] = 'KÏÛDA: Invalid upload path.  Directory either does not exist or not writable to webserver';
 $MANTIS_ERROR[ERROR_BUG_DUPLICATE_SELF]	= 'KÏÛDA: You cannot set a bug as a duplicate of itself.';
-$MANTIS_ERROR[ERROR_CUSTOM_FIELD_NOT_FOUND]= 'KÏÛDA: Custom field not found';
-$MANTIS_ERROR[ERROR_CUSTOM_FIELD_NAME_NOT_UNIQUE]= 'KÏÛDA: This is a duplicate name.';
-$MANTIS_ERROR[ERROR_CUSTOM_FIELD_IN_USE]= 'KÏÛDA: At least one project still uses this field.';
+$MANTIS_ERROR[ERROR_CUSTOM_FIELD_NOT_FOUND] = 'Custom field not found';
+$MANTIS_ERROR[ERROR_CUSTOM_FIELD_NAME_NOT_UNIQUE] = 'This is a duplicate name.';
+$MANTIS_ERROR[ERROR_CUSTOM_FIELD_IN_USE] = 'At least one project still uses this field.';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_INVALID_VALUE] = 'KÏÛDA: Invalid value for field';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_INVALID_DEFINITION] = 'Invalid custom field definition';
 $MANTIS_ERROR[ERROR_LDAP_AUTH_FAILED]	= 'KÏÛDA: LDAP Authentication Failed';
-$MANTIS_ERROR[ERROR_LDAP_SERVER_CONNECT_FAILED]= 'KÏÛDA: LDAP Server Connection Failed';
+$MANTIS_ERROR[ERROR_LDAP_SERVER_CONNECT_FAILED] = 'LDAP Server Connection Failed';
 $MANTIS_ERROR[ERROR_LDAP_UPDATE_FAILED]	= 'KÏÛDA: LDAP Record Update has failed.';
-$MANTIS_ERROR[ERROR_LDAP_USER_NOT_FOUND]= 'KÏÛDA: LDAP User Record Not Found.';
-$MANTIS_ERROR[ERROR_BUG_RESOLVED_ACTION_DENIED]= 'KÏÛDA: The action cannot be performed because the bug has been resolved';
+$MANTIS_ERROR[ERROR_LDAP_USER_NOT_FOUND] = 'LDAP User Record Not Found.';
 $MANTIS_ERROR[ERROR_DB_CONNECT_FAILED]	= 'KÏÛDA: Database connection failed.';
 $MANTIS_ERROR[ERROR_DB_QUERY_FAILED]	= 'KÏÛDA: Database query failed.';
 $MANTIS_ERROR[ERROR_DB_SELECT_FAILED]	= 'KÏÛDA: Database selection failed.';
@@ -203,7 +211,27 @@ $MANTIS_ERROR[ERROR_VERSION_DUPLICATE] = 'KÏÛDA: Ðâda versija jau eksistç.';
 $MANTIS_ERROR[ERROR_VERSION_NOT_FOUND]  = 'KÏÛDA: Versija nav atrasta.';
 $MANTIS_ERROR[ERROR_USER_NAME_INVALID]  = 'KÏÛDA: The username is invalid.';
 $MANTIS_ERROR[ERROR_USER_DOES_NOT_HAVE_REQ_ACCESS] = 'Lieotâjam nav nepiecieðamâ pieejas lîmeòa';
+$MANTIS_ERROR[ERROR_USER_REAL_MATCH_USER] = 'The "Real Name" chosen matches another user\'s login name. Please choose another.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_NOT_ENABLED] = 'Sponsorship support not enabled.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_NOT_FOUND] = 'Sponsorship %d not found.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_AMOUNT_TOO_LOW] = 'Sponsorship (%s) is below minimum amount (%s).';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_HANDLER_ACCESS_LEVEL_TOO_LOW] = 'Handler does not have the required access level to handle sponsored issues.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_ASSIGNER_ACCESS_LEVEL_TOO_LOW] = 'Access Denied: Assigning sponsored issues requires higher access level.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_SPONSOR_NO_EMAIL] = 'Sponsor has not provided an email address. Please update your profile.';
+$MANTIS_ERROR[ERROR_CONFIG_OPT_INVALID] = 'Configuration option \'%s\' has invalid value \'%s\'';
+$MANTIS_ERROR[ERROR_BUG_READ_ONLY_ACTION_DENIED] = 'The action cannot be performed because issue \'%d\' is read-only';
+$MANTIS_ERROR[ERROR_RELATIONSHIP_ALREADY_EXISTS] = "ERROR: There is already a relationship between these two issues.";
+$MANTIS_ERROR[ERROR_RELATIONSHIP_NOT_FOUND] = "ERROR: Relationship not found.";
+$MANTIS_ERROR[ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_BUG_TOO_LOW] = "Access denied: The issue %d requires higher access level.";
+$MANTIS_ERROR[ERROR_RELATIONSHIP_SAME_BUG] = "An issue can't be related to itself.";
+$MANTIS_ERROR[ERROR_SIGNUP_NOT_MATCHING_CAPTCHA] = 'Confirmation hash does not match. Please retry.';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_ENABLED] = 'The \'lost your password\' feature is not available.';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_NO_EMAIL_SPECIFIED] = 'You must provide an e-mail address in order to reset the password';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_MATCHING_DATA] = 'The provided information doesn\'t match any registered account!';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_CONFIRM_HASH_INVALID] = 'The confirmation URL is invalid or has already been used. Please signup again.';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_MAX_IN_PROGRESS_ATTEMPTS_REACHED] = 'Max. number of in-progress requests reached. Please contact the system administrator';
 
+#$s_login_error = 'Your account may be disabled or blocked (due to too many failed login attempts) or the username/password you entered is incorrect.';
 $s_login_error = 'KÏÛDA: Jûsu pieeja ir atslçgta vai ievadîts nepareizs lietotâja vârds, parole.';
 $s_login_cookies_disabled = 'KÏÛDA: Your browser either doesn\'t know how to handle cookies, or refuses to handle them.';
 
@@ -234,17 +262,18 @@ $s_projection_enum_string         = "10:nav,30:sîkas izmaiòas,50:izmaiòas,70:bût
 $s_eta_enum_string                = "10:nav,20:< 1 dienu,30:2-3 dienas,40:< 1 nedçïu,50:< 1 mçnesi,60:> 1 mçnesi";
 
 # Email Strings
-$s_new_account_subject = "Jûsu jaunais lietotâja vârds";
-$s_new_account_greeting = "Laipni lûdzam kïûdu kontroles sistçmâ (Bugtracker). Izlasiet informâciju, kas nepiecieðama lai pieslçgtos pie sistçmas.\n\n";
-$s_new_account_url = "Lai pieslçgtos sistçmai nepiecieðams izmantot sekojoðu web adresi: ";
+$s_new_account_subject = 'Account registration';
+$s_new_account_greeting = 'Thank you for registering. You have account with username \'';
+$s_new_account_greeting2 = '\'. In order to complete your registration, visit the following URL (make sure it is entered as the single line) and set your own access password:';
 $s_new_account_username = "Lietotâja vârds: ";
-$s_new_account_password = "Parole: ";
-$s_new_account_message = "Pçc pirmâs pieslçgðanâs lûdzu nomainiet savu paroli.  Òemiet vçrâ, ka parole tiek vienpusçji ðifrçta un glabâjas ðifrçtâ veidâ. Personâls nevarçs Jums atgâdinât paroli, tâdâ gadîjumâ to nâksies nomainît.\n\n";
-$s_new_account_do_not_reply = "Ðî vçstule tika izveidota automâtiski un uz to nav jâatbild.\n";
+$s_new_account_message = 'If you didn\'t request any registraion, ignore this message and nothing will happen.' . "\n\n";
+$s_new_account_do_not_reply = 'DO NOT REPLY TO THIS MESSAGE';
+$s_new_account_email = 'E-mail: ';
+$s_new_account_IP = 'Remote IP address: ';
+$s_new_account_signup_msg = 'The following account has been created:';
 
-$s_reset_request_msg = "Tika saòemts pieprasîjums jaunas paroles izveidei";
-$s_account_name_msg = "Jûsu lietotâja vârds:";
-$s_news_password_msg = "Jûsu jaunâ patrole:";
+$s_reset_request_msg = 'Someone (presumably you) requested a password change through email verification. If this was not you, ignore this message and nothing will happen.' . "\n\n" . 'If you requested this verification, visit the following URL to change your password:';
+$s_reset_request_in_progress_msg = 'If you supplied the correct username and email address for your account, we will now have sent a confirmation message to that email address. Once the message has been received, follow the instructions provided to change the password on your account.';
 
 $s_email_notification_title_for_status_bug_feedback = 'Sekojoðam buga pieteikumam nepiecieðama PAPILDINFORMÂCIJA.';
 $s_email_notification_title_for_status_bug_acknowledged = 'Sekojoðs buga pieteikums ir APSTIPRINÂTS(ackn).';
@@ -257,8 +286,16 @@ $s_email_notification_title_for_action_bug_submitted = 'REÌISTRÇTS buga pieteiku
 $s_email_notification_title_for_action_bug_assigned = 'PIEÐÍIRTS buga pieteikums.';
 $s_email_notification_title_for_action_bug_reopened = 'ATKÂRTOTI ATVÇRTS buga pieteikums.';
 $s_email_notification_title_for_action_bug_deleted = 'DZÇSTS buga pieteikums.';
+$s_email_notification_title_for_action_bug_updated = 'The following issue has been UPDATED.';
+$s_email_notification_title_for_action_sponsorship_added = 'The following issue has been SPONSORED.';
+$s_email_notification_title_for_action_sponsorship_updated = 'A sponsorship of the following issue was modified.';
+$s_email_notification_title_for_action_sponsorship_deleted = 'A sponsorship of the following issue was withdrawn.';
 
 $s_email_notification_title_for_action_bugnote_submitted = 'Buga pieteikumam pielikta piezîme.';
+$s_email_notification_title_for_action_relationship_added = "A new RELATIONSHIP has been added to the following issue.";
+$s_email_notification_title_for_action_relationship_deleted = "A RELATIONSHIP has been deleted from the following issue.";
+$s_email_notification_title_for_action_relationship_child_resolved = "A RELATED issue has been RESOLVED.";
+$s_email_notification_title_for_action_relationship_child_closed = "A RELATED issue has been CLOSED.";
 
 $s_email_reporter = "Lietotâjs";
 $s_email_handler = "Atbildîgais";
@@ -271,6 +308,7 @@ $s_email_priority = "Prioritâte";
 $s_email_status = "Status";
 $s_email_resolution = "Risinâjums";
 $s_email_duplicate = "Dublikâti";
+$s_email_fixed_in_version = 'Fixed in Version';
 $s_email_date_submitted = "Izveides datums";
 $s_email_last_modified = "Pçdçjâ korekcija";
 $s_email_summary =  "Îss apraksts";
@@ -289,6 +327,7 @@ $s_manage_profiles_link = "Profilu vadîba";
 $s_change_preferences_link = "Opcijas";
 $s_edit_account_title = "Lietotâja konta laboðana";
 $s_username = "Lietotâjs";
+$s_realname = 'Real Name';
 $s_email = "E-pasts";
 $s_password = "Parole";
 $s_confirm_password  = "Apstipriniet paroli";
@@ -303,6 +342,10 @@ $s_advanced_view = "Paplaðinâta apskate";
 $s_advanced_update = "Paplaðinâta laboðana";
 $s_refresh_delay = "Ekrâna atjauninâðnas aizture";
 $s_redirect_delay = "Aizture veicot noteiktas darbîbas";
+$s_with_minimum_severity = 'With Mimimum Severity of';
+$s_bugnote_order = 'Bugnotes Sort Order';
+$s_bugnote_order_asc = 'Ascending';
+$s_bugnote_order_desc = 'Descending';
 $s_email_on_new = "Paziòot par jaunumiem";
 $s_email_on_assigned = "Paziòot par atbildîgumu";
 $s_email_on_feedback = "Paziòot par papildinâjumiem(papildinformâcija)";
@@ -312,6 +355,7 @@ $s_email_on_reopened = "Paziòot, ja tiek atkârtoti ATVÇRTS";
 $s_email_on_bugnote_added = "Paziòot par jaunu komentâru";
 $s_email_on_status_change = "Paziòot par statusa maiòu";
 $s_email_on_priority_change = "Paziòot par prioritâtes maiòu";
+$s_email_bugnote_limit = 'Email Bugnotes Limit';
 $s_language = "Valoda";
 $s_update_prefs_button = "Saglabât";
 $s_reset_prefs_button = "Atcelt";
@@ -354,17 +398,31 @@ $s_profile_updated_msg = "Profils saglabâts...";
 # account_update.php
 $s_account_updated_msg = "Lietotâja konts saglabâts...";
 $s_email_updated = 'Email address successfully updated';
+$s_realname_duplicated = 'Real name is used by another user';
+$s_realname_updated = 'Real name successfully updated';
 $s_password_updated = 'Password successfully updated';
 
 # bug_assign.php
 $s_bug_assign_msg       = "Kïûdas atbildîgais tika noteikts...";
+
+# bug_change_status_page.php
+$s_new_bug_title = 'New Issue';
+$s_feedback_bug_title = 'Provide Feedback to Issue';
+$s_acknowledged_bug_title = 'Acknowledge Issue';
+$s_confirmed_bug_title = 'Confirm Issue';
+$s_assigned_bug_title = 'Assign Issue';
+$s_new_bug_button = 'New Issue';
+$s_feedback_bug_button = 'Provide Feedback';
+$s_acknowledged_bug_button = 'Acknowledge Issue';
+$s_confirmed_bug_button = 'Confirm Issue';
+$s_assigned_bug_button = 'Assign Issue';
 
 # bug_close.php
 $s_bug_close_msg       = "Kïûda aizvçrta...";
 $s_close_immediately   = "Nekavçjoties aizvçrt:";
 
 # bug_close_page.php
-$s_close_bug_title = "Aizvçrt kïûdu";
+$s_closed_bug_title = "Aizvçrt kïûdu";
 
 # bug_delete.php
 $s_bug_deleted_msg = "Kïûda izdzçsta...";
@@ -392,8 +450,8 @@ $s_reopen_add_bugnote_title = "Pievienot atkârtotas atvçrðanas iemeslu";
 $s_bugnote_add_reopen_button = "Pielikt komentâru un atkârtoti atvçrt";
 
 # bug_resolve_page.php
-$s_resolve_bug_title = "Kïûdas atrisinâðana";
-$s_resolve_bug_button = "Kïûda atrisinâta";
+$s_resolved_bug_title = "Kïûdas atrisinâðana";
+$s_resolved_bug_button = "Kïûda atrisinâta";
 
 # bug_resolve_page2.php
 $s_bug_resolved_msg = "Kïûda atrisinâta. Pievienojiet komentâru...";
@@ -435,12 +493,11 @@ $s_os_version = "OS versija";
 $s_eta = "ETA";
 $s_product_version = "Produkta versija";
 $s_build = "Apakðversija";
+$s_fixed_in_version = 'Fixed in Version';
 $s_votes = "Balsojumi";
 $s_summary = "Îss apraksts";
 $s_description = "Apraksts";
 $s_steps_to_reproduce = "Darbîbas, kas jâveic, lai atkârtotu kïûdu";
-$s_additional = "Papildus ";
-$s_information = "infomâcija";
 $s_update_information_button = "Saglabât";
 
 # bug_update_page.php
@@ -466,7 +523,7 @@ $s_delete_link = "Dzçst";
 $s_add_bugnote_title = "Komentâra pievienoðana";
 $s_add_bugnote_button = "Pievienot";
 $s_bugnote_edit_link = "Labot";
-$s_close_bug_button = "AIZVÇRT kïûdu";
+$s_closed_bug_button = "AIZVÇRT kïûdu";
 
 # bugnote_update.php
 $s_bugnote_updated_msg = "Komentârs saglabâts...";
@@ -478,12 +535,14 @@ $s_click_to_login = "Noklikðíiniet, lai pieslçgtos";
 # login.php
 
 # login_page.php
+#@@@ should the following string be related to $g_window_title?
 $s_login_page_info = "Sveicinâti problçmu, kïûdu un jaunas funkcionalitâtes pieprasîjumu uzskaites un kontroles sistçmâ(bugtrack)";
 $s_login_title = "Pieslçgðanâs";
 $s_save_login = "Iegaumçt paroli";
 $s_choose_project = "Izvçlaties projektu";
 $s_login_button = "Pieslçgties";
 $s_signup_link = "Jums nav paroles? Reìistrçties sistçmâ kâ jaunam lietotâjam.";
+$s_lost_password_link = 'Lost your password?';
 
 # login_select_proj_page.php
 $s_select_project_button = "Izvçlaties projektu";
@@ -492,6 +551,12 @@ $s_select_project_button = "Izvçlaties projektu";
 $s_logged_out_title = "Atslçgðanâs...";
 $s_redirecting = "...pâradresâcija";
 $s_here = "ðeit";
+# lost_pwd_page.php
+$s_lost_password_title = "Password Reset";
+$s_lost_password_done_title = "Password Message Sent";
+$s_lost_password_subject = "Password Reset";
+$s_lost_password_info = "To reinstate your lost password, please supply the name and email address for the account.<br/><br/>If the data corresponds to a valid account, you will be sent a special URL via email that contains a validation code for your account. Please follow this link to change your password.";
+$s_lost_password_confirm_hash_OK = "Your confirmation has been accepted. Please update your password.";
 
 # main_page.php
 $s_open_and_assigned_to_me = "man pieðíirtâs atvçrtâs(neatrisinâtâs) kïûdas/problçmas";
@@ -601,6 +666,7 @@ $s_delete_version_button = "Dzçst versiju";
 # manage_proj_version_edit_page.php
 $s_edit_project_version_title = "Projekta versijas laboðana";
 $s_update_version_button = "Labot projekta versiju";
+$s_released = 'Released';
 
 # manage_proj_version_update.php
 $s_version_updated_msg = "Versija saglabâta...";
@@ -621,13 +687,13 @@ $s_confirm_account_pruning = 'Vai Jûs esat pârliecinâti, ka vçlaties dzçst lieto
 $s_edit_user_title = "Lietotâja laboðana";
 $s_reset_password_button = "Atcelt paroli";
 $s_delete_user_button = "Dzçst lietotâju";
-$s_reset_password_msg = "Paroles atcelðâna nozîmç jaunas paroles ìenerâciju.";
+$s_reset_password_msg = 'Reset Password sends the confirmation URL via email.';
 $s_reset_password_msg2 = "ðobrîd lietotâjam nav paroles (tukða).";
 $s_show_all_users = 'Visi';
 
 # manage_user_reset.php
 $s_account_reset_protected_msg = "Lietotâja konts ir aizsargâts. Paroli nevar atcelt.";
-$s_account_reset_msg = "Parole tika atcelta...";
+$s_account_reset_msg = 'Confirmation message has been sent to your email address...';
 $s_account_reset_msg2 = "Parole tagad ir tukða...";
 
 # manage_user_update.php
@@ -638,6 +704,7 @@ $s_manage_user_updated_msg = "Izmaiòas lietotâja kontâ ir saglabâtas ...";
 $s_main_link = "Sâkumlapa";
 $s_view_bugs_link = "Skatît kïûdas";
 $s_report_bug_link = "Piereìistrçt kïûdu";
+$s_changelog_link = 'Change Log';
 $s_summary_link = "Statistika";
 $s_account_link = "Reþîmi";
 $s_users_link = "Lietotâji";
@@ -645,8 +712,17 @@ $s_manage_link = "Vadîba";
 $s_edit_news_link = "Jaunumi";
 $s_docs_link = "Dokumentâcija";
 $s_logout_link = "Beigt";
+$s_my_view_link = 'My View';
 
 # meta_inc.php
+
+# my_view_page.php
+$s_my_view_title_unassigned = 'Unassigned';
+$s_my_view_title_recent_mod = 'Recently Modified';
+$s_my_view_title_reported = 'Reported by Me';
+$s_my_view_title_assigned = 'Assigned to Me (Unresolved)';
+$s_my_view_title_resolved = 'Resolved';
+$s_my_view_title_monitored = 'Monitored by Me';
 
 # news_add.php
 $s_news_added_msg = "Ziòa tika pievienota...";
@@ -755,15 +831,13 @@ $s_selected_project = "Izvçlçtais projekts";
 $s_valid_project_msg = "Jums jâizvçlâs pareizs projekts";
 
 # signup.php
-$s_invalid_email = "NEPAREIZA e-pasta adrese";
-$s_duplicate_username = "TÂDS LIETOTÂJA VÂRDS JAU TIEK IZMANTOTS. IZVÇLATIES SEV CITU";
-$s_account_create_fail = "LIETOTÂJS NETIKA IZVEIDOTS";
-$s_account_added = "Lietotâjs tika izveidots.";
-$s_password_emailed_msg = "Jûsu parole tiks nosûtîta pa e-pastu.";
-$s_no_reponse_msg = "Ja nedçïas laikâ Jûs neuzsâksiet lietot sistçmu, Jûsu lietotâja vârds tiks nodzçsts.";
+$s_signup_done_title = 'Account registration processed';
+$s_password_emailed_msg = 'Congratulations. You have registered successfully. You are now being sent a confirmation email to verify your email address. Visiting the link sent to you in this email will activate your account.';
+$s_no_reponse_msg = 'You will have seven days to complete the account confirmation process; if you fail to complete account confirmation within seven days, this newly-registered account may be purged.';
 
 # signup_page.php
-$s_signup_info = "Izvçlaties sev lietotâja vârdu un ievadiet korektu e-pasta adresi. Parole tiks nosûtîta pa e-pastu!";
+$s_signup_captcha_request = 'Enter the code as it is shown in the box on the right';
+$s_signup_info = 'On completion of this form and verification of your answers, you will be sent a confirmation email to the email address you specified.<br/>Using the confirmation email, you will be able activate your account. If you fail to activate your account within seven days, it will be purged.<br/>You must specify a valid email address in order to receive the account confirmation email.';
 $s_signup_title = "Lietotâja reìistrâcija";
 $s_signup_button = "Piereìistrçties";
 
@@ -830,6 +904,22 @@ $s_yes = 'Yes';
 $s_no = 'No';
 $s_open_filters = 'Change Filter';
 $s_or_unassigned = 'Or Unassigned';
+$s_ok = 'OK';
+$s_select_all = 'Select All';
+
+# stored query strings
+$s_use_query = 'Use Filter';
+$s_delete_query = 'Delete Filter';
+$s_query_deleted = 'Filter Deleted';
+$s_save_query = 'Save Current Filter';
+$s_reset_query = 'Reset Filter';
+$s_query_name = 'Filter Name';
+$s_query_exists = 'This particular query appears to already exist.';
+$s_query_dupe_name = 'Another query already has this name. Please choose a different name for this query.';
+$s_query_blank_name = 'You cannot store a filter without a name. Please give this filter a name before saving it.';
+$s_query_store_error = 'There was an error saving this query.';
+$s_open_queries = 'Manage Filters';
+$s_query_delete_msg = 'Are you sure you wish to delete this query?';
 
 # view_bug_advanced_page.php
 $s_view_simple_link = "Apskate";
@@ -838,7 +928,9 @@ $s_product_build = "produkta apakðversija";
 $s_system_profile = "Sistçmas (darba vides) apraksts";
 $s_update_bug_button = "Labot kïûdas informâciju";
 $s_bug_assign_to_button = 'Pieðíirts:';
+$s_bug_status_to_button = 'Change Status To:';
 $s_reopen_bug_button = "Atkârtoti atvçrt";
+$s_move_bug_button = 'Move Issue';
 $s_attached_files = "Failu pievienoðana";
 $s_publish = 'Publicçt';
 $s_cached = 'Keðots';
@@ -853,6 +945,13 @@ $s_viewing_bug_simple_details_title = "Apskatît informâcijau";
 $s_no_users_monitoring_bug = 'Neviens lietotâjs neveic ðî buga monitoringu.';
 $s_users_monitoring_bug = 'Lietotâji, kas veic monitoringu';
 $s_monitoring_user_list = 'Lietotâju saraksts';
+
+# bug_sponsorship_list_view_inc.php
+$s_no_users_sponsoring_bug = 'There are no users sponsoring this issue.';
+$s_users_sponsoring_bug = 'Users sponsoring this issue';
+$s_sponsors_list = 'Sponsors List';
+$s_total_sponsorship_amount = 'Total Sponsorship = %s';
+$s_sponsor_issue = 'Sponsor Issue';
 
 # custom field strings
 $s_add_custom_field_button = 'Jauns Custom lauks';
@@ -873,9 +972,18 @@ $s_custom_field_access_level_r = 'Lasîðanas tiesîbas';
 $s_custom_field_access_level_rw = 'Laboðanas tiesîbas';
 $s_custom_field_length_min = 'Min. garums';
 $s_custom_field_length_max = 'Max. garums';
-$s_custom_field_advanced = 'Advanced';
+$s_custom_field_advanced = 'Display Only On Advanced Page';
+$s_custom_field_display_report = 'Display When Reporting Issues';
+$s_custom_field_display_update = 'Display When Updating Issues';
+$s_custom_field_display_resolved = 'Display When Resolving Issues';
+$s_custom_field_display_closed = 'Display When Closing Issues';
+$s_custom_field_require_report = 'Required On Report';
+$s_custom_field_require_update = 'Required On Update';
+$s_custom_field_require_resolved = 'Required On Resolve';
+$s_custom_field_require_closed = 'Required On Close';
+
 $s_custom_field_sequence = 'Secîba(n.p.k)';
-$s_custom_field_type_enum_string = '0:Teksts,1:Skaitlis,2:Float,3:Enumeration,4:E-pasts';
+$s_custom_field_type_enum_string = '0:Teksts,1:Skaitlis,2:Float,3:Enumeration,4:E-pasts,5:Checkbox,6:List,7:Multiselection list';
 
 $s_confirm_used_custom_field_deletion = 'ðis lauks ir saistîts ar vismaz vienu projektu.  Ja turpinâsiet, visas vçrtîbas tiks izdzçstas.  Ðî darbîba ir neatceïama.  Lai atliktu, spiediet atgriezieties uz iepriekðçjo lapu.';
 $s_confirm_custom_field_deletion = 'Vai esat pârliecinâti ka jâdþçð Custum lauks un visas ar to saistîtâs vçrtîbas?';
@@ -886,10 +994,49 @@ $s_filter_closed = "Aizvçrtie";
 $s_filter_resolved = "Atrisinâtie";
 $s_hide_closed = "Hide Closed";
 $s_hide_resolved = "Hide Resolved";
+$s_and_above = 'And Above';
+$s_advanced_filters = 'Advanced Filters';
+$s_simple_filters = 'Simple Filters';
+$s_monitored_by = 'Monitored By';
 
 $s_attachments = "pielikums(-i)";
 $s_attachment_alt = "A";
 
 # PHPMailer
 $s_phpmailer_language = 'en';
+
+# Sponsorship Strings
+$s_sponsors = '%d sponsor(s)';
+$s_sponsorship_added = 'Sponsorship Added';
+$s_sponsorship_updated = 'Sponsorship Updated';
+$s_sponsorship_deleted = 'Sponsorship Deleted';
+$s_sponsorship_more_info = 'More information about sponsorship';
+
+# URL explaining the process of sponsoring an issue.  This is defined here rather than
+# in the config to allow for a URL per language.  This can be set to an empty string if there
+# is not need to provide such process information.
+$s_sponsorship_process_url = '';
+
+# Changelog
+$s_changelog = 'Change Log';
+
+# Http auth
+$s_http_auth_realm = "Mantis Login";
+
+$s_bug = "issue";
+$s_add_new_relationship = "New relationship";
+$s_add_new_relationship_button = "Add";
+$s_this_bug = "Current issue";
+$s_relationship_added = "Relationship added";
+$s_relationship_deleted = "Relationship deleted";
+$s_delete_relationship_button = "Delete";
+$s_delete_relationship_sure_msg = "Are you sure you wish to delete this relationship?";
+$s_relationship_warning_blocking_bugs_not_resolved = "Not all the children of this issue are yet resolved or closed.";
+$s_relationship_warning_blocking_bugs_not_resolved_2 = "<b>ATTENTION</b>. Not all the children of this issue are yet resolved or closed.<br>Before <b>resolving/closing</b> a parent issue, all the issues related as child with this one should be resolved or closed.";
+$s_create_child_bug_button = "Create Child";
+$s_bug_cloned_to = "Issue cloned";
+$s_bug_created_from = "Issue generated from";
+
+# Source Control Integration
+$s_checkin = 'Checkin';
 ?>

@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_view_advanced_page.php,v 1.51 2004-05-09 02:24:18 vboctor Exp $
+	# $Id: bug_view_advanced_page.php,v 1.61 2004-08-27 00:29:54 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -35,7 +35,7 @@
 
 	compress_enable();
 
-	html_page_top1();
+	html_page_top1( bug_format_summary( $f_bug_id, SUMMARY_CAPTION ) );
 	html_page_top2();
 ?>
 
@@ -54,7 +54,7 @@
 
 		<!-- Send Bug Reminder -->
 	<?php
-		if ( !current_user_is_anonymous() &&
+		if ( !current_user_is_anonymous() && !bug_is_readonly( $f_bug_id ) &&
 			  access_has_bug_level( config_get( 'bug_reminder_threshold' ), $f_bug_id ) ) {
 	?>
 		<span class="small">
@@ -226,13 +226,20 @@
 		<?php echo get_enum_element( 'status', $t_bug->status ) ?>
 	</td>
 
-	<!-- Duplicate ID -->
-	<td class="category">
-		<?php echo lang_get( 'duplicate_id' ) ?>
-	</td>
-	<td>
-		<?php print_duplicate_id( $t_bug->duplicate_id ) ?>
-	</td>
+	<?php
+		# Duplicate Id
+		# MASC RELATIONSHIP
+		if ( OFF == config_get( 'enable_relationship' ) ) {
+			# Duplicate ID
+			echo '<td class="category">', lang_get( 'duplicate_id' ), '&nbsp;</td>';
+			echo '<td>';
+			print_duplicate_id( $t_bug->duplicate_id );
+			echo '</td>';
+		} else {
+			# spacer
+			echo '<td colspan="2">&nbsp;</td>';
+		}
+	?>
 
 	<!-- Operating System -->
 	<td class="category">
@@ -279,20 +286,50 @@
 		<?php echo get_enum_element( 'eta', $t_bug->eta ) ?>
 	</td>
 
-	<!-- spacer -->
-	<td colspan="2">&nbsp;</td>
-
-	<!-- Product Version -->
+	<!-- fixed in version -->
 	<td class="category">
-		<?php echo lang_get( 'product_version' ) ?>
+		<?php 
+			$t_show_version = ( ON == config_get( 'show_product_version' ) ) 
+					|| ( ( AUTO == config_get( 'show_product_version' ) ) 
+								&& ( count( version_get_all_rows( $t_bug->project_id ) ) > 0 ) );
+			if ( $t_show_version ) { 
+				echo lang_get( 'fixed_in_version' );
+			}
+		?>
 	</td>
 	<td>
-		<?php echo $t_bug->version ?>
+		<?php 
+			if ( $t_show_version ) { 
+				echo $t_bug->fixed_in_version; 
+			}
+		?>
+	</td>
+
+	<!-- Product Version or Product Build, if version is suppressed -->
+	<td class="category">
+		<?php 
+			if ( $t_show_version ) { 
+				echo lang_get( 'product_version' ); 
+			}else{
+				echo lang_get( 'product_build' );
+			}
+		?>
+	</td>
+	<td>
+		<?php  
+			if ( $t_show_version ) { 
+				echo $t_bug->version; 
+			}else{
+				echo $t_bug->build;
+			}
+		?>
 	</td>
 
 </tr>
 
-
+<?php
+	if( $t_show_version ) {
+?>
 <tr <?php echo helper_alternate_class() ?>>
 
 	<!-- spacer -->
@@ -307,7 +344,9 @@
 	</td>
 
 </tr>
-
+<?php
+	}
+?>
 
 <!-- spacer -->
 <tr height="5" class="spacer">
@@ -321,7 +360,7 @@
 		<?php echo lang_get( 'summary' ) ?>
 	</td>
 	<td colspan="5">
-		<?php echo $t_bug->summary ?>
+		<?php echo bug_format_summary( $f_bug_id, SUMMARY_FIELD ) ?>
 	</td>
 </tr>
 
@@ -382,14 +421,7 @@
 			<?php echo lang_get_defaulted( $t_def['name'] ) ?>
 		</td>
 		<td colspan="5">
-		<?php
-			$t_custom_field_value = custom_field_get_value( $t_id, $f_bug_id );
-			if( CUSTOM_FIELD_TYPE_EMAIL == $t_def['type'] ) {
-				echo "<a href=\"mailto:$t_custom_field_value\">$t_custom_field_value</a>";
-			} else {
-				echo $t_custom_field_value;
-			}
-		?>
+		<?php print_custom_field_value( $t_def, $t_id, $f_bug_id ); ?>
 		</td>
 	</tr>
 <?php
@@ -423,65 +455,6 @@
 	}
 ?>
 
-
-<!-- Bug Relationships -->
-<tr <?php echo helper_alternate_class() ?>>
-	<td class="category">
-		<?php echo lang_get( 'bug_relationships' ) ?>
-	</td>
-	<td colspan="5">
-		<?php
-			$result = relationship_fetch_all_src( $f_bug_id );
-			$relationship_count = db_num_rows( $result );
-			for ( $i = 0 ; $i < $relationship_count ; $i++ ) {
-				$row = db_fetch_array( $result );
-
-				$t_bug_link = string_get_bug_view_link( $row['destination_bug_id'] );
-				switch ( $row['relationship_type'] ) {
-					case BUG_DUPLICATE:
-						$t_description = str_replace( '%id', $t_bug_link, lang_get( 'duplicate_of' ) );
-						break;
-					case BUG_RELATED:
-						$t_description = str_replace( '%id', $t_bug_link, lang_get( 'related_to' ) );
-						break;
-					case BUG_DEPENDANT:
-						$t_description = str_replace( '%id', $t_bug_link, lang_get( 'dependant_on' ) );
-						break;
-					default:
-						$t_description = str_replace( '%id', $t_bug_link, lang_get( 'duplicate_of' ) );
-				}
-
-				echo $t_description . '<br />';
-			}
-		?>
-		<?php
-			$result = relationship_fetch_all_dest( $f_bug_id );
-			$relationship_count = db_num_rows( $result );
-			for ( $i = 0 ; $i < $relationship_count ; $i++ ) {
-				$row = db_fetch_array( $result );
-
-				$t_bug_link = string_get_bug_view_link( $row['source_bug_id'] );
-				switch ( $row['relationship_type'] ) {
-					case BUG_DUPLICATE:
-						$t_description = str_replace( '%id', $t_bug_link, lang_get( 'has_duplicate' ) );
-						break;
-					case BUG_RELATED:
-						$t_description = str_replace( '%id', $t_bug_link, lang_get( 'related_to' ) );
-						break;
-					case BUG_DEPENDANT:
-						$t_description = str_replace( '%id', $t_bug_link, lang_get( 'blocks' ) );
-						break;
-					default:
-						$t_description = str_replace( '%id', $t_bug_link, lang_get( 'has_duplicate' ) );
-				}
-
-				echo $t_description . '<br />';
-			}
-		?>
-	</td>
-</tr>
-
-
 <!-- Buttons -->
 <tr align="center">
 	<td align="center" colspan="6">
@@ -498,8 +471,15 @@
 	# User list sponsoring the bug
 	include( $t_mantis_dir . 'bug_sponsorship_list_view_inc.php' );
 
+	# Bug Relationships
+	# MASC RELATIONSHIP
+	if ( ON == config_get( 'enable_relationship' ) ) {
+		relationship_view_box ( $f_bug_id );
+	}
+	# MASC RELATIONSHIP
+
 	# File upload box
-	if ( $t_bug->status < config_get( 'bug_resolved_status_threshold' ) ) {
+	if ( !bug_is_readonly( $f_bug_id ) ) {
 		include( $t_mantis_dir . 'bug_file_upload_inc.php' );
 	}
 

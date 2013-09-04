@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: sponsorship_api.php,v 1.1 2004-05-09 02:24:19 vboctor Exp $
+	# $Id: sponsorship_api.php,v 1.4 2004-07-18 10:27:18 vboctor Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -249,7 +249,7 @@
 
 			if ( $t_old_amount == $c_amount ) {
 				return $t_sponsorship_id;
-			}				
+			}
 
 			# Update
 			$query = "UPDATE $t_sponsorship_table

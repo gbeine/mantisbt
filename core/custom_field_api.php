@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: custom_field_api.php,v 1.32 2004-04-08 22:44:59 prescience Exp $
+	# $Id: custom_field_api.php,v 1.41 2004-08-27 23:05:33 prichards Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -234,7 +234,7 @@
 	function custom_field_create( $p_name ) {
 		$c_name = db_prepare_string( trim( $p_name ) );
 
-		if ( is_blank( $p_name ) ) {
+		if ( is_blank( $p_name ) ) {			
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}
 
@@ -248,7 +248,7 @@
 
 		db_query( $query );
 
-		return db_insert_id($t_custom_field_table);
+		return db_insert_id( $t_custom_field_table );
 	}
 
 	# --------------------
@@ -260,12 +260,20 @@
 		$c_type				= db_prepare_int(    $p_def_array['type']            );
 		$c_possible_values	= db_prepare_string( $p_def_array['possible_values'] );
 		$c_default_value	= db_prepare_string( $p_def_array['default_value']   );
-		$c_valid_regexp		= db_prepare_string( $p_def_array['valid_regexp']      );
+		$c_valid_regexp		= db_prepare_string( $p_def_array['valid_regexp']    );
 		$c_access_level_r	= db_prepare_int(    $p_def_array['access_level_r']  );
 		$c_access_level_rw	= db_prepare_int(    $p_def_array['access_level_rw'] );
 		$c_length_min		= db_prepare_int(    $p_def_array['length_min']      );
 		$c_length_max		= db_prepare_int(    $p_def_array['length_max']      );
 		$c_advanced			= db_prepare_bool(   $p_def_array['advanced']        );
+		$c_display_report	= db_prepare_bool( 	 $p_def_array['display_report'] );
+		$c_display_update	= db_prepare_bool( 	 $p_def_array['display_update'] );
+		$c_display_resolved	= db_prepare_bool( 	 $p_def_array['display_resolved'] );
+		$c_display_closed	= db_prepare_bool( 	 $p_def_array['display_closed']   );
+		$c_require_report	= db_prepare_bool( 	 $p_def_array['require_report']  );
+		$c_require_update	= db_prepare_bool( 	 $p_def_array['require_update']  );
+		$c_require_resolved = db_prepare_bool( 	 $p_def_array['require_resolved'] );
+		$c_require_closed	= db_prepare_bool( 	 $p_def_array['require_closed']   );
 
 		if (( is_blank( $c_name ) ) ||
 			( $c_access_level_rw < $c_access_level_r ) ||
@@ -273,6 +281,11 @@
 			( ( $c_length_max != 0 ) && ( $c_length_min > $c_length_max ) ) ) {
 			trigger_error( ERROR_CUSTOM_FIELD_INVALID_DEFINITION, ERROR );
 		}
+
+		if ( $c_advanced == true && ( $c_require_report == true || $c_require_update ) ) {
+			trigger_error( ERROR_CUSTOM_FIELD_INVALID_DEFINITION, ERROR );
+		}
+		
 
 		if ( !custom_field_is_name_unique( $c_name, $c_field_id ) ) {
 			trigger_error( ERROR_CUSTOM_FIELD_NAME_NOT_UNIQUE, ERROR );
@@ -362,6 +375,71 @@
 			}
 			$query .= "advanced='$c_advanced'";
 		}
+		if( array_key_exists( 'display_report', $p_def_array ) ) {
+			if ( !$t_update_something ) {
+				$t_update_something = true;
+			} else {
+				$query .= ', ';
+			}
+			$query .= "display_report='$c_display_report'";
+		}
+		if( array_key_exists( 'display_update', $p_def_array ) ) {
+			if ( !$t_update_something ) {
+				$t_update_something = true;
+			} else {
+				$query .= ', ';
+			}
+			$query .= "display_update='$c_display_update'";
+		}
+		if( array_key_exists( 'display_resolved', $p_def_array ) ) {
+			if ( !$t_update_something ) {
+				$t_update_something = true;
+			} else {
+				$query .= ', ';
+			}
+			$query .= "display_resolved='$c_display_resolved'";
+		}
+		if( array_key_exists( 'display_closed', $p_def_array ) ) {
+			if ( !$t_update_something ) {
+				$t_update_something = true;
+			} else {
+				$query .= ', ';
+			}
+			$query .= "display_closed='$c_display_closed'";
+		}
+		if( array_key_exists( 'require_report', $p_def_array ) ) {
+			if ( !$t_update_something ) {
+				$t_update_something = true;
+			} else {
+				$query .= ', ';
+			}
+			$query .= "require_report='$c_require_report'";
+		}
+		if( array_key_exists( 'require_update', $p_def_array ) ) {
+			if ( !$t_update_something ) {
+				$t_update_something = true;
+			} else {
+				$query .= ', ';
+			}
+			$query .= "require_update='$c_require_update'";
+		}
+		if( array_key_exists( 'require_resolved', $p_def_array ) ) {
+			if ( !$t_update_something ) {
+				$t_update_something = true;
+			} else {
+				$query .= ', ';
+			}
+			$query .= "require_resolved='$c_require_resolved'";
+		}
+		if( array_key_exists( 'require_closed', $p_def_array ) ) {
+			if ( !$t_update_something ) {
+				$t_update_something = true;
+			} else {
+				$query .= ', ';
+			}
+			$query .= "require_closed='$c_require_closed'";
+		}
+
 
 		$query .= " WHERE id='$c_field_id'";
 
@@ -608,7 +686,7 @@
 		custom_field_ensure_exists( $p_field_id );
 
 		$t_custom_field_table = config_get( 'mantis_custom_field_table' );
-		$query = "SELECT access_level_r, default_value
+		$query = "SELECT access_level_r, default_value, type
 				  FROM $t_custom_field_table
 				  WHERE id='$c_field_id'";
 		$result = db_query( $query );
@@ -629,7 +707,7 @@
 		$result = db_query( $query );
 
 		if( db_num_rows( $result ) > 0 ) {
-			return db_result( $result );
+			return custom_field_database_to_value( db_result( $result ) , $row['type'] );
 		} else {
 			return $t_default_value;
 		}
@@ -672,7 +750,7 @@
 			$t_custom_field_table         = config_get( 'mantis_custom_field_table' );
 			$t_custom_field_string_table  = config_get( 'mantis_custom_field_string_table' );
 
-			$query = "SELECT f.name, f.type, f.access_level_r, f.default_value, s.value
+			$query = "SELECT f.name, f.type, f.access_level_r, f.default_value, f.type, s.value
 					FROM $t_custom_field_project_table AS p, $t_custom_field_table AS f
 					LEFT JOIN $t_custom_field_string_table AS s
 						ON  p.field_id=s.field_id AND s.bug_id='$c_bug_id'
@@ -691,7 +769,7 @@
 				if( is_null( $row['value'] ) ) {
 					$t_value = $row['default_value'];
 				} else {
-					$t_value = $row['value'];
+					$t_value = custom_field_database_to_value( $row['value'], $row['type'] );
 				}
 
 				$t_custom_fields[$row['name']] = array( 'type'  => $row['type'],
@@ -774,10 +852,12 @@
 
 	# --------------------
 	# Get All Possible Values for a Field.
-	function custom_field_distinct_values( $p_field_id ) {
+	function custom_field_distinct_values( $p_field_id, $p_project_id = ALL_PROJECTS ) {
 		$c_field_id						= db_prepare_int( $p_field_id );
+		$c_project_id					= db_prepare_int( $p_project_id );
 		$t_custom_field_string_table	= config_get( 'mantis_custom_field_string_table' );
 		$t_custom_field_table			= config_get( 'mantis_custom_field_table' );
+		$t_mantis_bug_table				= config_get( 'mantis_bug_table' );
 		$t_return_arr					= array();
 
 		$query = "SELECT type, possible_values
@@ -792,16 +872,27 @@
 		$row = db_fetch_array( $result );
 
 		# If an enumeration type, we get all possible values, not just used values
-		if ( CUSTOM_FIELD_TYPE_ENUM == $row['type'] ) {
+		if ( CUSTOM_FIELD_TYPE_ENUM == $row['type'] ||
+			 CUSTOM_FIELD_TYPE_CHECKBOX == $row['type'] ||
+			 CUSTOM_FIELD_TYPE_LIST == $row['type'] ||
+			 CUSTOM_FIELD_TYPE_MULTILIST == $row['type'] 
+			) {
 			$t_values_arr = explode( '|', $row['possible_values'] );
 
 			foreach( $t_values_arr as $t_option ) {
 				array_push( $t_return_arr, $t_option );
 			}
 		} else {
-			$query2 = "SELECT value FROM $t_custom_field_string_table
-						WHERE field_id='$c_field_id'
-						GROUP BY value";
+			$t_where = '';
+			$t_from = $t_custom_field_string_table;
+			if ( ALL_PROJECTS != $p_project_id ) {
+				$t_where = " AND $t_mantis_bug_table.id = $t_custom_field_string_table.bug_id AND 
+							$t_mantis_bug_table.project_id = '$p_project_id'";
+				$t_from = $t_from . ", $t_mantis_bug_table";
+			}
+			$query2 = "SELECT $t_custom_field_string_table.value FROM $t_from
+						WHERE $t_custom_field_string_table.field_id='$c_field_id' $t_where
+						GROUP BY $t_custom_field_string_table.value";
 			$result2 = db_query( $query2 );
 			$t_row_count = db_num_rows( $result2 );
 			if ( 0 == $t_row_count ) {
@@ -822,13 +913,46 @@
 	# Data Modification
 	#===================================
 
+ 	# --------------------
+	# Convert the value to save it into the database, depending of the type
+	# return value for database
+	function custom_field_value_to_database( $p_value, $p_type ) {
+		switch ($p_type) {
+		case CUSTOM_FIELD_TYPE_MULTILIST:
+		case CUSTOM_FIELD_TYPE_CHECKBOX:
+			if ( '' == $p_value ) {
+				$result = '';
+			} else {
+				$result = '|' . $p_value . '|';
+			}
+			break;
+		default:
+			$result = $p_value;
+		}
+		return $result;
+	}
+
+	# --------------------
+	# Convert the database-value to value, depending of the type
+	# return value for further operation
+	function custom_field_database_to_value( $p_value, $p_type ) {
+		switch ($p_type) {
+		case CUSTOM_FIELD_TYPE_MULTILIST:
+		case CUSTOM_FIELD_TYPE_CHECKBOX:
+			$result = str_replace( '||', '', '|' . $p_value . '|' );
+			break;
+		default:
+			$result = $p_value;
+		}
+		return $result;
+	}
+
 	# --------------------
 	# Set the value of a custom field for a given bug
 	#  return true on success, false on failure
 	function custom_field_set_value( $p_field_id, $p_bug_id, $p_value ) {
 		$c_field_id	= db_prepare_int( $p_field_id );
 		$c_bug_id	= db_prepare_int( $p_bug_id );
-		$c_value	= db_prepare_string( $p_value );
 
 		custom_field_ensure_exists( $p_field_id );
 
@@ -848,6 +972,8 @@
 		$t_length_min		= $row['length_min'];
 		$t_length_max		= $row['length_max'];
 		$t_default_value	= $row['default_value'];
+
+		$c_value	= db_prepare_string( custom_field_value_to_database( $p_value, $t_type ) );
 
 		# check for valid value
 		if ( !is_blank( $t_valid_regexp ) ) {
@@ -885,7 +1011,7 @@
 			db_query( $query );
 
 			$row = db_fetch_array( $result );
-			history_log_event_direct( $c_bug_id, $t_name, $row['value'], $p_value);
+			history_log_event_direct( $c_bug_id, $t_name, custom_field_database_to_value( $row['value'], $t_type ), $p_value );
 		} else {
 			# Always store the value, even if it's the dafault value
 			# This is important, as the definitions might change but the
@@ -895,7 +1021,7 @@
 					  VALUES
 						( '$c_field_id', '$c_bug_id', '$c_value' )";
 			db_query( $query );
-			history_log_event_direct( $c_bug_id, $t_name, '', $p_value);
+			history_log_event_direct( $c_bug_id, $t_name, '', $p_value );
 		}
 
 		custom_field_clear_cache( $p_field_id );
@@ -950,28 +1076,114 @@
 
 		switch ($p_field_def['type']) {
 		case CUSTOM_FIELD_TYPE_ENUM:
-			PRINT "<select name=\"custom_field_$t_id\">";
-			$t_values = explode('|', $p_field_def['possible_values']);
+		case CUSTOM_FIELD_TYPE_LIST:
+		case CUSTOM_FIELD_TYPE_MULTILIST:
+ 			$t_values = explode( '|', $p_field_def['possible_values'] );
+			$t_list_size = $t_possible_values_count = count( $t_values );
+				
+			if ( $t_possible_values_count > 5 ) {
+				$t_list_size = 5;
+			}
+			
+			if ( $p_field_def['type'] == CUSTOM_FIELD_TYPE_ENUM ) {
+				$t_list_size = 0;	# for enums the size is 0
+			}
+			
+			if ( $p_field_def['type'] == CUSTOM_FIELD_TYPE_MULTILIST ) {	 
+				echo '<select name="custom_field_' . $t_id . '[]" size="' . $t_list_size . '" multiple>';
+			} else {
+				echo '<select name="custom_field_' . $t_id . '" size="' . $t_list_size . '">';
+			}
+			
+			$t_selected_values = explode( '|', $t_custom_field_value );
+ 			foreach( $t_values as $t_option ) {
+				if( in_array( $t_option, $t_selected_values ) ) {
+ 					echo '<option value="' . $t_option . '" selected> ' . $t_option . '</option>';
+ 				} else {
+ 					echo '<option value="' . $t_option . '">' . $t_option . '</option>';
+ 				}
+ 			}
+ 			echo '</select>';
+			break;
+		case CUSTOM_FIELD_TYPE_CHECKBOX:
+			$t_values = explode( '|', $p_field_def['possible_values'] );
+			$t_checked_values = explode( '|', $t_custom_field_value );
 			foreach( $t_values as $t_option ) {
-				if( $t_custom_field_value == $t_option ) {
-					PRINT "<option value=\"$t_option\" selected>$t_option</option>";
+				echo '<input type="checkbox" name="custom_field_' . $t_id . '[]"';
+				if( in_array( $t_option, $t_checked_values ) ) {
+					echo ' value="' . $t_option . '" checked>&nbsp;' . $t_option . '&nbsp;&nbsp;';
 				} else {
-					PRINT "<option value=\"$t_option\">$t_option</option>";
+					echo ' value="' . $t_option . '">&nbsp;' . $t_option . '&nbsp;&nbsp;';
 				}
 			}
-			PRINT '</select>';
-			break;
+ 			break;
 		case CUSTOM_FIELD_TYPE_NUMERIC:
 		case CUSTOM_FIELD_TYPE_FLOAT:
 		case CUSTOM_FIELD_TYPE_EMAIL:
 		case CUSTOM_FIELD_TYPE_STRING:
-			PRINT "<input type=\"text\" name=\"custom_field_$t_id\" size=\"80\"";
+			echo '<input type="text" name="custom_field_' . $t_id . '" size="80"';
 			if( 0 < $p_field_def['length_max'] ) {
-				PRINT ' maxlength="' . $p_field_def['length_max'] . '"';
+				echo ' maxlength="' . $p_field_def['length_max'] . '"';
 			} else {
-				PRINT ' maxlength="255"';
+				echo ' maxlength="255"';
 			}
-			PRINT " value=\"$t_custom_field_value\"></input>";
+			echo ' value="' . $t_custom_field_value .'"></input>';
 		}
 	}
+
+	# --------------------
+	# Prepare a string containing a custom field value for display
+	# $p_def 		contains the definition of the custom field 
+	# $p_field_id 	contains the id of the field
+	# $p_bug_id		contains the bug id to display the custom field value for
+	# NOTE: This probably belongs in the string_api.php
+	function string_custom_field_value( $p_def, $p_field_id, $p_bug_id ) {
+		$t_custom_field_value = custom_field_get_value( $p_field_id, $p_bug_id );
+		switch( $p_def['type'] ) {
+			case CUSTOM_FIELD_TYPE_EMAIL:
+				return "<a href=\"mailto:$t_custom_field_value\">$t_custom_field_value</a>";
+				break;
+			case CUSTOM_FIELD_TYPE_ENUM:
+			case CUSTOM_FIELD_TYPE_LIST:
+			case CUSTOM_FIELD_TYPE_MULTILIST:
+			case CUSTOM_FIELD_TYPE_CHECKBOX:
+				return str_replace( '|', ', ', $t_custom_field_value );
+				break;
+			default:
+				return $t_custom_field_value;
+		}	
+	}
+
+	# --------------------
+	# Print a custom field value for display
+	# $p_def 		contains the definition of the custom field 
+	# $p_field_id 	contains the id of the field
+	# $p_bug_id		contains the bug id to display the custom field value for
+	# NOTE: This probably belongs in the print_api.php
+	function print_custom_field_value( $p_def, $p_field_id, $p_bug_id ) {
+		echo string_custom_field_value( $p_def, $p_field_id, $p_bug_id );
+	}
+
+	# --------------------
+	# Prepare a string containing a custom field value for email
+	# $p_value		value of custom field
+	# $p_type		type of custom field
+	# NOTE: This probably belongs in the string_api.php
+	function string_custom_field_value_for_email( $p_value, $p_type ) {
+		switch( $p_type ) {
+			case CUSTOM_FIELD_TYPE_EMAIL:
+				return 'mailto:'.$p_value;
+				break;
+			case CUSTOM_FIELD_TYPE_ENUM:
+			case CUSTOM_FIELD_TYPE_LIST:
+			case CUSTOM_FIELD_TYPE_MULTILIST:
+			case CUSTOM_FIELD_TYPE_CHECKBOX:
+				return str_replace( '|', ', ', $p_value );
+				break;
+			default:
+				return $p_value;
+		}	
+		return $p_value;
+	}
+	
 ?>

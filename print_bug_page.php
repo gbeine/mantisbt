@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: print_bug_page.php,v 1.45 2004-03-05 01:26:16 jlatour Exp $
+	# $Id: print_bug_page.php,v 1.51 2004-08-27 00:29:54 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -53,7 +53,7 @@
 	$v2_steps_to_reproduce 		= string_display_links( $v2_steps_to_reproduce );
 	$v2_additional_information 	= string_display_links( $v2_additional_information );
 ?>
-<?php html_page_top1() ?>
+<?php html_page_top1( bug_format_summary( $f_bug_id, SUMMARY_CAPTION ) ) ?>
 <?php
 	html_head_end();
 	html_body_begin();
@@ -204,10 +204,18 @@
 		<?php echo get_enum_element( 'projection', $v_projection ) ?>
 	</td>
 	<td class="print-category">
-		<?php echo lang_get( 'duplicate_id' ) ?>:
+		<?php
+			if ( !config_get( 'enable_relationship' ) ) {
+				echo lang_get( 'duplicate_id' );
+			} # MASC RELATIONSHIP
+		?>&nbsp;
 	</td>
 	<td class="print">
-		<?php print_duplicate_id( $v_duplicate_id ) ?>
+		<?php
+			if ( !config_get( 'enable_relationship' ) ) {
+				print_duplicate_id( $v_duplicate_id );
+			} # MASC RELATIONSHIP
+		?>&nbsp;
 	</td>
 	<td class="print" colspan="2">&nbsp;</td>
 </tr>
@@ -218,7 +226,13 @@
 	<td class="print">
 		<?php echo get_enum_element( 'eta', $v_eta ) ?>
 	</td>
-	<td class="print" colspan="4">&nbsp;</td>
+	<td class="print-category">
+		<?php echo lang_get( 'fixed_in_version' ) ?>:
+	</td>
+	<td class="print">
+		<?php echo $v_fixed_in_version ?>
+	</td>
+	<td class="print" colspan="2">&nbsp;</td>
 </tr>
 
 <?php
@@ -228,12 +242,10 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 ?>
 <tr class="print">
 	<td class="print-category">
-		<?php echo $t_def['name'] ?>:
+		<?php echo lang_get_defaulted( $t_def['name'] ) ?>:
 	</td>
 	<td class="print" colspan="4">
-		<?php
-			echo custom_field_get_value( $t_id, $f_bug_id );
-		?>
+		<?php print_custom_field_value( $t_def, $t_id, $f_bug_id ); ?>
 	</td>
 </tr>
 <?php
@@ -250,7 +262,7 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 		<?php echo lang_get( 'summary' ) ?>:
 	</td>
 	<td class="print" colspan="5">
-		<?php echo $v_summary ?>
+		<?php echo bug_format_summary( $f_bug_id, SUMMARY_FIELD ) ?>
 	</td>
 </tr>
 <tr class="print">
@@ -301,6 +313,14 @@ foreach( $t_related_custom_field_ids as $t_id ) {
 </tr>
 <?php
 	}
+
+	# MASC RELATIONSHIP
+	if ( ON == config_get( 'enable_relationship' ) ) {
+		echo "<tr class=\"print\">";
+		echo "<td class=\"print-category\">" . lang_get( 'bug_relationships' ) . "</td>";
+		echo "<td class=\"print\" colspan=\"5\">" . relationship_get_summary_html_preview( $c_bug_id ) . "</td></tr>";
+	}
+	# MASC RELATIONSHIP
 ?>
 <tr class="print">
 	<td class="print-category">

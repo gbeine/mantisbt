@@ -6,7 +6,7 @@
 	# See the files README and LICENSE for details
 
 	# --------------------------------------------------------
-	# $Id: bugnote_view_inc.php,v 1.15 2004-05-09 02:24:18 vboctor Exp $
+	# $Id: bugnote_view_inc.php,v 1.18 2004-08-08 11:39:00 jlatour Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -30,7 +30,7 @@
 
 	$t_bugnote_table		= config_get( 'mantis_bugnote_table' );
 	$t_bugnote_text_table	= config_get( 'mantis_bugnote_text_table' );
-	$t_bugnote_order		= config_get( 'bugnote_order' );
+	$t_bugnote_order		= current_user_get_pref( 'bugnote_order' );
 
 	# get the bugnote data
 	$query = "SELECT *,date_submitted
@@ -43,6 +43,20 @@
 
 <?php # Bugnotes BEGIN ?>
 <a name="bugnotes" id="bugnotes" /><br />
+
+<?php if ( ON == config_get( 'use_javascript' ) ) { ?>
+<div id="bugnotes_closed" style="display: none;">
+<table class="width100" cellspacing="1">
+	<td class="form-title" colspan="2">
+		<a href="" onClick="ToggleDiv( 'bugnotes', g_div_bugnotes ); return false;"
+		><img border="0" src="images/plus.png" alt="+" /></a>
+		<?php echo lang_get( 'bug_notes_title' ) ?>
+	</td>
+</table>
+</div>
+<?php } ?>
+
+<div id="bugnotes_open">
 <table class="width100" cellspacing="1">
 <?php
 	# no bugnotes
@@ -56,6 +70,10 @@
 <?php } else { # print bugnotes ?>
 <tr>
 	<td class="form-title" colspan="2">
+<?php if ( ON == config_get( 'use_javascript' ) ) { ?>
+		<a href="" onClick="ToggleDiv( 'bugnotes', g_div_bugnotes ); return false;"
+		><img border="0" src="images/minus.png" alt="-" /></a>
+<?php } ?>
 		<?php echo lang_get( 'bug_notes_title' ) ?>
 	</td>
 </tr>
@@ -126,4 +144,12 @@
 	} # end else
 ?>
 </table>
+</div>
+
+<?php if ( ON == config_get( 'use_javascript' ) ) { ?>
+<script type="text/JavaScript">
+	SetDiv( "bugnotes", g_div_bugnotes );
+</script>
+<?php } ?>
+
 <?php # Bugnotes END ?>

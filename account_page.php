@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: account_page.php,v 1.44 2004-05-06 13:09:35 vboctor Exp $
+	# $Id: account_page.php,v 1.47 2004-08-14 15:26:19 thraxisp Exp $
 	# --------------------------------------------------------
 
 	# CALLERS
@@ -48,7 +48,7 @@
 
 	# extracts the user information for the currently logged in user
 	# and prefixes it with u_
-    $row = user_get_row( auth_get_current_user_id() );
+	$row = user_get_row( auth_get_current_user_id() );
 	extract( $row, EXTR_PREFIX_ALL, 'u' );
 
 	$t_ldap = ( LDAP == config_get( 'login_method' ) );
@@ -57,7 +57,7 @@
 	#  that version instead of the one in the DB
 	$u_email = user_get_email( $u_id, $u_username );
 
-	html_page_top1();
+	html_page_top1( lang_get( 'account_link' ) );
 	html_page_top2();
 ?>
 
@@ -120,7 +120,7 @@
 	</tr>
 
 	<!-- Password confirmation -->
-	<tr class="row-2">
+	<tr class="row-1">
 		<td class="category">
 			<?php echo lang_get( 'confirm_password' ) ?>
 		</td>
@@ -146,7 +146,7 @@
 <?php } else { ?> <!-- Without LDAP Email -->
 
 	<!-- Email -->
-	<tr class="row-1">
+	<tr class="row-2">
 		<td class="category">
 			<?php echo lang_get( 'email' ) ?>
 		</td>
@@ -156,6 +156,16 @@
 	</tr>
 
 <?php } ?> <!-- End LDAP Email conditional -->
+
+	<!-- Realname -->
+	<tr class="row-1" valign="top">
+		<td class="category">
+			<?php echo lang_get( 'realname' ) ?>
+		</td>
+		<td>
+			<input type="text" size="32" maxlength="64" name="realname" value="<?php echo $u_realname ?>" />
+		</td>
+	</tr>
 
 	<!-- Access level -->
 	<tr class="row-2">

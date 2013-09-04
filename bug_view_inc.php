@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_view_inc.php,v 1.12 2004-01-11 07:16:06 vboctor Exp $
+	# $Id: bug_view_inc.php,v 1.14 2004-08-27 00:29:54 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -166,10 +166,18 @@
 
 	<!-- Duplicate ID -->
 	<td class="category">
-		<?php echo lang_get( 'duplicate_id' ) ?>
+		<?php
+			if ( ! config_get( 'enable_relationship' ) ) {
+				echo lang_get( 'duplicate_id' );
+			} # MASC RELATIONSHIP
+		?>&nbsp;
 	</td>
 	<td>
-		<?php print_duplicate_id( $t_bug->duplicate_id ) ?>
+		<?php
+			if ( !config_get( 'enable_relationship' ) ) {
+				print_duplicate_id( $t_bug->duplicate_id );
+			} # MASC RELATIONSHIP
+		?>&nbsp;
 	</td>
 
 	<!-- spacer -->
@@ -190,7 +198,7 @@
 		<?php echo lang_get( 'summary' ) ?>
 	</td>
 	<td colspan="5">
-		<?php echo $t_bug->summary ?>
+		<?php echo bug_format_summary( $f_bug_id, SUMMARY_FIELD ) ?>
 	</td>
 </tr>
 

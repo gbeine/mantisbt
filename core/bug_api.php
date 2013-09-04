@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_api.php,v 1.58 2004-05-09 02:24:19 vboctor Exp $
+	# $Id: bug_api.php,v 1.82 2004-08-27 00:29:55 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -17,6 +17,10 @@
 	require_once( $t_core_dir . 'file_api.php' );
 	require_once( $t_core_dir . 'string_api.php' );
 	require_once( $t_core_dir . 'sponsorship_api.php' );
+
+	# MASC RELATIONSHIP
+	require_once( $t_core_dir.'relationship_api.php' );
+	# MASC RELATIONSHIP
 
 	### Bug API ###
 
@@ -42,6 +46,7 @@
 		var $os_build = '';
 		var $platform = '';
 		var $version = '';
+		var $fixed_in_version = '';
 		var $build = '';
 		var $view_state = VS_PUBLIC;
 		var $summary = '';
@@ -49,7 +54,7 @@
 
 		# omitted:
 		# var $bug_text_id
-		# var $profile_id
+		var $profile_id;
 
 		# extended info
 		var $description = '';
@@ -83,7 +88,7 @@
 			return $g_cache_bug[$c_bug_id];
 		}
 
-		$query = "SELECT *, date_submitted, last_updated
+		$query = "SELECT *
 				  FROM $t_bug_table
 				  WHERE id='$c_bug_id'";
 		$result = db_query( $query );
@@ -105,6 +110,20 @@
 		$g_cache_bug[$c_bug_id] = $row;
 
 		return $row;
+	}
+
+	# --------------------
+	# Inject a bug into the bug cache
+	function bug_add_to_cache( $p_bug_row ) {
+		global $g_cache_bug;
+
+		if ( !is_array( $p_bug_row ) )
+			return false;
+
+		$c_bug_id = db_prepare_int( $p_bug_row['id'] );
+		$g_cache_bug[ $c_bug_id ] = $p_bug_row;
+
+		return true;
 	}
 
 	# --------------------
@@ -227,15 +246,45 @@
 
 	# --------------------
 	# Check if the bug is readonly and shouldn't be modified
-	# by default a bug becomes readonly when it is resolved, but this can be changed
-	# through the configuration file.
+	# For a bug to be readonly the status has to be >= bug_readonly_status_threshold and
+	# current user access level < update_readonly_bug_threshold.
 	function bug_is_readonly( $p_bug_id ) {
 		$t_status = bug_get_field( $p_bug_id, 'status' );
-		if ( $t_status >= config_get( 'bug_resolved_status_threshold' ) ) {
-			return true;
-		} else {
+		if ( $t_status < config_get( 'bug_readonly_status_threshold' ) ) {
 			return false;
 		}
+
+		if ( access_has_bug_level( config_get( 'update_readonly_bug_threshold' ), $p_bug_id ) ) {
+			return false;
+		}
+
+		return true;
+	}
+	# --------------------
+	# Validate workflow state to see if bug can be moved to requested state
+	function bug_check_workflow( $p_bug_status, $p_wanted_status ) {
+		$t_status_enum_workflow = config_get( 'status_enum_workflow' );
+
+		if ( count( $t_status_enum_workflow ) < 1) {
+			# workflow not defined, use default enum
+			return true;
+		} else {
+			# workflow defined - find allowed states
+			$t_allowed_states = $t_status_enum_workflow[$p_bug_status];
+			$t_arr = explode_enum_string( $t_allowed_states );
+
+			$t_enum_count = count( $t_arr );
+
+			for ( $i = 0; $i < $t_enum_count; $i++ ) {
+				# check if wanted status is allowed
+				$t_elem  = explode_enum_arr( $t_arr[$i] );
+				if ( $p_wanted_status == $t_elem[0] ) {
+					return true;
+				}
+			} # end for
+		}
+
+		return false;
 	}
 
 	#===================================
@@ -245,40 +294,37 @@
 	# --------------------
 	# Create a new bug and return the bug id
 	#
-	# @@@ pass in a bug object instead of all these params
-	function bug_create( $p_project_id,
-				$p_reporter_id, $p_handler_id,
-				$p_priority,
-				$p_severity, $p_reproducibility,
-				$p_category,
-				$p_os, $p_os_build,
-				$p_platform, $p_version,
-				$p_build,
-				$p_profile_id, $p_summary, $p_view_state,
-				$p_description, $p_steps_to_reproduce, $p_additional_info ) {
+	function bug_create( $p_bug_data ) {
 
-		$c_summary				= db_prepare_string( $p_summary );
-		$c_description			= db_prepare_string( $p_description );
-		$c_project_id			= db_prepare_int( $p_project_id );
-		$c_reporter_id			= db_prepare_int( $p_reporter_id );
-		$c_handler_id			= db_prepare_int( $p_handler_id );
-		$c_priority				= db_prepare_int( $p_priority );
-		$c_severity				= db_prepare_int( $p_severity );
-		$c_reproducibility		= db_prepare_int( $p_reproducibility );
-		$c_category				= db_prepare_string( $p_category );
-		$c_os					= db_prepare_string( $p_os );
-		$c_os_build				= db_prepare_string( $p_os_build );
-		$c_platform				= db_prepare_string( $p_platform );
-		$c_version				= db_prepare_string( $p_version );
-		$c_build				= db_prepare_string( $p_build );
-		$c_profile_id			= db_prepare_int( $p_profile_id );
-		$c_view_state			= db_prepare_int( $p_view_state );
-		$c_steps_to_reproduce	= db_prepare_string( $p_steps_to_reproduce );
-		$c_additional_info		= db_prepare_string( $p_additional_info );
+		$c_summary				= db_prepare_string( $p_bug_data->summary );
+		$c_description			= db_prepare_string( $p_bug_data->description );
+		$c_project_id			= db_prepare_int( $p_bug_data->project_id );
+		$c_reporter_id			= db_prepare_int( $p_bug_data->reporter_id );
+		$c_handler_id			= db_prepare_int( $p_bug_data->handler_id );
+		$c_priority				= db_prepare_int( $p_bug_data->priority );
+		$c_severity				= db_prepare_int( $p_bug_data->severity );
+		$c_reproducibility		= db_prepare_int( $p_bug_data->reproducibility );
+		$c_category				= db_prepare_string( $p_bug_data->category );
+		$c_os					= db_prepare_string( $p_bug_data->os );
+		$c_os_build				= db_prepare_string( $p_bug_data->os_build );
+		$c_platform				= db_prepare_string( $p_bug_data->platform );
+		$c_version				= db_prepare_string( $p_bug_data->version );
+		$c_build				= db_prepare_string( $p_bug_data->build );
+		$c_profile_id			= db_prepare_int( $p_bug_data->profile_id );
+		$c_view_state			= db_prepare_int( $p_bug_data->view_state );
+		$c_steps_to_reproduce	= db_prepare_string( $p_bug_data->steps_to_reproduce );
+		$c_additional_info		= db_prepare_string( $p_bug_data->additional_information );
 		$c_sponsorship_total = 0;
 
-		# Summary and description cannot be blank
-		if ( is_blank( $c_summary ) || is_blank( $c_description ) ) {
+		# Summary cannot be blank
+		if ( is_blank( $c_summary ) ) {
+			error_parameters( lang_get( 'summary' ) );
+			trigger_error( ERROR_EMPTY_FIELD, ERROR );
+		}
+
+		# Description cannot be blank
+		if ( is_blank( $c_description ) ) {
+			error_parameters( lang_get( 'description' ) );
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}
 
@@ -362,6 +408,206 @@
 	}
 
 	# --------------------
+	# Copy a bug from one project to another. Also make copies of issue notes, attachments, history,
+	# email notifications etc.
+	# @@@ Not managed FTP file upload
+	# MASC RELATIONSHIP
+	function bug_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields = false, $p_copy_relationships = false,
+		$p_copy_history = false, $p_copy_attachments = false, $p_copy_bugnotes = false, $p_copy_monitoring_users = false ) {
+		global $g_db;
+
+		$t_mantis_custom_field_string_table	= config_get( 'mantis_custom_field_string_table' );
+		$t_mantis_bug_file_table			= config_get( 'mantis_bug_file_table' );
+		$t_mantis_bugnote_table				= config_get( 'mantis_bugnote_table' );
+		$t_mantis_bugnote_text_table		= config_get( 'mantis_bugnote_text_table' );
+		$t_mantis_bug_monitor_table			= config_get( 'mantis_bug_monitor_table' );
+		$t_mantis_bug_history_table			= config_get( 'mantis_bug_history_table' );
+		$t_mantis_db = $g_db;
+
+		$t_bug_id = db_prepare_int( $p_bug_id );
+		$t_target_project_id = db_prepare_int( $p_target_project_id );
+
+
+		$t_bug_data = new BugData;
+		$t_bug_data = bug_get( $t_bug_id, true );
+
+		# retrieve the project id associated with the bug
+		if ( ( $p_target_project_id == null ) || is_blank( $p_target_project_id ) ) {
+			$t_target_project_id = $t_bug_data->project_id;
+		}
+
+		$t_bug_data->project_id = $t_target_project_id;
+		
+		$t_new_bug_id = bug_create( $t_bug_data );
+
+		# MASC ATTENTION: IF THE SOURCE BUG HAS TO HANDLER THE bug_create FUNCTION CAN TRY TO AUTO-ASSIGN THE BUG
+		# WE FORCE HERE TO DUPLICATE THE SAME HANDLER OF THE SOURCE BUG
+		# @@@ VB: Shouldn't we check if the handler in the source project is also a handler in the destination project?
+		bug_set_field( $t_new_bug_id, 'handler_id', $t_bug_data->handler_id );
+
+		bug_set_field( $t_new_bug_id, 'duplicate_id', $t_bug_data->duplicate_id );
+		bug_set_field( $t_new_bug_id, 'status', $t_bug_data->status );
+		bug_set_field( $t_new_bug_id, 'resolution', $t_bug_data->resolution );
+		bug_set_field( $t_new_bug_id, 'projection', $t_bug_data->projection );
+		bug_set_field( $t_new_bug_id, 'date_submitted', $t_mantis_db->DBTimeStamp( $t_bug_data->date_submitted ), false );
+		bug_set_field( $t_new_bug_id, 'last_updated', $t_mantis_db->DBTimeStamp( $t_bug_data->last_updated ), false );
+		bug_set_field( $t_new_bug_id, 'eta', $t_bug_data->eta );
+		bug_set_field( $t_new_bug_id, 'fixed_in_version', $t_bug_data->fixed_in_version );
+		bug_set_field( $t_new_bug_id, 'sponsorship_total', 0 );
+
+		# COPY CUSTOM FIELDS
+		if ( $p_copy_custom_fields ) {
+			$query = "SELECT field_id, bug_id, value
+					   FROM $t_mantis_custom_field_string_table
+					   WHERE bug_id = '$t_bug_id';";
+			$result = db_query( $query );
+			$t_count = db_num_rows( $result );
+
+			for ( $i = 0 ; $i < $t_count ; $i++ ) {
+				$t_bug_custom = db_fetch_array( $result );
+
+				$c_field_id = db_prepare_int( $t_bug_custom['field_id'] );
+				$c_new_bug_id = db_prepare_int( $t_new_bug_id );
+				$c_value = db_prepare_string( $t_bug_custom['value'] );
+
+				$query = "INSERT INTO $t_mantis_custom_field_string_table
+						   ( field_id, bug_id, value )
+						   VALUES ('$c_field_id', '$c_new_bug_id', '$c_value')";
+				db_query( $query );
+			}
+		}
+
+		# COPY RELATIONSHIPS
+		if ( $p_copy_relationships ) {
+			if ( ON == config_get( 'enable_relationship' ) ) {
+				relationship_copy_all( $t_bug_id,$t_new_bug_id );
+			}
+		}
+
+		# Copy bugnotes
+		if ( $p_copy_bugnotes ) {
+			$query = "SELECT *
+					  FROM $t_mantis_bugnote_table
+					  WHERE bug_id = '$t_bug_id';";
+			$result = db_query( $query );
+			$t_count = db_num_rows( $result );
+
+			for ( $i = 0; $i < $t_count; $i++ ) {
+				$t_bug_note = db_fetch_array( $result );
+				$t_bugnote_text_id = $t_bug_note['bugnote_text_id'];
+
+				$query2 = "SELECT *
+						   FROM $t_mantis_bugnote_text_table
+						   WHERE id = '$t_bugnote_text_id';";
+				$result2 = db_query( $query2 );
+				$t_count2 = db_num_rows( $result2 );
+
+				$t_bugnote_text_insert_id = -1;
+				if ( $t_count2 > 0 ) {
+					$t_bugnote_text = db_fetch_array( $result2 );
+					$t_bugnote_text['note'] = db_prepare_string( $t_bugnote_text['note'] );
+
+					$query2 = "INSERT INTO $t_mantis_bugnote_text_table
+							   ( note )
+							   VALUES ( '" . $t_bugnote_text['note'] . "' );";
+					db_query( $query2 );
+					$t_bugnote_text_insert_id = db_insert_id( $t_mantis_bugnote_text_table );
+				}
+
+				$query2 = "INSERT INTO $t_mantis_bugnote_table
+						   ( bug_id, reporter_id, bugnote_text_id, view_state, date_submitted, last_modified )
+						   VALUES ( '$t_new_bug_id',
+						   			'" . $t_bug_note['reporter_id'] . "',
+						   			'$t_bugnote_text_insert_id',
+						   			'" . $t_bug_note['view_state'] . "',
+						   			'" . $t_bug_note['date_submitted'] . "',
+						   			'" . $t_bug_note['last_modified'] . "' );";
+				db_query( $query2 );
+			}
+		}
+
+		# Copy attachments
+		if ( $p_copy_attachments ) {
+			$query = "SELECT *
+					  FROM $t_mantis_bug_file_table
+					  WHERE bug_id = '$t_bug_id';";
+			$result = db_query( $query );
+			$t_count = db_num_rows( $result );
+
+			$t_bug_file = array();
+			for ( $i = 0; $i < $t_count; $i++ ) {
+				$t_bug_file = db_fetch_array( $result );
+
+				# prepare the new diskfile name and then copy the file
+				$t_new_file_name = file_get_display_name( $t_bug_file['filename'] );
+				$t_new_file_name = bug_format_id( $t_new_bug_id ) . '-' . $t_new_file_name;
+				$t_new_diskfile_name = $t_bug_file['folder'] . $t_new_file_name;
+				if ( ( config_get( 'file_upload_method' ) == DISK ) ) {
+					umask( 0333 );  # make read only
+					copy( $t_bug_file['diskfile'], $t_new_diskfile_name );
+				}
+
+				$query = "INSERT INTO $t_mantis_bug_file_table
+						( bug_id, title, description, diskfile, filename, folder, filesize, file_type, date_added, content )
+						VALUES ( '$t_new_bug_id',
+								 '" . db_prepare_string( $t_bug_file['title'] ) . "',
+								 '" . db_prepare_string( $t_bug_file['description'] ) . "',
+								 '" . db_prepare_string( $t_new_diskfile_name ) . "',
+								 '" . db_prepare_string( $t_new_file_name ) . "',
+								 '" . db_prepare_string( $t_bug_file['folder'] ) . "',
+								 '" . db_prepare_int( $t_bug_file['filesize'] ) . "',
+								 '" . db_prepare_string( $t_bug_file['file_type'] ) . "',
+								 '" . db_prepare_string( $t_bug_file['date_added'] ) . "',
+								 '" . db_prepare_string( $t_bug_file['content'] ) . "');";
+				db_query( $query );
+			}
+		}
+
+		# Copy users monitoring bug
+		if ( $p_copy_monitoring_users ) {
+			$query = "SELECT *
+					  FROM $t_mantis_bug_monitor_table
+					  WHERE bug_id = '$t_bug_id';";
+			$result = db_query( $query );
+			$t_count = db_num_rows( $result );
+
+			for ( $i = 0; $i < $t_count; $i++ ) {
+				$t_bug_monitor = db_fetch_array( $result );
+				$query = "INSERT INTO $t_mantis_bug_monitor_table
+						 ( user_id, bug_id )
+						 VALUES ( '" . $t_bug_monitor['user_id'] . "', '$t_new_bug_id' );";
+				db_query( $query );
+			}
+		}
+
+		# COPY HISTORY
+		history_delete( $t_new_bug_id );	# should history only be deleted inside the if statement below?
+		if ( $p_copy_history ) {
+			$query = "SELECT *
+					  FROM $t_mantis_bug_history_table
+					  WHERE bug_id = '$t_bug_id';";
+			$result = db_query( $query );
+			$t_count = db_num_rows( $result );
+
+			for ( $i = 0; $i < $t_count; $i++ ) {
+				$t_bug_history = db_fetch_array( $result );
+				$query = "INSERT INTO $t_mantis_bug_history_table
+						  ( user_id, bug_id, date_modified, field_name, old_value, new_value, type )
+						  VALUES ( '" . db_prepare_int( $t_bug_history['user_id'] ) . "',
+						  		   '$t_new_bug_id',
+						  		   '" . db_prepare_string( $t_bug_history['date_modified'] ) . "',
+						  		   '" . db_prepare_string( $t_bug_history['field_name'] ) . "',
+						  		   '" . db_prepare_string( $t_bug_history['old_value'] ) . "',
+						  		   '" . db_prepare_string( $t_bug_history['new_value'] ) . "',
+						  		   '" . db_prepare_int( $t_bug_history['type'] ) . "' );";
+				db_query( $query );
+			}
+		}
+
+		return $t_new_bug_id;
+	}
+
+	# --------------------
 	# allows bug deletion :
 	# delete the bug, bugtext, bugnote, and bugtexts selected
 	# used in bug_delete.php & mass treatments
@@ -386,6 +632,11 @@
 
 		# Delete all sponsorships
 		sponsorship_delete( sponsorship_get_all_ids( $p_bug_id ) );
+
+		# MASC RELATIONSHIP
+		# we delete relationships even if the feature is currently off.
+		relationship_delete_all( $p_bug_id );
+		# MASC RELATIONSHIP
 
 		# Delete files
 		file_delete_attachments( $p_bug_id );
@@ -446,14 +697,16 @@
 		$c_bug_id		= db_prepare_int( $p_bug_id );
 		$c_bug_data		= bug_prepare_db( $p_bug_data );
 
-		# Summary field cannot be empty
+		# Summary cannot be blank
 		if ( is_blank( $c_bug_data->summary ) ) {
+			error_parameters( lang_get( 'summary' ) );
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}
 
 		if ( $p_update_extended ) {
 			# Description field cannot be empty
 			if ( is_blank( $c_bug_data->description ) ) {
+				error_parameters( lang_get( 'description' ) );
 				trigger_error( ERROR_EMPTY_FIELD, ERROR );
 			}
 		}
@@ -485,6 +738,7 @@
 					platform='$c_bug_data->platform',
 					version='$c_bug_data->version',
 					build='$c_bug_data->build',
+					fixed_in_version='$c_bug_data->fixed_in_version',
 					view_state='$c_bug_data->view_state',
 					summary='$c_bug_data->summary',
 					sponsorship_total='$c_bug_data->sponsorship_total'
@@ -511,6 +765,7 @@
 		history_log_event_direct( $p_bug_id, 'platform', $t_old_data->platform, $p_bug_data->platform );
 		history_log_event_direct( $p_bug_id, 'version', $t_old_data->version, $p_bug_data->version );
 		history_log_event_direct( $p_bug_id, 'build', $t_old_data->build, $p_bug_data->build );
+		history_log_event_direct( $p_bug_id, 'fixed_in_version', $t_old_data->fixed_in_version, $p_bug_data->fixed_in_version );
 		history_log_event_direct( $p_bug_id, 'view_state', $t_old_data->view_state, $p_bug_data->view_state );
 		history_log_event_direct( $p_bug_id, 'summary', $t_old_data->summary, $p_bug_data->summary );
 		history_log_event_direct( $p_bug_id, 'sponsorship_total', $t_old_data->sponsorship_total, $p_bug_data->sponsorship_total );
@@ -549,15 +804,15 @@
 
 		# bug assigned
 		if ( $t_old_data->handler_id != $p_bug_data->handler_id ) {
-			email_generic( $p_bug_id, 'assigned', $t_action_prefix . 'assigned' );
+			email_generic( $p_bug_id, 'owner', $t_action_prefix . 'assigned' );
 			return true;
 		}
 
 		# status changed
 		if ( $t_old_data->status != $p_bug_data->status ) {
 			$t_status = get_enum_to_string( config_get( 'status_enum_string' ), $p_bug_data->status );
-			$t_status = str_replace( ' ', '', $t_status );
-			email_generic( $p_bug_id, 'status_' . $t_status, $t_status_prefix . $t_status );
+			$t_status = str_replace( ' ', '_', $t_status );
+			email_generic( $p_bug_id, $t_status, $t_status_prefix . $t_status );
 			return true;
 		}
 
@@ -649,6 +904,14 @@
 	}
 
 	# --------------------
+	# return the bug summary
+	#  this is a wrapper for the custom function
+	function bug_format_summary( $p_bug_id, $p_context ) {
+		return 	helper_call_custom_function( 'format_issue_summary', array( $p_bug_id , $p_context ) );
+	}
+		
+
+	# --------------------
 	# Returns the number of bugnotes for the given bug_id
 	function bug_get_bugnote_count( $p_bug_id ) {
 		$c_bug_id = db_prepare_int( $p_bug_id );
@@ -691,16 +954,44 @@
 		}
 	}
 
+	# --------------------
+	# return the timestamp for the most recent time at which a bugnote
+	#  associated with the bug was modified and the total bugnote
+	#  count in one db query
+	function bug_get_bugnote_stats( $p_bug_id ) {
+		$c_bug_id			= db_prepare_int( $p_bug_id );
+		$t_bugnote_table	= config_get( 'mantis_bugnote_table' );
+
+		$query = "SELECT last_modified
+				  FROM $t_bugnote_table
+				  WHERE bug_id='$c_bug_id'
+				  ORDER BY last_modified DESC";
+		$result = db_query( $query );
+		$row = db_fetch_array( $result );
+
+		if ( false === $row )
+			return false;
+
+		$t_stats['last_modified'] = db_unixtimestamp( $row['last_modified'] );
+		$t_stats['count'] = db_num_rows( $result );
+
+		return $t_stats;
+	}
+
 	#===================================
 	# Data Modification
 	#===================================
 
 	# --------------------
 	# set the value of a bug field
-	function bug_set_field( $p_bug_id, $p_field_name, $p_status ) {
-		$c_bug_id		= db_prepare_int( $p_bug_id );
-		$c_field_name	= db_prepare_string( $p_field_name );
-		$c_status		= db_prepare_string( $p_status ); #generic, unknown type
+	function bug_set_field( $p_bug_id, $p_field_name, $p_status, $p_prepare = true ) {
+		$c_bug_id			= db_prepare_int( $p_bug_id );
+		$c_field_name		= db_prepare_string( $p_field_name );
+		if( $p_prepare ) {
+			$c_status		= '\'' . db_prepare_string( $p_status ) . '\''; #generic, unknown type	
+		} else {
+			$c_status		=  $p_status; #generic, unknown type
+		}			
 
 		$h_status = bug_get_field( $p_bug_id, $p_field_name );
 
@@ -713,7 +1004,7 @@
 
 		# Update fields
 		$query = "UPDATE $t_bug_table
-				  SET $c_field_name='$c_status'
+				  SET $c_field_name=$c_status
 				  WHERE id='$c_bug_id'";
 		db_query( $query );
 
@@ -794,20 +1085,62 @@
 
 		email_close( $p_bug_id );
 
+		# MASC RELATIONSHIP
+		if ( ON == config_get( 'enable_relationship' ) ) {
+			email_relationship_child_closed( $p_bug_id );
+		}
+		# MASC RELATIONSHIP
+
 		return true;
 	}
 
 	# --------------------
 	# resolve the given bug
-	function bug_resolve( $p_bug_id, $p_resolution, $p_bugnote_text = '', $p_duplicate_id = null, $p_handler_id = null ) {
+	function bug_resolve( $p_bug_id, $p_resolution, $p_fixed_in_version = '', $p_bugnote_text = '', $p_duplicate_id = null, $p_handler_id = null ) {
 		$p_bugnote_text = trim( $p_bugnote_text );
 
-		bug_set_field( $p_bug_id, 'status', RESOLVED );
-		bug_set_field( $p_bug_id, 'resolution', (int)$p_resolution );
+		if( !is_blank( $p_duplicate_id ) && ( $p_duplicate_id != 0 ) ) {
+			# MASC RELATIONSHIP
 
-		if ( null !== $p_duplicate_id ) {
+			# the related bug exists...
+			bug_ensure_exists( $p_duplicate_id );
+
+			if( ON == config_get( 'enable_relationship' ) ) {
+				$t_relationship_id = relationship_exists( $p_bug_id, $p_duplicate_id );
+				if( $t_relationship_id > 0 ) {
+					# there is already a relationship between the bugs... we check if it's of the right type (otherwise error)
+
+					$t_relationship = relationship_get( $t_relationship_id );
+					if( $t_relationship != null ) {
+						if( ( $t_relationship->type != BUG_DUPLICATE ) && ( $t_relationship->type != BUG_HAS_DUPLICATE )) {
+							# the relationship is not duplicates/has duplicated -> error
+							trigger_error( ERROR_RELATIONSHIP_ALREADY_EXISTS, ERROR );
+						}
+					}
+
+				}
+				else {
+					# no relationship found... we add the duplicate relationship
+
+					# user can access to the related bug at least as viewer...
+					if( !access_has_bug_level( VIEWER, $p_duplicate_id ) ) {
+						error_parameters( $p_duplicate_id );
+						trigger_error( ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_BUG_TOO_LOW, ERROR );
+					}
+
+					# Relationship feature active
+					relationship_add( $p_bug_id, $p_duplicate_id, BUG_DUPLICATE );
+					history_log_event_special( $p_bug_id, BUG_ADD_RELATIONSHIP, BUG_DUPLICATE, $p_duplicate_id );
+					history_log_event_special( $p_duplicate_id, BUG_ADD_RELATIONSHIP, BUG_HAS_DUPLICATE, $p_bug_id );
+				}
+			}
 			bug_set_field( $p_bug_id, 'duplicate_id', (int)$p_duplicate_id );
+			# MASC RELATIONSHIP
 		}
+
+		bug_set_field( $p_bug_id, 'status', config_get( 'bug_resolved_status_threshold' ) );
+		bug_set_field( $p_bug_id, 'fixed_in_version', $p_fixed_in_version );
+		bug_set_field( $p_bug_id, 'resolution', (int)$p_resolution );
 
 		# only set handler if specified explicitly or if bug was not assigned to a handler
 		if ( null == $p_handler_id ) {
@@ -825,6 +1158,12 @@
 		}
 
 		email_resolved( $p_bug_id );
+
+		# MASC RELATIONSHIP
+		if ( ON == config_get( 'enable_relationship' ) ) {
+			email_relationship_child_resolved( $p_bug_id );
+		}
+		# MASC RELATIONSHIP
 
 		return true;
 	}
@@ -950,6 +1289,7 @@
 		$p_bug_data->platform			= db_prepare_string( $p_bug_data->platform );
 		$p_bug_data->version			= db_prepare_string( $p_bug_data->version );
 		$p_bug_data->build				= db_prepare_string( $p_bug_data->build );
+		$p_bug_data->fixed_in_version		= db_prepare_string( $p_bug_data->fixed_in_version );
 		$p_bug_data->view_state			= db_prepare_int( $p_bug_data->view_state );
 		$p_bug_data->summary			= db_prepare_string( $p_bug_data->summary );
 		$p_bug_data->sponsorship_total		= db_prepare_int( $p_bug_data->sponsorship_total );
@@ -973,6 +1313,7 @@
 		$p_bug_data->platform			= string_attribute( $p_bug_data->platform );
 		$p_bug_data->version			= string_attribute( $p_bug_data->version );
 		$p_bug_data->build				= string_attribute( $p_bug_data->build );
+		$p_bug_data->fixed_in_version		= string_attribute( $p_bug_data->fixed_in_version );
 		$p_bug_data->summary			= string_attribute( $p_bug_data->summary );
 		$p_bug_data->sponsorship_total		= string_attribute( $p_bug_data->sponsorship_total );
 
@@ -995,6 +1336,7 @@
 		$p_bug_data->platform			= string_display( $p_bug_data->platform );
 		$p_bug_data->version			= string_display( $p_bug_data->version );
 		$p_bug_data->build				= string_display( $p_bug_data->build );
+		$p_bug_data->fixed_in_version		= string_display( $p_bug_data->fixed_in_version );
 		$p_bug_data->summary			= string_display_links( $p_bug_data->summary );
 		$p_bug_data->sponsorship_total		= string_display( $p_bug_data->sponsorship_total );
 

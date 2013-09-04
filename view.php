@@ -6,26 +6,19 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_reopen.php,v 1.33 2004-01-11 07:16:06 vboctor Exp $
+	# $Id: view.php,v 1.2 2004-07-21 10:23:36 vboctor Exp $
 	# --------------------------------------------------------
-?>
-<?php
-	# This file reopens a bug
 ?>
 <?php
 	require_once( 'core.php' );
 	
 	$t_core_path = config_get( 'core_path' );
 	
-	require_once( $t_core_path.'bug_api.php' );
+	require_once( $t_core_path.'string_api.php' );
 ?>
 <?php
-	$f_bug_id		= gpc_get_int( 'bug_id' );
-	$f_bugnote_text	= gpc_get_string( 'bugnote_text', '' );
+	// Copy 'id' parameter into 'bug_id' so it is found by the simple/advanced view page.
+	$_GET['bug_id'] = gpc_get_int( 'id' );
 
-	access_ensure_can_reopen_bug( $f_bug_id );
-
-	bug_reopen( $f_bug_id, $f_bugnote_text );
-
-	print_successful_redirect_to_bug( $f_bug_id );
+	include string_get_bug_view_page();
 ?>

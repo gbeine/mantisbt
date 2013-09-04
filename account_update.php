@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: account_update.php,v 1.34 2004-02-07 12:53:41 vboctor Exp $
+	# $Id: account_update.php,v 1.38 2004-08-22 01:19:29 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -27,7 +27,8 @@
 	current_user_ensure_unprotected();
 ?>
 <?php
-	$f_email			= gpc_get_string( 'email', '' );
+	$f_email			= htmlentities( gpc_get_string( 'email', '' ) );
+	$f_realname			= htmlentities( gpc_get_string( 'realname', '' ) );
 	$f_password			= gpc_get_string( 'password', '' );
 	$f_password_confirm	= gpc_get_string( 'password_confirm', '' );
 
@@ -48,10 +49,25 @@
 	# @@@ Listing what fields were updated is not standard behaviour of Mantis
 	#     it also complicates the code.
 
-	echo lang_get( 'operation_successful' ) . '<br />';
 	if ( $f_email != user_get_email( $t_user_id ) ) {
 		user_set_email( $t_user_id, $f_email );
 		echo lang_get( 'email_updated' ) . '<br />';
+	}
+
+	if ( $f_realname != user_get_field( $t_user_id, 'realname' ) ) {
+		# checks for problems with realnames
+		$t_username = user_get_field( $t_user_id, 'username' );
+		switch ( user_is_realname_unique( $t_username, $f_realname ) ) {
+			case 0:
+				trigger_error( ERROR_USER_REAL_MATCH_USER, ERROR );
+				break;
+			case 1:
+				break;
+			default:			
+				echo lang_get( 'realname_duplicated' ) . '<br />';
+		}
+		user_set_realname( $t_user_id, $f_realname );
+		echo lang_get( 'realname_updated' ) . '<br />';
 	}
 
 	# Update password if the two match and are not empty
@@ -66,6 +82,7 @@
 		}
 	}
 
+	echo lang_get( 'operation_successful' ) . '<br />';
 	print_bracket_link( $t_redirect, lang_get( 'proceed' ) );
 	echo '</div>';
 	html_page_bottom1( __FILE__ );

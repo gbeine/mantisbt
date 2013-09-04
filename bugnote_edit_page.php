@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bugnote_edit_page.php,v 1.44 2004-04-12 21:04:35 jlatour Exp $
+	# $Id: bugnote_edit_page.php,v 1.47 2004-08-27 00:29:54 thraxisp Exp $
 	# --------------------------------------------------------
 
 	# CALLERS
@@ -42,11 +42,11 @@
 		access_ensure_bugnote_level( config_get( 'update_bugnote_threshold' ), $f_bugnote_id );
 	}
 
-	# Check if the bug has been resolved
+	# Check if the bug is readonly
 	$t_bug_id = bugnote_get_field( $f_bugnote_id, 'bug_id' );
-	if ( bug_get_field( $t_bug_id, 'status' ) >= config_get( 'bug_resolved_status_threshold' ) ) {
-		# @@@ The error should be more generic.
-		trigger_error( ERROR_BUG_RESOLVED_ACTION_DENIED, ERROR );
+	if ( bug_is_readonly( $t_bug_id ) ) {
+		error_parameters( $t_bug_id );
+		trigger_error( ERROR_BUG_READ_ONLY_ACTION_DENIED, ERROR );
 	}
 
 	$t_bugnote_text = string_textarea( bugnote_get_text( $f_bugnote_id ) );
@@ -54,7 +54,7 @@
 	# Determine which view page to redirect back to.
 	$t_redirect_url = string_get_bug_view_url( $t_bug_id );
 ?>
-<?php html_page_top1() ?>
+<?php html_page_top1( bug_format_summary( $t_bug_id, SUMMARY_CAPTION ) ) ?>
 <?php html_page_top2() ?>
 
 <br />

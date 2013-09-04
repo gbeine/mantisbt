@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: constant_inc.php,v 1.15 2004-05-10 12:33:42 vboctor Exp $
+	# $Id: constant_inc.php,v 1.29 2004-08-27 00:29:55 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### CONSTANTS  ###
@@ -16,6 +16,8 @@
 	# magic numbers
 	define( 'ON',	1 );
 	define( 'OFF',	0 );
+	define( 'AUTO', 3 );
+
 
 	# error types
 	define( 'ERROR',	E_USER_ERROR );
@@ -89,6 +91,7 @@
 	define( 'MD5',				3 );
 	define( 'LDAP',				4 );
 	define( 'BASIC_AUTH',		5 );
+	define( 'HTTP_AUTH',		6 );
 
 	# file upload methods
 	define( 'DISK',			1 );
@@ -99,6 +102,8 @@
 	define( 'BOTH',				0 );
 	define( 'SIMPLE_ONLY',		1 );
 	define( 'ADVANCED_ONLY',	2 );
+	define( 'SIMPLE_DEFAULT',	3 );
+	define( 'ADVANCED_DEFAULT',	4 );
 
 	# news values
 	define( 'BY_LIMIT',		0 );
@@ -116,7 +121,6 @@
 	define( 'BUGNOTE_ADDED',				2 );
 	define( 'BUGNOTE_UPDATED',				3 );
 	define( 'BUGNOTE_DELETED',				4 );
-	define( 'SUMMARY_UPDATED',				5 );
 	define( 'DESCRIPTION_UPDATED',			6 );
 	define( 'ADDITIONAL_INFO_UPDATED',		7 );
 	define( 'STEP_TO_REPRODUCE_UPDATED',	8 );
@@ -129,11 +133,18 @@
 	define( 'BUG_ADD_SPONSORSHIP',				15 );
 	define( 'BUG_UPDATE_SPONSORSHIP',			16 );
 	define( 'BUG_DELETE_SPONSORSHIP',			17 );
+	define( 'BUG_ADD_RELATIONSHIP', 		18 );
+	define( 'BUG_DEL_RELATIONSHIP', 		19 );
+	define( 'BUG_CLONED_TO', 				20 );
+	define( 'BUG_CREATED_FROM', 			21 );
+	define( 'CHECKIN',				22 );
 
 	# bug relationship constants
 	define( 'BUG_DUPLICATE',	0 );
 	define( 'BUG_RELATED',		1 );
 	define( 'BUG_DEPENDANT',	2 );
+	define( 'BUG_BLOCKS', 3 );
+	define( 'BUG_HAS_DUPLICATE', 4 );
 
 	# error messages
 	define( 'ERROR_GENERIC',						0 );
@@ -190,6 +201,7 @@
 	define( 'ERROR_USER_PROFILE_NOT_FOUND',			804 );
 	define( 'ERROR_USER_NAME_INVALID',				805 );
 	define( 'ERROR_USER_DOES_NOT_HAVE_REQ_ACCESS',		806 );
+	define( 'ERROR_USER_REAL_MATCH_USER',		807 );
 
 	# ERROR_AUTH_*
 	define( 'ERROR_AUTH_INVALID_COOKIE',			900 );
@@ -200,7 +212,8 @@
 	# ERROR_BUG_*
 	define( 'ERROR_BUG_NOT_FOUND',					1100 );
 	define( 'ERROR_BUG_DUPLICATE_SELF',				1101 );
-	define( 'ERROR_BUG_RESOLVED_ACTION_DENIED',		1102 );
+	define( 'ERROR_BUG_RESOLVED_ACTION_DENIED',			1102 );	// @@@ obsolete, remove after lang files are sync'd
+	define( 'ERROR_BUG_READ_ONLY_ACTION_DENIED',			1103 );
 
 	# ERROR_EMAIL_*
 	define( 'ERROR_EMAIL_INVALID',					1200 );
@@ -233,6 +246,23 @@
 	define( 'ERROR_SPONSORSHIP_AMOUNT_TOO_LOW',			1702 );
 	define( 'ERROR_SPONSORSHIP_HANDLER_ACCESS_LEVEL_TOO_LOW',	1703 );
 	define( 'ERROR_SPONSORSHIP_ASSIGNER_ACCESS_LEVEL_TOO_LOW',	1704 );
+	define( 'ERROR_SPONSORSHIP_SPONSOR_NO_EMAIL',	1705 );
+
+	# MASC RELATIONSHIP
+	# ERROR RELATIONSHIP
+	define( 'ERROR_RELATIONSHIP_ALREADY_EXISTS', 1800 );
+	define( 'ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_BUG_TOO_LOW', 1801 );
+	define( 'ERROR_RELATIONSHIP_NOT_FOUND', 1802 );
+	define( 'ERROR_RELATIONSHIP_SAME_BUG', 1803 );
+	# MASC RELATIONSHIP
+
+	# ERROR_LOST_PASSWORD_*
+	define( 'ERROR_LOST_PASSWORD_NOT_ENABLED', 1900 );
+	define( 'ERROR_LOST_PASSWORD_CONFIRM_HASH_INVALID', 1901 );
+	define( 'ERROR_LOST_PASSWORD_NO_EMAIL_SPECIFIED', 1902 );
+	define( 'ERROR_LOST_PASSWORD_NOT_MATCHING_DATA', 1903 );
+	define( 'ERROR_SIGNUP_NOT_MATCHING_CAPTCHA', 1904 );
+	define( 'ERROR_LOST_PASSWORD_MAX_IN_PROGRESS_ATTEMPTS_REACHED', 1905 );
 
 	# Status Legend Position
 	define( 'STATUS_LEGEND_POSITION_TOP',		1);
@@ -242,12 +272,26 @@
 	define( 'EMAIL_CATEGORY_PROJECT_CATEGORY',	1);
 
 	# Custom Field types
-	define( 'CUSTOM_FIELD_TYPE_STRING',   0 );
-	define( 'CUSTOM_FIELD_TYPE_NUMERIC',  1 );
-	define( 'CUSTOM_FIELD_TYPE_FLOAT',    2 );
-	define( 'CUSTOM_FIELD_TYPE_ENUM',     3 );
-	define( 'CUSTOM_FIELD_TYPE_EMAIL',    4 );
+	define( 'CUSTOM_FIELD_TYPE_STRING',		0 );
+	define( 'CUSTOM_FIELD_TYPE_NUMERIC',	1 );
+	define( 'CUSTOM_FIELD_TYPE_FLOAT',		2 );
+	define( 'CUSTOM_FIELD_TYPE_ENUM',		3 );
+	define( 'CUSTOM_FIELD_TYPE_EMAIL',		4 );
+	define( 'CUSTOM_FIELD_TYPE_CHECKBOX',	5 );
+	define( 'CUSTOM_FIELD_TYPE_LIST',		6 );
+	define( 'CUSTOM_FIELD_TYPE_MULTILIST',	7 );
 
 	# Meta filter values
 	define( 'META_FILTER_MYSELF',	-1 );
+
+	# Versions
+	define( 'VERSION_ALL',		null );
+	define( 'VERSION_FUTURE',	0 );
+	define( 'VERSION_RELEASED',	1 );
+
+	# Contexts for bug summary
+	define( 'SUMMARY_CAPTION', 1 );
+	define( 'SUMMARY_FIELD', 2 );
+	define( 'SUMMARY_EMAIL', 3 );
+	
 ?>

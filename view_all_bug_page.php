@@ -6,11 +6,11 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Revision: 1.51 $
+	# $Revision: 1.54 $
 	# $Author: vboctor $
-	# $Date: 2004-01-11 07:16:08 $
+	# $Date: 2004-07-20 15:51:50 $
 	#
-	# $Id: view_all_bug_page.php,v 1.51 2004-01-11 07:16:08 vboctor Exp $
+	# $Id: view_all_bug_page.php,v 1.54 2004-07-20 15:51:50 vboctor Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -25,20 +25,18 @@
 <?php
 	$f_page_number		= gpc_get_int( 'page_number', 1 );
 
-	# check to see if the cookie does not exist
-	if ( !filter_is_cookie_valid() ) {
-		print_header_redirect( 'view_all_set.php?type=0' );
-	}
-
 	$t_per_page = null;
 	$t_bug_count = null;
 	$t_page_count = null;
 
 	$rows = filter_get_bug_rows( $f_page_number, $t_per_page, $t_page_count, $t_bug_count );
+	if ( $rows === false ) {
+		print_header_redirect( 'view_all_set.php?type=0' );
+	}
 
 	compress_enable();
 
-	html_page_top1();
+	html_page_top1( lang_get( 'view_bugs_link' ) );
 
 	if ( current_user_get_pref( 'refresh_delay' ) > 0 ) {
 		html_meta_redirect( 'view_all_bug_page.php?page_number='.$f_page_number, current_user_get_pref( 'refresh_delay' )*60 );

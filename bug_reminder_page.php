@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: bug_reminder_page.php,v 1.16 2004-04-12 21:04:35 jlatour Exp $
+	# $Id: bug_reminder_page.php,v 1.19 2004-08-27 00:29:54 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php
@@ -19,9 +19,14 @@
 <?php
 	$f_bug_id = gpc_get_int( 'bug_id' );
 
+	if ( bug_is_readonly( $f_bug_id ) ) {
+		error_parameters( $f_bug_id );
+		trigger_error( ERROR_BUG_READ_ONLY_ACTION_DENIED, ERROR );
+	}
+
 	access_ensure_bug_level( config_get( 'bug_reminder_threshold' ), $f_bug_id );
 ?>
-<?php html_page_top1() ?>
+<?php html_page_top1( bug_format_summary( $f_bug_id, SUMMARY_CAPTION ) ) ?>
 <?php html_page_top2() ?>
 
 <?php # Send reminder Form BEGIN ?>
@@ -46,7 +51,7 @@
 <tr <?php echo helper_alternate_class() ?>>
 	<td>
 		<select name="to[]" multiple="multiple" size="10">
-			<?php echo print_project_user_option_list() ?>
+			<?php echo print_project_user_option_list( bug_get_field( $f_bug_id, 'project_id' ) ) ?>
 		</select>
 	</td>
 	<td class="center">

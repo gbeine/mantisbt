@@ -4,28 +4,32 @@ and POP3 Mailaccounts with PEAR's Net_POP3 packge.
 bug_report_mail is able to recognize if mail is a reply to an already opened
 bug and adds the content as a bugnote.
 
-If you are alway running Mantis you have to alter you projects table
+If you are alway running Mantis you have to alter your projects table
 with the sql/bug_report_mail.sql script.
 If not, you can create the database tables in the way described in
 the doc/INSTALL file.
 
 This patch changes the following files:
+    core/category_api.php
     core/user_api.php
+    config_defaults_inc.php
+    manage_proj_cat_edit_page.php
     manage_proj_edit_page.php
-    config_inc.php.sample
 These files are new:
     core/mail_api.php
-    sql/bug_report_mail.php
+    sql/bug_report_mail.sql
     bug_report_mail.php
+    manage_proj_cat_mail_delete.php
+    manage_proj_cat_mail_update.php
+    manage_proj_mail_categories.php
     manage_proj_mail_delete.php
     manage_proj_mail_update.php
 
 After installing this patch, you can add a POP3 server's hostname
-and authentication data for each of your projects with the
-project edit form.
+and authentication data for each of your projects with the project edit form.
 
 There are two ways to receive mail with bug_report_mail:
-The secure way is to use a standard reporting user:
+The secure (and default) way is to use a standard reporting user:
 You have to create a reporter account, for example 'Mail'.
 The name for this reporter account you have to write in your config_inc.php file:
 	$g_mail_reporter = "Mail";

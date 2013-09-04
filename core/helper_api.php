@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: helper_api.php,v 1.47 2004-04-14 19:26:45 narcissus Exp $
+	# $Id: helper_api.php,v 1.51 2004-08-01 03:29:25 narcissus Exp $
 	# --------------------------------------------------------
 
 	### Helper API ###
@@ -96,15 +96,25 @@
 		return '@' . $p_val . '@';
 	}
 	# --------------------
-	# If $p_var and $p_val are euqal to each other then we PRINT SELECTED
+	# If $p_var is not an array and is equal to $p_val then we PRINT SELECTED.
+	# If $p_var is an array, then if any member is equal to $p_val we PRINT SELECTED.
 	# This is used when we want to know if a variable indicated a certain
 	# option element is selected
 	#
 	# If the second parameter is not given, the first parameter is compared
 	#  to the boolean value true
 	function check_selected( $p_var, $p_val=true ) {
-		if ( $p_var == $p_val ) {
-			PRINT ' selected="selected" ';
+		if ( is_array( $p_var ) ) {
+			foreach( $p_var as $p_this_var ) {
+				if ( $p_this_var == $p_val ) {
+					PRINT ' selected="selected" ';
+					return;
+				}
+			}
+		} else {
+			if ( $p_var == $p_val ) {
+				PRINT ' selected="selected" ';
+			}
 		}
 	}
 	# --------------------
@@ -166,9 +176,8 @@
 	# --------------------
 	# Clear all known user preference cookies
 	function helper_clear_pref_cookies() {
-		gpc_clear_cookie( 'project_cookie' );
-		gpc_clear_cookie( 'view_all_cookie' );
-		gpc_clear_cookie( 'manage_cookie' );
+		gpc_clear_cookie( config_get( 'project_cookie' ) );
+		gpc_clear_cookie( config_get( 'manage_cookie' ) );
 	}
 	# --------------------
 	# Check whether the user has confirmed this action.
@@ -211,5 +220,21 @@
 		PRINT "</div>\n";
 		html_page_bottom1();
 		exit;
+	}
+
+	# --------------------
+	# Call custom function.
+	#
+	# $p_function - Name of function to call (eg: do_stuff).  The function will call custom_function_override_do_stuff()
+	#		if found, otherwise, will call custom_function_default_do_stuff().
+	# $p_args_array - Parameters to function as an array
+	function helper_call_custom_function( $p_function, $p_args_array ) {
+		$t_function = 'custom_function_override_' . $p_function;
+
+		if ( !function_exists( $t_function ) ) {
+			$t_function = 'custom_function_default_' . $p_function;
+		}
+
+		return call_user_func_array( $t_function, $p_args_array );
 	}
 ?>

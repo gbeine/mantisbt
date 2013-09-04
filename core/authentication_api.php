@@ -6,10 +6,12 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: authentication_api.php,v 1.37 2004-04-27 00:54:32 narcissus Exp $
+	# $Id: authentication_api.php,v 1.45 2004-08-14 15:26:20 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### Authentication API ###
+
+	$g_script_login_cookie = null;
 
 	#===================================
 	# Boolean queries and ensures
@@ -35,6 +37,9 @@
 			}
 		} else { # not logged in
 			if ( is_blank( $p_return_page ) ) {
+				if (!isset($_SERVER['REQUEST_URI'])) {
+					$_SERVER['REQUEST_URI'] = $_SERVER['SCRIPT_NAME'] . '?' . $_SERVER['QUERY_STRING'];
+				}
 				$p_return_page = $_SERVER['REQUEST_URI'];
 			}
 			$p_return_page = string_url( $p_return_page );
@@ -46,11 +51,7 @@
 	# Return true if there is a currently logged in and authenticated user,
 	#  false otherwise
 	function auth_is_user_authenticated() {
-		if ( is_blank( auth_get_current_user_cookie() ) ) {
-			return false;
-		} else {
-			return true;
-		}
+		return ( !is_blank( auth_get_current_user_cookie() ) );
 	}
 
 
@@ -94,18 +95,59 @@
 			}
 		}
 
+		# check for disabled account
+		if ( !user_is_enabled( $t_user_id ) ) {
+			return false;
+		}
+
+		# max. failed login attempts achieved...
+		if( !user_is_login_request_allowed( $t_user_id ) ) {
+			return false;
+		}
+
+		$t_anon_account = config_get( 'anonymous_account' );
+		$t_anon_allowed = config_get( 'allow_anonymous_login' );
+
+		# check for anonymous login
+		if ( !( ( ON == $t_anon_allowed ) && ( $t_anon_account == $p_username)  ) ) {
+			# anonymous login didn't work, so check the password
+
+			if ( !auth_does_password_match( $t_user_id, $p_password ) ) {
+				user_increment_failed_login_count( $t_user_id );
+				return false;
+			}
+		}
+
+		# ok, we're good to login now
+
+		# increment login count
+		user_increment_login_count( $t_user_id );
+
+		user_reset_failed_login_count_to_zero( $t_user_id );
+		user_reset_lost_password_in_progress_count_to_zero( $t_user_id );
+
+		# set the cookies
+		auth_set_cookies( $t_user_id, $p_perm_login );
+
+		return true;
+	}
+
+	# --------------------
+	# Allows scripts to login using a login name or ( login name + password )
+	function auth_attempt_script_login( $p_username, $p_password = null ) {
+		global $g_script_login_cookie;
+
+		$t_user_id = user_get_id_by_name( $p_username );
+
 		$t_user = user_get_row( $t_user_id );
 
 		# check for disabled account
 		if ( OFF == $t_user['enabled'] ) {
 			return false;
 		}
-		$t_anon_account = config_get( 'anonymous_account' );
-		$t_anon_allowed = config_get( 'allow_anonymous_login' );
-		# check for anonymous login
-		if ( !( ( ON == $t_anon_allowed ) && ( $t_anon_account == $p_username)  ) ) {
-			# anonymous login didn't work, so check the password
 
+		# validate password if supplied	
+		if ( null !== $p_password ) {
 			if ( !auth_does_password_match( $t_user_id, $p_password ) ) {
 				return false;
 			}
@@ -117,7 +159,7 @@
 		user_increment_login_count( $t_user_id );
 
 		# set the cookies
-		auth_set_cookies( $t_user_id, $p_perm_login );
+		$g_script_login_cookie = $t_user['cookie_string'];
 
 		return true;
 	}
@@ -128,7 +170,6 @@
 	function auth_logout() {
 		auth_clear_cookies();
 		helper_clear_pref_cookies();
-		filter_db_delete_current_filters();
 		return true;
 	}
 
@@ -210,6 +251,17 @@
 		return substr( $t_val, 0, 12 );
 	}
 
+	# --------------------
+	# Generate a confirm_hash 12 character to valide the password reset request
+	function auth_generate_confirm_hash( $p_user_id ) {
+		$t_confirm_hash_generator = config_get( 'password_confirm_hash_magic_string' );
+		$t_password = user_get_field( $p_user_id, 'password' );
+		$t_last_visit = user_get_field( $p_user_id, 'last_visit' );
+
+		$t_confirm_hash = md5( $t_confirm_hash_generator . $t_password . $t_last_visit );
+
+		return $t_confirm_hash;
+	}
 
 	#===================================
 	# Cookie functions
@@ -235,6 +287,10 @@
 	# --------------------
 	# Clear login cookies
 	function auth_clear_cookies() {
+		global $g_script_login_cookie;
+
+		$g_script_login_cookie = null;
+
 		$t_cookie_name =  config_get( 'string_cookie' );
 		$t_cookie_path = config_get( 'cookie_path' );
 
@@ -288,19 +344,25 @@
 	# if no user is logged in and anonymous login is enabled, returns cookie for anonymous user
 	# otherwise returns '' (an empty string)
 	function auth_get_current_user_cookie() {
+		global $g_script_login_cookie;
+
 		$t_cookie_name = config_get( 'string_cookie' );
 		$t_cookie = gpc_get_cookie( $t_cookie_name, '' );
 
 		# if cookie not found, and anonymous login enabled, use cookie of anonymous account.
 		if ( is_blank( $t_cookie ) ) {
-			if ( ON == config_get( 'allow_anonymous_login' ) ) {
-				$query = sprintf('SELECT id, cookie_string FROM %s WHERE username = "%s"',
-						config_get( 'mantis_user_table' ), config_get( 'anonymous_account' ) );
-				$result = db_query( $query );
+			if ( $g_script_login_cookie !== null ) {
+				return $g_script_login_cookie;
+			} else {
+				if ( ON == config_get( 'allow_anonymous_login' ) ) {
+					$query = sprintf('SELECT id, cookie_string FROM %s WHERE username = "%s"',
+							config_get( 'mantis_user_table' ), config_get( 'anonymous_account' ) );
+					$result = db_query( $query );
 
-				if ( 1 == db_num_rows( $result ) ) {
-					$row		= db_fetch_array( $result );
-					$t_cookie	= $row['cookie_string'];
+					if ( 1 == db_num_rows( $result ) ) {
+						$row		= db_fetch_array( $result );
+						$t_cookie	= $row['cookie_string'];
+					}
 				}
 			}
 		}
@@ -352,5 +414,41 @@
 		$g_cache_current_user_id = $t_user_id;
 
 		return $t_user_id;
+	}
+
+
+	#===================================
+	# HTTP Auth
+	#===================================
+
+	function auth_http_prompt() {
+		header( "HTTP/1.0 401 Authorization Required" );
+		header( "WWW-Authenticate: Basic realm=\"" . lang_get( 'http_auth_realm' ) . "\"" );
+		header( 'status: 401 Unauthorized' );
+
+		echo '<center>';
+		echo '<p>'.error_string(ERROR_ACCESS_DENIED).'</p>';
+		print_bracket_link( 'main_page.php', lang_get( 'proceed' ) );
+		echo '</center>';
+
+		exit;
+	}
+
+	function auth_http_set_logout_pending( $p_pending ) {
+		$t_cookie_name = config_get( 'logout_cookie' );
+
+		if ( $p_pending ) {
+			gpc_set_cookie( $t_cookie_name, "1", false );
+		} else {
+			$t_cookie_path = config_get( 'cookie_path' );
+			gpc_clear_cookie( $t_cookie_name, $t_cookie_path );
+		}
+	}
+
+	function auth_http_is_logout_pending() {
+		$t_cookie_name = config_get( 'logout_cookie' );
+		$t_cookie = gpc_get_cookie( $t_cookie_name, '' );
+
+		return( $t_cookie > '' );
 	}
 ?>

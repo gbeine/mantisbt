@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: database_api.php,v 1.28 2004-05-10 13:03:55 vboctor Exp $
+	# $Id: database_api.php,v 1.33 2004-09-09 17:56:37 thraxisp Exp $
 	# --------------------------------------------------------
 
 	### Database ###
@@ -14,7 +14,9 @@
 	# This is the general interface for all database calls.
 	# Use this as a starting point to port to other databases
 
-	include( 'adodb/adodb.inc.php' );
+	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
+
+	require_once( $t_core_dir . 'adodb/adodb.inc.php' );
 
 	$g_db = $db = ADONewConnection($g_db_type);
 
@@ -29,7 +31,7 @@
 	function db_connect( $p_hostname, $p_username, $p_password, $p_port, $g_database_name ) {
 		global $g_db_connected, $g_db;
 
-		$t_result = $g_db->Connect($p_hostname, $p_username, $p_password, $g_database_name);
+		$t_result = $g_db->Connect($p_hostname, $p_username, $p_password, $g_database_name );
 
 		if ( !$t_result ) {
 			db_error();
@@ -44,10 +46,10 @@
 
 	# --------------------
 	# Make a persistent connection to the database
-	function db_pconnect( $p_hostname, $p_username, $p_password, $p_port ) {
+	function db_pconnect( $p_hostname, $p_username, $p_password, $p_port, $g_database_name ) {
 		global $g_db_connected, $g_db;
 
-		$t_result = $g_db->PConnect($p_hostname, $p_username, $p_password);
+		$t_result = $g_db->PConnect($p_hostname, $p_username, $p_password, $g_database_name );
 		if ( !$t_result ) {
 			db_error();
 			trigger_error( ERROR_DB_CONNECT_FAILED, ERROR );
@@ -82,19 +84,27 @@
 	}
 
 	# --------------------
+	# timer analysis 
+	function microtime_float() {
+		list( $usec, $sec ) = explode( " ", microtime() );
+		return ( (float)$usec + (float)$sec );
+	}
+	
+	# --------------------
 	# execute query, requires connection to be opened
 	# If $p_error_on_failure is true (default) an error will be triggered
 	#  if there is a problem executing the query.
 	function db_query( $p_query, $p_limit = -1, $p_offset = -1 ) {
 		global $g_queries_array, $g_db;
 
-		array_push ( $g_queries_array, $p_query );
-
+		$t_start = microtime_float();
 		if ( ( $p_limit != -1 ) || ( $p_offset != -1 ) ) {
 			$t_result = $g_db->SelectLimit( $p_query, $p_limit, $p_offset );
 		} else {
 			$t_result = $g_db->Execute( $p_query );
 		}
+		$t_elapsed = number_format( microtime_float() - $t_start, 4);
+		array_push ( $g_queries_array, array( $p_query, $t_elapsed ) );
 
 		if ( !$t_result ) {
 			db_error($p_query);
@@ -158,22 +168,10 @@
 	}
 
 	# --------------------
-	function db_field_exists( $p_field_name, $p_table_name, $p_db_name = '') {
-		global $g_database_name;
+	function db_field_exists( $p_field_name, $p_table_name ) {
+		global $g_db;
 
-		if ( is_blank( $p_db_name ) ) {
-			$p_db_name = $g_database_name;
-		}
-
-		$fields	 = mysql_list_fields( $p_db_name, $p_table_name );
-		$columns	= mysql_num_fields( $fields );
-		for ($i = 0; $i < $columns; $i++) {
-			if ( mysql_field_name( $fields, $i ) == $p_field_name ) {
-				return true;
-			}
-		}
-
-		return false;
+		return in_array ( $p_field_name , $g_db->MetaColumnNames( $p_table_name) ) ;
 	}
 
 	# --------------------
@@ -243,6 +241,7 @@
 
 		switch( $t_db_type ) {
 			case 'mssql':
+			case 'odbc_mssql':
 				return addslashes( $p_string );
 
 			case 'mysql':
@@ -317,6 +316,7 @@
 
 		switch( $t_db_type ) {
 			case 'mssql':
+			case 'odbc_mssql':
 				return "(DATEDIFF(day, $p_date2, $p_date1) ". $p_limitstring . ")";
 
 			case 'mysql':
@@ -334,6 +334,30 @@
 		}
 	}
 
+	# --------------------
+	# count queries
+	function db_count_queries () {
+		global $g_queries_array;
+
+		return count( $g_queries_array );
+		}
+
+	# --------------------
+	# count unique queries
+	function db_count_unique_queries () {
+		global $g_queries_array;
+
+		$t_unique_queries = 0;
+		$t_shown_queries = array();
+		foreach ($g_queries_array as $t_val_array) {
+			if ( ! in_array( $t_val_array[0], $t_shown_queries ) ) {
+				$t_unique_queries++;
+				array_push( $t_shown_queries, $t_val_array[0] );
+			}
+		}
+		return $t_unique_queries;
+		}
+		
 	# --------------------
 	if ( !isset( $g_skip_open_db ) ) {
 		if ( OFF == $g_use_persistent_connections ) {

@@ -8,11 +8,11 @@
 	# Turkish: Oktay Altunergil - oktay@bellatlantic.net, founder of FreeLinuxCD.org
 	# Türkçe tercüme , FreeLinuxCD.org kurucusu Oktay Altunergil tarafýndan gerçeklestirilmiþtir.
 	# -------------------------------------------------
-	# $Revision: 1.57 $
-	# $Author: jlatour $
-	# $Date: 2004-03-14 20:10:49 $
+	# $Revision: 1.67 $
+	# $Author: bigbadger $
+	# $Date: 2004-08-26 17:40:59 $
 	#
-	# $Id: strings_turkish.txt,v 1.57 2004-03-14 20:10:49 jlatour Exp $
+	# $Id: strings_turkish.txt,v 1.67 2004-08-26 17:40:59 bigbadger Exp $
 	###########################################################################
 ?>
 <?php
@@ -21,12 +21,15 @@ $s_charset = 'iso-8859-9';
 
 # Group commands menuitems
 $s_actiongroup_menu_move = 'Move';
+$s_actiongroup_menu_copy = 'Copy';
 $s_actiongroup_menu_assign = 'Assign';
 $s_actiongroup_menu_close = 'Close';
 $s_actiongroup_menu_delete = 'Delete';
 $s_actiongroup_menu_resolve = 'Resolve';
 $s_actiongroup_menu_update_priority = 'Update Priority';
 $s_actiongroup_menu_update_status = 'Update Status';
+$s_actiongroup_menu_update_view_status = 'Update View Status';
+$s_actiongroup_bugs = 'Selected Issues';
 
 # new strings:
 $s_all_projects = 'Bütün Projeler';
@@ -94,20 +97,26 @@ $s_login_link = 'Login';
 
 # bug_actiongroup_page.php : mass treatment
 $s_bug_actiongroup_failed = 'You did not have appropriate permissions to perform that action on the following bugs: ';
+$s_bug_actiongroup_access = 'You did not have appropriate permissions to perform that action.';
+$s_bug_actiongroup_status = 'This issue cannot be changed to the requested status';
 $s_close_bugs_conf_msg = 'Are you sure you wish to close these bugs ?';
 $s_delete_bugs_conf_msg = 'Are you sure you wish to delete these bugs ?';
 $s_move_bugs_conf_msg = 'Move bugs to';
+$s_copy_bugs_conf_msg = 'Copy issues to';
 $s_assign_bugs_conf_msg = 'Assign bugs to';
 $s_resolve_bugs_conf_msg = 'Choose bugs resolution';
 $s_priority_bugs_conf_msg = 'Choose bugs priority';
 $s_status_bugs_conf_msg = 'Choose bugs status';
+$s_view_status_bugs_conf_msg = 'Choose issues view status';
 $s_close_group_bugs_button = 'Close Bugs' ;
 $s_delete_group_bugs_button = 'Delete Bugs' ;
 $s_move_group_bugs_button = 'Move Bugs' ;
+$s_copy_group_bugs_button = 'Copy Issues' ;
 $s_assign_group_bugs_button = 'Assign Bugs' ;
 $s_resolve_group_bugs_button = 'Resolve Bugs' ;
 $s_priority_group_bugs_button = 'Update Priority' ;
 $s_status_group_bugs_button = 'Update Status' ;
+$s_view_status_group_bugs_button = 'Update View Status';
 
 # improved JPgraphs strings
 $s_graph_imp_status_title = 'Synthesis graphs by status' ;
@@ -191,7 +200,6 @@ $MANTIS_ERROR[ERROR_LDAP_AUTH_FAILED]	 = 'LDAP Authentication Failed';
 $MANTIS_ERROR[ERROR_LDAP_SERVER_CONNECT_FAILED] = 'LDAP Server Connection Failed';
 $MANTIS_ERROR[ERROR_LDAP_UPDATE_FAILED]	 = 'LDAP Record Update has failed.';
 $MANTIS_ERROR[ERROR_LDAP_USER_NOT_FOUND] = 'LDAP User Record Not Found.';
-$MANTIS_ERROR[ERROR_BUG_RESOLVED_ACTION_DENIED] = 'The action cannot be performed because the bug has been resolved';
 $MANTIS_ERROR[ERROR_DB_CONNECT_FAILED]	 = 'Database connection failed. Error received from database was #%d: %s';
 $MANTIS_ERROR[ERROR_DB_QUERY_FAILED]	 = 'Database query failed.  Error received from database was #%d: %s for the query: %s';
 $MANTIS_ERROR[ERROR_DB_SELECT_FAILED]	 = 'Database selection failed.  Error received from database was #%d: %s';
@@ -202,7 +210,27 @@ $MANTIS_ERROR[ERROR_VERSION_DUPLICATE] = 'A version with that name already exist
 $MANTIS_ERROR[ERROR_VERSION_NOT_FOUND] = 'Version not found.';
 $MANTIS_ERROR[ERROR_USER_NAME_INVALID] = 'The username is invalid. Usernames may only contain letters, numbers, spaces, hyphens, and underscores.';
 $MANTIS_ERROR[ERROR_USER_DOES_NOT_HAVE_REQ_ACCESS] = 'User does not have required access level';
+$MANTIS_ERROR[ERROR_USER_REAL_MATCH_USER] = 'The "Real Name" chosen matches another user\'s login name. Please choose another.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_NOT_ENABLED] = 'Sponsorship support not enabled.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_NOT_FOUND] = 'Sponsorship %d not found.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_AMOUNT_TOO_LOW] = 'Sponsorship (%s) is below minimum amount (%s).';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_HANDLER_ACCESS_LEVEL_TOO_LOW] = 'Handler does not have the required access level to handle sponsored issues.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_ASSIGNER_ACCESS_LEVEL_TOO_LOW] = 'Access Denied: Assigning sponsored issues requires higher access level.';
+$MANTIS_ERROR[ERROR_SPONSORSHIP_SPONSOR_NO_EMAIL] = 'Sponsor has not provided an email address. Please update your profile.';
+$MANTIS_ERROR[ERROR_CONFIG_OPT_INVALID] = 'Configuration option \'%s\' has invalid value \'%s\'';
+$MANTIS_ERROR[ERROR_BUG_READ_ONLY_ACTION_DENIED] = 'The action cannot be performed because issue \'%d\' is read-only';
+$MANTIS_ERROR[ERROR_RELATIONSHIP_ALREADY_EXISTS] = "There is already a relationship between these two issues.";
+$MANTIS_ERROR[ERROR_RELATIONSHIP_NOT_FOUND] = "Relationship not found.";
+$MANTIS_ERROR[ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_BUG_TOO_LOW] = "Access denied: The issue %d requires higher access level.";
+$MANTIS_ERROR[ERROR_RELATIONSHIP_SAME_BUG] = "An issue can't be related to itself.";
+$MANTIS_ERROR[ERROR_SIGNUP_NOT_MATCHING_CAPTCHA] = 'Confirmation hash does not match. Please retry.';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_ENABLED] = 'The \'lost your password\' feature is not available.';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_NO_EMAIL_SPECIFIED] = 'You must provide an e-mail address in order to reset the password';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_MATCHING_DATA] = 'The provided information doesn\'t match any registered account!';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_CONFIRM_HASH_INVALID] = 'The confirmation URL is invalid or has already been used. Please signup again.';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_MAX_IN_PROGRESS_ATTEMPTS_REACHED] = 'Max. number of in-progress requests reached. Please contact the system administrator';
 
+#$s_login_error = 'Your account may be disabled or blocked (due to too many failed login attempts) or the username/password you entered is incorrect.';
 $s_login_error = 'ERROR: your account may be disabled or the username/password you entered is incorrect.';
 $s_login_cookies_disabled = 'ERROR: Your browser either doesn\'t know how to handle cookies, or refuses to handle them.';
 
@@ -233,17 +261,18 @@ $s_projection_enum_string         = '10:yok,30:ayar,50:basit çözüm,70:fazla iþ,9
 $s_eta_enum_string                = '10:yok,20:< 1 güm,30:2-3 gün,40:< 1 hafta,50:< 1 ay,60:> 1 ay';
 
 # Email Strings
-$s_new_account_subject = 'Yeni kullanýcý hesabýnýz';
-$s_new_account_greeting = "Bug Takip Sistemine hoþgeldiniz.  Sisteme girmek için ihtiyacýnýz olan bilgiler aþaðýdadýr\n\n";
-$s_new_account_url = 'Sisteme bu adresten ulaþabilirsiniz: ';
+$s_new_account_subject = 'Account registration';
+$s_new_account_greeting = 'Thank you for registering. You have account with username \'';
+$s_new_account_greeting2 = '\'. In order to complete your registration, visit the following URL (make sure it is entered as the single line) and set your own access password:';
 $s_new_account_username = 'Kullanýcý Adý: ';
-$s_new_account_password = 'Þifre: ';
-$s_new_account_message = "Sisteme girdikten sonra lütfen þifrenizi deðiþtiriniz.  Sistemdeki þifreler tek yönlü bir algoritma kullanarak muhafaza edildiðinden unutulan þifrelerin kullanýcýya gönderilmesi mümkün deðildir. Þifrenizi unuttuðunuz takdirde yenisiyle deðiþtirilecektir.\n\n";
-$s_new_account_do_not_reply = "Lütfen bu mesaja cevap göndermeyiniz.\n";
+$s_new_account_message = 'If you didn\'t request any registraion, ignore this message and nothing will happen.' . "\n\n";
+$s_new_account_do_not_reply = 'DO NOT REPLY TO THIS MESSAGE';
+$s_new_account_email = 'E-mail: ';
+$s_new_account_IP = 'Remote IP address: ';
+$s_new_account_signup_msg = 'The following account has been created:';
 
-$s_reset_request_msg = 'Þifrenizim yenilenmesi için bir istekte bulunuldu';
-$s_account_name_msg = 'Kullanýcý adýnýz';
-$s_news_password_msg = 'Yeni Þifreniz';
+$s_reset_request_msg = 'Someone (presumably you) requested a password change through email verification. If this was not you, ignore this message and nothing will happen.' . "\n\n" . 'If you requested this verification, visit the following URL to change your password:';
+$s_reset_request_in_progress_msg = 'If you supplied the correct username and email address for your account, we will now have sent a confirmation message to that email address. Once the message has been received, follow the instructions provided to change the password on your account.';
 
 $s_email_notification_title_for_status_bug_feedback = 'The following bug requires your FEEDBACK.';
 $s_email_notification_title_for_status_bug_acknowledged = 'The following bug has been ACKNOWLEDGED.';
@@ -256,8 +285,16 @@ $s_email_notification_title_for_action_bug_submitted = 'The following bug has be
 $s_email_notification_title_for_action_bug_assigned = 'The following bug has been ASSIGNED.';
 $s_email_notification_title_for_action_bug_reopened = 'The following bug has been REOPENED.';
 $s_email_notification_title_for_action_bug_deleted = 'The following bug has been DELETED.';
+$s_email_notification_title_for_action_bug_updated = 'The following issue has been UPDATED.';
+$s_email_notification_title_for_action_sponsorship_added = 'The following issue has been SPONSORED.';
+$s_email_notification_title_for_action_sponsorship_updated = 'A sponsorship of the following issue was modified.';
+$s_email_notification_title_for_action_sponsorship_deleted = 'A sponsorship of the following issue was withdrawn.';
 
 $s_email_notification_title_for_action_bugnote_submitted = 'A BUGNOTE has been added to this bug.';
+$s_email_notification_title_for_action_relationship_added = "A new RELATIONSHIP has been added to the following issue.";
+$s_email_notification_title_for_action_relationship_deleted = "A RELATIONSHIP has been deleted from the following issue.";
+$s_email_notification_title_for_action_relationship_child_resolved = "A RELATED issue has been RESOLVED.";
+$s_email_notification_title_for_action_relationship_child_closed = "A RELATED issue has been CLOSED.";
 
 $s_email_reporter = 'Bildirici';
 $s_email_handler = 'Ýlgili';
@@ -270,6 +307,7 @@ $s_email_priority = 'Öncelik';
 $s_email_status = 'Statü';
 $s_email_resolution = 'Çözüm';
 $s_email_duplicate = 'Tekrar';
+$s_email_fixed_in_version = 'Fixed in Version';
 $s_email_date_submitted = 'Gönderme Tarihi';
 $s_email_last_modified = 'Son Degiþme Tarihi';
 $s_email_summary =  'Özet';
@@ -288,6 +326,7 @@ $s_manage_profiles_link = 'Profilleri Düzenle';
 $s_change_preferences_link = 'Tercihleri deðiþtir';
 $s_edit_account_title = 'Hesap düzenle';
 $s_username = 'Kullanýcý Adý';
+$s_realname = 'Real Name';
 $s_email = 'Email';
 $s_password = 'Þifre';
 $s_confirm_password  = 'Þifre Onayla';
@@ -302,6 +341,10 @@ $s_advanced_view = 'Detaylý Ýzle';
 $s_advanced_update = 'Detaylý Güncelleme';
 $s_refresh_delay = 'Yeniden Yükleme Gecikmesi';
 $s_redirect_delay = 'Yönlendirme Gecikmesi';
+$s_with_minimum_severity = 'With Mimimum Severity of';
+$s_bugnote_order = 'Bugnotes Sort Order';
+$s_bugnote_order_asc = 'Ascending';
+$s_bugnote_order_desc = 'Descending';
 $s_email_on_new = 'Yenileri Emaille';
 $s_email_on_assigned = 'Atananlarý Emaille';
 $s_email_on_feedback = 'Bilgi gerektirenleri Emaille';
@@ -311,6 +354,7 @@ $s_email_on_reopened = 'Yeniden açýlanlarý Emaille';
 $s_email_on_bugnote_added = 'Bug notu eklenenleri Emaille';
 $s_email_on_status_change = 'Statü deðiþikliklerini Emaille';
 $s_email_on_priority_change = 'Öncelik deðiþikliklerini Emaille';
+$s_email_bugnote_limit = 'Email Bugnotes Limit';
 $s_language = 'Dil';
 $s_update_prefs_button = 'Tercihleri Güncelle';
 $s_reset_prefs_button = 'Tercihleri Sýfýrla';
@@ -353,17 +397,31 @@ $s_profile_updated_msg = 'Profil güncelle...';
 # account_update.php
 $s_account_updated_msg = 'Hesabýnýz baþarýyla güncellendi...';
 $s_email_updated = 'Email address successfully updated';
+$s_realname_duplicated = 'Real name is used by another user';
+$s_realname_updated = 'Real name successfully updated';
 $s_password_updated = 'Password successfully updated';
 
 # bug_assign.php
 $s_bug_assign_msg = 'Bug baþarýyla atandý...';
+
+# bug_change_status_page.php
+$s_new_bug_title = 'New Issue';
+$s_feedback_bug_title = 'Provide Feedback to Issue';
+$s_acknowledged_bug_title = 'Acknowledge Issue';
+$s_confirmed_bug_title = 'Confirm Issue';
+$s_assigned_bug_title = 'Assign Issue';
+$s_new_bug_button = 'New Issue';
+$s_feedback_bug_button = 'Provide Feedback';
+$s_acknowledged_bug_button = 'Acknowledge Issue';
+$s_confirmed_bug_button = 'Confirm Issue';
+$s_assigned_bug_button = 'Assign Issue';
 
 # bug_close.php
 $s_bug_close_msg = 'Bug kapatýldý...';
 $s_close_immediately   = 'Hemen Kapat:';
 
 # bug_close_page.php
-$s_close_bug_title = 'Bug Kapat';
+$s_closed_bug_title = 'Bug Kapat';
 
 # bug_delete.php
 $s_bug_deleted_msg = 'Bug silindi...';
@@ -391,8 +449,8 @@ $s_reopen_add_bugnote_title = 'Bug\'ý yeniden açma sebebini giriniz';
 $s_bugnote_add_reopen_button = 'Bug Notu ekle ve Bug\'ý yeniden aç';
 
 # bug_resolve_page.php
-$s_resolve_bug_title = 'Bug çözümle';
-$s_resolve_bug_button = 'Bug çözümle';
+$s_resolved_bug_title = 'Bug çözümle';
+$s_resolved_bug_button = 'Bug çözümle';
 
 # bug_resolve_page2.php
 $s_bug_resolved_msg = 'Bug çözümlendi. Bug Notu giriniz...';
@@ -434,12 +492,11 @@ $s_os_version = 'Versiyon';
 $s_eta = 'Tahmini Tamamlama Süresi';
 $s_product_version = 'Ürün Versiyonu';
 $s_build = 'Alt Versiyon';
+$s_fixed_in_version = 'Fixed in Version';
 $s_votes = 'Oylar';
 $s_summary = 'Özet';
 $s_description = 'Açýklama';
 $s_steps_to_reproduce = 'Tekrarlamaya Yönelik Adýmlar';
-$s_additional = 'Ek';
-$s_information = 'Bilgi';
 $s_update_information_button = 'Bilgi Güncelle';
 
 # bug_update_page.php
@@ -465,7 +522,7 @@ $s_delete_link = 'Sil';
 $s_add_bugnote_title = 'Bug Notu Ekle';
 $s_add_bugnote_button = 'Bug Notu Ekle';
 $s_bugnote_edit_link = 'Güncelle';
-$s_close_bug_button = 'Bug Kapat';
+$s_closed_bug_button = 'Bug Kapat';
 
 # bugnote_update.php
 $s_bugnote_updated_msg = 'Bug notu baþarýyla güncellendi...';
@@ -477,12 +534,14 @@ $s_click_to_login = 'Sisteme Girmek Ýçin Týklayýnýz';
 # login.php
 
 # login_page.php
+#@@@ should the following string be related to $g_window_title?
 $s_login_page_info = 'Bug Takip Sistemine hoþgeldiniz.';
 $s_login_title = 'Sisteme Giriþ';
 $s_save_login = 'Kullanýcý Adýný Kaydet';
 $s_choose_project = 'Proje Seç';
 $s_login_button = 'Sisteme Gir';
 $s_signup_link = 'Yeni bir hesap aç';
+$s_lost_password_link = 'Lost your password?';
 
 # login_select_proj_page.php
 $s_select_project_button = 'Proje Seç';
@@ -491,6 +550,12 @@ $s_select_project_button = 'Proje Seç';
 $s_logged_out_title = 'Sistemden çýkýldý...';
 $s_redirecting = '...Giriþ Sayfasýna';
 $s_here = 'Yönlendir';
+# lost_pwd_page.php
+$s_lost_password_title = "Password Reset";
+$s_lost_password_done_title = "Password Message Sent";
+$s_lost_password_subject = "Password Reset";
+$s_lost_password_info = "To reinstate your lost password, please supply the name and email address for the account.<br/><br/>If the data corresponds to a valid account, you will be sent a special URL via email that contains a validation code for your account. Please follow this link to change your password.";
+$s_lost_password_confirm_hash_OK = "Your confirmation has been accepted. Please update your password.";
 
 # main_page.php
 $s_open_and_assigned_to_me = 'Açýk ve bana atanmýþ olanlar';
@@ -600,6 +665,7 @@ $s_delete_version_button = 'Versiyon Sil';
 # manage_proj_version_edit_page.php
 $s_edit_project_version_title = 'Proje Versiyonu Düzenle';
 $s_update_version_button = 'Versiyon Güncelle';
+$s_released = 'Released';
 
 # manage_proj_version_update.php
 $s_version_updated_msg = 'Versiyon baþarýyla güncellendi...';
@@ -620,13 +686,13 @@ $s_confirm_account_pruning = 'Are you sure you want to delete old accounts that 
 $s_edit_user_title = 'Kullanýcý Düzenle';
 $s_reset_password_button = 'Þifre Sýfýrla';
 $s_delete_user_button = 'Kullanýcý Sil';
-$s_reset_password_msg = 'Þifre Sýfýrla rastgele bir þifre üretir.';
+$s_reset_password_msg = 'Reset Password sends the confirmation URL via email.';
 $s_reset_password_msg2 = 'Þifre Sýfýrla sifreyi boþ hale getirir .';
 $s_show_all_users = 'ALL';
 
 # manage_user_reset.php
 $s_account_reset_protected_msg = 'Hesap korumalý. Sifre sýfýrlanamaz.';
-$s_account_reset_msg = 'Hesap þifresi sýfýrlandý...';
+$s_account_reset_msg = 'Confirmation message has been sent to your email address...';
 $s_account_reset_msg2 = 'Hesap þifresi boþ olarak düzenlendi...';
 
 # manage_user_update.php
@@ -637,6 +703,7 @@ $s_manage_user_updated_msg = 'Hesap baþarýyla güncellendi...';
 $s_main_link = 'Ana Sayfa';
 $s_view_bugs_link = 'Bug Ýzle';
 $s_report_bug_link = 'Bug Bildir';
+$s_changelog_link = 'Change Log';
 $s_summary_link = 'Özet';
 $s_account_link = 'Hesap';
 $s_users_link = 'Users';
@@ -644,8 +711,17 @@ $s_manage_link = 'Düzenle';
 $s_edit_news_link = 'Haberleri Düzenle';
 $s_docs_link = 'Belgeler';
 $s_logout_link = 'Sistemden Çýk';
+$s_my_view_link = 'My View';
 
 # meta_inc.php
+
+# my_view_page.php
+$s_my_view_title_unassigned = 'Unassigned';
+$s_my_view_title_recent_mod = 'Recently Modified';
+$s_my_view_title_reported = 'Reported by Me';
+$s_my_view_title_assigned = 'Assigned to Me (Unresolved)';
+$s_my_view_title_resolved = 'Resolved';
+$s_my_view_title_monitored = 'Monitored by Me';
 
 # news_add.php
 $s_news_added_msg = 'Haber eklendi...';
@@ -754,15 +830,13 @@ $s_selected_project = 'Seçilen Proje';
 $s_valid_project_msg = 'Geçerli bir proje seçmelisiniz';
 
 # signup.php
-$s_invalid_email = 'GEÇERSÝZ BÝR EMAÝL ADRESÝDÝR';
-$s_duplicate_username = 'SÝSTEMDE DAHA ÖNCEDEN KULLANILMIÞTIR.  LÜTFEN BAÞKA BÝR KULLANICI ADI SEÇÝNÝZ';
-$s_account_create_fail = 'KULLANICI HESABI AÇILAMADI';
-$s_account_added = 'Kullanýcý hesabý baþarýyla eklendi.';
-$s_password_emailed_msg = 'Þifreniz size emaille gönderilecektir.';
-$s_no_reponse_msg = 'Eðer bir hafta içinde yanýt vermezseniz kullanýcý hesabýnýz silinebilir.';
+$s_signup_done_title = 'Account registration processed';
+$s_password_emailed_msg = 'Congratulations. You have registered successfully. You are now being sent a confirmation email to verify your email address. Visiting the link sent to you in this email will activate your account.';
+$s_no_reponse_msg = 'You will have seven days to complete the account confirmation process; if you fail to complete account confirmation within seven days, this newly-registered account may be purged.';
 
 # signup_page.php
-$s_signup_info = 'Kullanýcý adýnýzý seçip geçerli bir email adresi giriniz. Rastgele oluþturulmuþ bir þifre adresinize gönderilecektir.';
+$s_signup_captcha_request = 'Enter the code as it is shown in the box on the right';
+$s_signup_info = 'On completion of this form and verification of your answers, you will be sent a confirmation email to the email address you specified.<br/>Using the confirmation email, you will be able activate your account. If you fail to activate your account within seven days, it will be purged.<br/>You must specify a valid email address in order to receive the account confirmation email.';
 $s_signup_title = 'Yeni Hesap Açma';
 $s_signup_button = 'Hesap Aç';
 
@@ -829,6 +903,22 @@ $s_yes = 'Yes';
 $s_no = 'No';
 $s_open_filters = 'Change Filter';
 $s_or_unassigned = 'Or Unassigned';
+$s_ok = 'OK';
+$s_select_all = 'Select All';
+
+# stored query strings
+$s_use_query = 'Use Filter';
+$s_delete_query = 'Delete Filter';
+$s_query_deleted = 'Filter Deleted';
+$s_save_query = 'Save Current Filter';
+$s_reset_query = 'Reset Filter';
+$s_query_name = 'Filter Name';
+$s_query_exists = 'This particular query appears to already exist.';
+$s_query_dupe_name = 'Another query already has this name. Please choose a different name for this query.';
+$s_query_blank_name = 'You cannot store a filter without a name. Please give this filter a name before saving it.';
+$s_query_store_error = 'There was an error saving this query.';
+$s_open_queries = 'Manage Filters';
+$s_query_delete_msg = 'Are you sure you wish to delete this query?';
 
 # view_bug_advanced_page.php
 $s_view_simple_link = 'Basit Ýzle';
@@ -837,7 +927,9 @@ $s_product_build = 'Ürün Alt Versiyonu';
 $s_system_profile = 'Sistem Özellikleri';
 $s_update_bug_button = 'Bug Güncelle';
 $s_bug_assign_to_button = 'Assign To:';
+$s_bug_status_to_button = 'Change Status To:';
 $s_reopen_bug_button = 'Bug Yeniden Aç';
+$s_move_bug_button = 'Move Issue';
 $s_attached_files = 'Eklenen Dosyalar';
 $s_publish = 'Publish';
 $s_cached = 'Cached';
@@ -849,9 +941,16 @@ $s_view_advanced_link = 'Detaylý Link';
 $s_viewing_bug_simple_details_title = 'Basit Bug Detaylarý Ýzleniyor';
 
 # bug_monitor_list_view_inc.php
-$s_no_users_monitoring_bug = 'There are no users monitoring this bug.';
-$s_users_monitoring_bug = 'Users monitoring this bug';
+$s_no_users_monitoring_bug = 'There are no users monitoring this issue.';
+$s_users_monitoring_bug = 'Users monitoring this issue';
 $s_monitoring_user_list = 'User List';
+
+# bug_sponsorship_list_view_inc.php
+$s_no_users_sponsoring_bug = 'There are no users sponsoring this issue.';
+$s_users_sponsoring_bug = 'Users sponsoring this issue';
+$s_sponsors_list = 'Sponsors List';
+$s_total_sponsorship_amount = 'Total Sponsorship = %s';
+$s_sponsor_issue = 'Sponsor Issue';
 
 # custom field strings
 $s_add_custom_field_button = 'New Custom Field';
@@ -872,9 +971,18 @@ $s_custom_field_access_level_r = 'Read Access';
 $s_custom_field_access_level_rw = 'Write Access';
 $s_custom_field_length_min = 'Min. Length';
 $s_custom_field_length_max = 'Max. Length';
-$s_custom_field_advanced = 'Advanced';
+$s_custom_field_advanced = 'Display Only On Advanced Page';
+$s_custom_field_display_report = 'Display When Reporting Issues';
+$s_custom_field_display_update = 'Display When Updating Issues';
+$s_custom_field_display_resolved = 'Display When Resolving Issues';
+$s_custom_field_display_closed = 'Display When Closing Issues';
+$s_custom_field_require_report = 'Required On Report';
+$s_custom_field_require_update = 'Required On Update';
+$s_custom_field_require_resolved = 'Required On Resolve';
+$s_custom_field_require_closed = 'Required On Close';
+
 $s_custom_field_sequence = 'Sequence';
-$s_custom_field_type_enum_string = '0:String,1:Numeric,2:Float,3:Enumeration,4:Email';
+$s_custom_field_type_enum_string = '0:String,1:Numeric,2:Float,3:Enumeration,4:Email,5:Checkbox,6:List,7:Multiselection list';
 
 $s_confirm_used_custom_field_deletion = 'This field is currently linked to at least one project.  If you continue all values for this field will be permanently deleted.  This action cannot be undone.  If you do not want to delete this field, hit the Back button in your browser.  To proceed, click the button below';
 $s_confirm_custom_field_deletion = 'Are you sure you want to delete this custom field and all associated values?';
@@ -885,10 +993,49 @@ $s_filter_closed = 'Closed';
 $s_filter_resolved = 'Resolved';
 $s_hide_closed = "Hide Closed";
 $s_hide_resolved = "Hide Resolved";
+$s_and_above = 'And Above';
+$s_advanced_filters = 'Advanced Filters';
+$s_simple_filters = 'Simple Filters';
+$s_monitored_by = 'Monitored By';
 
 $s_attachments = 'attachment(s)';
 $s_attachment_alt = 'A';
 
 # PHPMailer
-$s_phpmailer_language = 'en';
+$s_phpmailer_language = 'tr';
+
+# Sponsorship Strings
+$s_sponsors = '%d sponsor(s)';
+$s_sponsorship_added = 'Sponsorship Added';
+$s_sponsorship_updated = 'Sponsorship Updated';
+$s_sponsorship_deleted = 'Sponsorship Deleted';
+$s_sponsorship_more_info = 'More information about sponsorship';
+
+# URL explaining the process of sponsoring an issue.  This is defined here rather than
+# in the config to allow for a URL per language.  This can be set to an empty string if there
+# is not need to provide such process information.
+$s_sponsorship_process_url = '';
+
+# Changelog
+$s_changelog = 'Change Log';
+
+# Http auth
+$s_http_auth_realm = "Mantis Login";
+
+$s_bug = "issue";
+$s_add_new_relationship = "New relationship";
+$s_add_new_relationship_button = "Add";
+$s_this_bug = "Current issue";
+$s_relationship_added = "Relationship added";
+$s_relationship_deleted = "Relationship deleted";
+$s_delete_relationship_button = "Delete";
+$s_delete_relationship_sure_msg = "Are you sure you wish to delete this relationship?";
+$s_relationship_warning_blocking_bugs_not_resolved = "Not all the children of this issue are yet resolved or closed.";
+$s_relationship_warning_blocking_bugs_not_resolved_2 = "<b>ATTENTION</b>. Not all the children of this issue are yet resolved or closed.<br>Before <b>resolving/closing</b> a parent issue, all the issues related as child with this one should be resolved or closed.";
+$s_create_child_bug_button = "Create Child";
+$s_bug_cloned_to = "Issue cloned";
+$s_bug_created_from = "Issue generated from";
+
+# Source Control Integration
+$s_checkin = 'Checkin';
 ?>

@@ -1617,4 +1617,84 @@
 	#   )
 	# );
 	$g_custom_group_actions = array();
+
+	######################
+	# Mail Reporting
+	######################
+
+	# --- mail reporting settings -----
+	# This tells Mantis to report all the Mail with only one account
+	$g_mail_use_reporter	= ON;
+
+	# The account's name for mail reporting
+	# Also used for fallback if a user is not found in database
+	$g_mail_reporter	= 'Mail';
+
+	# Signup new users automatically (possible security risk!)
+	# Default is OFF, ignored if mail_use_reporter is ON
+	$g_mail_auto_signup	= OFF;
+
+	# How many mails should be fetched at the same time
+	# If big mails with attachments should be received, specify only one
+	$g_mail_fetch_max	= 1;
+
+	# Write complete mail into the "Additional Information"
+	$g_mail_additional	= OFF;
+
+	# Write sender of the message into the bug report
+	$g_mail_save_from	= OFF;
+
+	# Parse MIME mails (may require a lot of memory)
+	$g_mail_parse_mime	= OFF;
+
+	# Parse HTML mails
+	$g_mail_parse_html	= OFF;
+
+	# HTML Parser Command
+	# It should print the formatted text to STDOUT
+	# For example: "/usr/bin/w3m -T text/html -dump"
+	$g_mail_html_parser	= OFF;
+
+	# directory for saving temporary mail content
+	$g_mail_tmp_directory	= '/tmp';
+	
+	# Delete incoming mail from POP3 server
+	$g_mail_delete		= ON;
+
+	# Signup new users automatically (possible security risk!)
+	# Default is OFF, ignored if mail_use_reporter is ON
+	$g_mail_debug		= OFF;
+	
+	# Save mail contents to this directory if debug mode is ON
+	$g_mail_directory	= '/tmp/mantis';
+	
+	# The auth method used for POP3
+	# Valid methods are: 'DIGEST-MD5','CRAM-MD5','LOGIN','PLAIN','APOP','USER'
+	$g_mail_auth_method	= 'USER';
+	
+	# Looks for priority header field
+	$g_mail_use_bug_priority = ON;
+	
+	# Default priority for mail reported bugs
+	$g_mail_bug_priority_default = NORMAL;
+	
+	# Classify bug priorities
+	$g_mail_bug_priority = array(
+		'5 (lowest)'	=> 10,
+		'4 (low)'	=> 20,
+		'3 (normal)'	=> 30,
+		'2 (high)'	=> 40,
+		'1 (highest)'	=> 50,
+		'5'		=> 20,
+		'4'		=> 20,
+		'3'		=> 30,
+		'2'		=> 40,
+		'1'		=> 50,
+		'0'		=> 10,
+		'low'		=> 20,
+		'normal' 	=> 30,
+		'high' 		=> 40,
+		'' 		=> 30,
+		'?' 		=> 30
+	);
 ?>

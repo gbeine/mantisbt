@@ -192,7 +192,10 @@ $upgrade[] = Array('CreateTableSQL',Array(config_get('mantis_news_table'),"
 $upgrade[] = Array('CreateTableSQL',Array(config_get('mantis_project_category_table'),"
   project_id 		 I  UNSIGNED NOTNULL PRIMARY DEFAULT '0',
   category 		C(64) NOTNULL PRIMARY DEFAULT \" '' \",
-  user_id 		 I  UNSIGNED NOTNULL DEFAULT '0'
+  user_id 		 I  UNSIGNED NOTNULL DEFAULT '0',
+  pop3_host		C(250) NULL,
+  pop3_user		C(250) NULL,
+  pop3_pass		C(250) NULL
 ",Array('mysql' => 'TYPE=MyISAM', 'pgsql' => 'WITHOUT OIDS')));
 
 $upgrade[] = Array('CreateTableSQL',Array(config_get('mantis_project_file_table'),"
@@ -222,7 +225,11 @@ $upgrade[] = Array('CreateTableSQL',Array(config_get('mantis_project_table'),"
   view_state 		I2 NOTNULL DEFAULT '10',
   access_min 		I2 NOTNULL DEFAULT '10',
   file_path 		C(250) NOTNULL DEFAULT \" '' \",
-  description 		XS NOTNULL
+  description 		XS NOTNULL,
+  pop3_host		C(250) NULL,
+  pop3_user		C(250) NULL,
+  pop3_pass		C(250) NULL,
+  pop3_categories	L NOTNULL DEFAULT '0'
 ",Array('mysql' => 'TYPE=MyISAM', 'pgsql' => 'WITHOUT OIDS')));
 $upgrade[] = Array('CreateIndexSQL',Array('idx_project_id',config_get('mantis_project_table'),'id'));
 $upgrade[] = Array('CreateIndexSQL',Array('idx_project_name',config_get('mantis_project_table'),'name',Array('UNIQUE')));
@@ -340,5 +347,9 @@ $upgrade[] = Array('CreateIndexSQL',Array('idx_access',config_get('mantis_user_t
 $upgrade[] = Array('InsertData', Array( config_get('mantis_user_table'),
     "(username, realname, email, password, date_created, last_visit, enabled, protected, access_level, login_count, lost_password_request_count, failed_login_count, cookie_string) VALUES
         ('administrator', '', 'root@localhost', '63a9f0ea7bb98050796b649e85481845', " . db_now() . ", " . db_now() . ", 1, 0, 90, 3, 0, 0, '" .
+             md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "')" ) );
+$upgrade[] = Array('InsertData', Array( config_get('mantis_user_table'), 
+    "(username, realname, email, password, date_created, last_visit, enabled, protected, access_level, login_count, lost_password_request_count, failed_login_count, cookie_string) VALUES 
+        ('mail', 'Mail Reporter', 'nomail@localhost', 'a268462c3c679a9027658c5aa723f97c', " . db_now() . ", " . db_now() . ", 1, 0, 25, 0, 0, 0, '" . 
              md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "')" ) );
 ?>

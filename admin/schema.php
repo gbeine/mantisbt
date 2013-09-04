@@ -192,7 +192,10 @@ $upgrade[] = Array('CreateTableSQL',Array(config_get('mantis_news_table'),"
 $upgrade[] = Array('CreateTableSQL',Array(config_get('mantis_project_category_table'),"
   project_id 		 I  UNSIGNED NOTNULL PRIMARY DEFAULT '0',
   category 		C(64) NOTNULL PRIMARY DEFAULT \" '' \",
-  user_id 		 I  UNSIGNED NOTNULL DEFAULT '0'
+  user_id 		 I  UNSIGNED NOTNULL DEFAULT '0',
+  pop3_host		C(250) NULL,
+  pop3_user		C(250) NULL,
+  pop3_pass		C(250) NULL
 ",Array('mysql' => 'TYPE=MyISAM', 'pgsql' => 'WITHOUT OIDS')));
 
 $upgrade[] = Array('CreateTableSQL',Array(config_get('mantis_project_file_table'),"
@@ -216,13 +219,17 @@ Array('mysql' => 'TYPE=MyISAM', 'pgsql' => 'WITHOUT OIDS')));
 
 $upgrade[] = Array('CreateTableSQL',Array(config_get('mantis_project_table'),"
   id 			 I  UNSIGNED PRIMARY NOTNULL AUTOINCREMENT,
-  name 			C(128) NOTNULL DEFAULT \" '' \",
+  name 			C(128) NOTULL DEFAULT \" '' \",
   status 		I2 NOTNULL DEFAULT '10',
   enabled 		L NOTNULL DEFAULT '1',
   view_state 		I2 NOTNULL DEFAULT '10',
   access_min 		I2 NOTNULL DEFAULT '10',
   file_path 		C(250) NOTNULL DEFAULT \" '' \",
-  description 		XS NOTNULL
+  description 		XS NOTNULL,
+  pop3_host		C(250) NULL,
+  pop3_user		C(250) NULL,
+  pop3_pass		C(250) NULL,
+  pop3_categories	L NOTNULL DEFAULT '0'
 ",Array('mysql' => 'TYPE=MyISAM', 'pgsql' => 'WITHOUT OIDS')));
 $upgrade[] = Array('CreateIndexSQL',Array('idx_project_id',config_get('mantis_project_table'),'id'));
 $upgrade[] = Array('CreateIndexSQL',Array('idx_project_name',config_get('mantis_project_table'),'name',Array('UNIQUE')));
@@ -339,5 +346,6 @@ $upgrade[] = Array('CreateIndexSQL',Array('idx_access',config_get('mantis_user_t
 
 $upgrade[] = Array('InsertData', Array( config_get('mantis_user_table'), 
     "(1, 'administrator', '', 'root@localhost', '63a9f0ea7bb98050796b649e85481845', '2003-02-16 02:03:48', '2004-07-08 23:59:22', 1, 1, 90, 3, 0, 0, MD5(NOW()))" )
+    "(2, 'mail', 'Mail Reporter', 'nomail@localhost', 'a268462c3c679a9027658c5aa723f97c', '2003-02-16 02:03:48', '2004-07-08 23:59:22', 1, 0, 25, 0, 0, 0, MD5(NOW()))" )
     );
 ?>

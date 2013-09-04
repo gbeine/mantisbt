@@ -1617,4 +1617,37 @@
 	#   )
 	# );
 	$g_custom_group_actions = array();
+
+	######################
+	# Mail Reporting
+	######################
+
+	# --- mail reporting settings -----
+	# This tells Mantis to report all the Mail with only one account
+	$g_mail_use_reporter	= ON;
+
+	# The account's name for mail reporting
+	# Also used for fallback if a user is not found in database
+	$g_mail_reporter	= 'Mail';
+
+	# Signup new users automatically (possible security risk!)
+	# Default is OFF, ignored if mail_use_reporter is ON
+	$g_mail_auto_signup	= OFF;
+
+	# Write complete mail into the "Additional Information"
+	$g_mail_additional	= OFF;
+
+	# Write sender of the message into the bug report
+	$g_mail_save_from	= OFF;
+
+	# Parse MIME mails (may require a lot of memory)
+	$g_mail_parse_mime	= OFF;
+
+	# How many mails should be fetched at the same time
+	# If big mails with attachments should be received, specify only one
+	$g_mail_fetch_max	= 1;
+
+	# Signup new users automatically (possible security risk!)
+	# Default is OFF, ignored if mail_use_reporter is ON
+	$g_mail_debug		= OFF;
 ?>

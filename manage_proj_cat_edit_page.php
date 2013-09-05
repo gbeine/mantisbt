@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: manage_proj_cat_edit_page.php,v 1.31 2005-02-12 20:01:06 jlatour Exp $
+	# $Id: manage_proj_cat_edit_page.php,v 1.31 2005/02/12 20:01:06 jlatour Exp $
 	# --------------------------------------------------------
 ?>
 <?php

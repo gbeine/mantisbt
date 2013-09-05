@@ -18,9 +18,16 @@ This patch changes the following files:
     manage_proj_cat_edit_page.php
     manage_proj_edit_page.php
 These files are new:
+    Mail/mime.php
+    Mail/mimeDecode.php
+    Mail/mimePart.php
+    Mail/Parser.php
+    Net/POP3.php
+    Net/Socket.php
     core/mail_api.php
     doc/README.bug_report_mail
     doc/bug_report_mail.sql
+    PEAR.php
     bug_report_mail.php
     manage_proj_cat_mail_delete.php
     manage_proj_cat_mail_update.php
@@ -113,6 +120,13 @@ This addon is distributed under the same conditions as Mantis itself.
 Gerrit Beine, August 2004
 
 Changelog:
+Aug 2006
+	- update to Mantis 1.0.5
+	- mail parsing completely rewritten
+	- include additional patches submitted by
+		- cas (handling of attachments and empty fields)
+		  mail_add_file in core/mail.api
+		  mail_add_bug in core/mail.api
 May 2006
 	- update to Mantis 1.0.3
 	- added support for HTML mail

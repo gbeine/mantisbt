@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: manage_proj_edit_page.php,v 1.92.6.1 2006-01-01 02:58:50 thraxisp Exp $
+	# $Id: manage_proj_edit_page.php,v 1.92.6.1 2006/01/01 02:58:50 thraxisp Exp $
 	# --------------------------------------------------------
 ?>
 <?php

@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: schema.php,v 1.8.10.1 2006-02-19 13:42:24 thraxisp Exp $
+	# $Id: schema.php,v 1.8.10.1 2006/02/19 13:42:24 thraxisp Exp $
 	# --------------------------------------------------------
 
 	# Each entry below defines the schema. The upgrade array consists of

@@ -23,7 +23,7 @@
 
 	foreach ($t_mailaccounts as $t_mailaccount) {
 		if ( config_get( 'mail_debug' ) ) {
-			print_r($t_mailaccounts);
+			print_r($t_mailaccount);
 		}
 		mail_process_all_mails( $t_mailaccount );
 	}

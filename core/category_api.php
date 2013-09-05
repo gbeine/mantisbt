@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: category_api.php,v 1.14 2005-02-12 20:01:10 jlatour Exp $
+	# $Id: category_api.php,v 1.14 2005/02/12 20:01:10 jlatour Exp $
 	# --------------------------------------------------------
 
 	### Category API ###
@@ -186,7 +186,7 @@
 
 		$t_project_category_table = config_get( 'mantis_project_category_table' );
 
-		$query = "SELECT category, user_id
+		$query = "SELECT category, user_id, pop3_host, pop3_user, pop3_pass
 				FROM $t_project_category_table
 				WHERE project_id='$c_project_id' AND
 					category='$c_category'";
@@ -206,7 +206,7 @@
 
 		$t_project_category_table = config_get( 'mantis_project_category_table' );
 
-		$query = "SELECT category, user_id
+		$query = "SELECT category, user_id, pop3_host, pop3_user, pop3_pass
 				FROM $t_project_category_table
 				WHERE project_id='$c_project_id'
 				ORDER BY category";

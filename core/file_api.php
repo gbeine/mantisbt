@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: file_api.php,v 1.72 2005-08-11 01:53:02 thraxisp Exp $
+	# $Id: file_api.php,v 1.72 2005/08/11 01:53:02 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -572,8 +572,8 @@
 						file_ftp_disconnect ( $conn_id );
 					}
 
-					if ( !move_uploaded_file( $p_tmp_file, $t_disk_file_name ) ) {
-					    trigger_error( FILE_MOVE_FAILED, ERROR );
+					if ( !rename( $p_tmp_file, $t_disk_file_name ) ) {
+					    trigger_error( ERROR_FILE_MOVE_FAILED, ERROR );
 					}
 					chmod( $t_disk_file_name, 0400 );
 

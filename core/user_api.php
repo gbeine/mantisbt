@@ -6,7 +6,7 @@
 	# See the README and LICENSE files for details
 
 	# --------------------------------------------------------
-	# $Id: user_api.php,v 1.106 2005-07-22 15:34:03 thraxisp Exp $
+	# $Id: user_api.php,v 1.106 2005/07/22 15:34:03 thraxisp Exp $
 	# --------------------------------------------------------
 
 	$t_core_dir = dirname( __FILE__ ).DIRECTORY_SEPARATOR;
@@ -517,6 +517,24 @@
 		$query = "SELECT id
 				  FROM $t_user_table
 				  WHERE username='$c_username'";
+		$result = db_query( $query );
+
+		if ( 0 == db_num_rows( $result ) ) {
+			return false;
+		} else {
+			return db_result( $result );
+		}
+	}
+
+	# get a user id from an mail address
+	#  return false if the mail address does not exist
+	function user_get_id_by_mail( $p_mailaddress ) {
+		$c_mailaddress = db_prepare_string( $p_mailaddress );
+		$t_user_table = config_get( 'mantis_user_table' );
+
+		$query = "SELECT id
+				  FROM $t_user_table
+				  WHERE email='$c_mailaddress'";
 		$result = db_query( $query );
 
 		if ( 0 == db_num_rows( $result ) ) {

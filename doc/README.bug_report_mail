@@ -1,0 +1,176 @@
+The current version of bug_report_mail support plain text and MIME
+encoded e-mails via POP3 Mailaccounts with PEAR's Net_POP3 package.
+
+bug_report_mail is able to recognize if mail is a reply to an already opened
+bug and adds the content as a bugnote.
+
+If you are alway running Mantis you have to alter your projects table
+with the sql/bug_report_mail.sql script.
+If not, you can create the database tables in the way described in
+the doc/INSTALL file.
+
+This patch changes the following files:
+    core/category_api.php
+    core/file_api.php
+    core/user_api.php
+    admin/schema.php
+    config_defaults_inc.php
+    manage_proj_cat_edit_page.php
+    manage_proj_edit_page.php
+These files are new:
+    Mail/mime.php
+    Mail/mimeDecode.php
+    Mail/mimePart.php
+    Mail/Parser.php
+    Net/POP3.php
+    Net/Socket.php
+    core/mail_api.php
+    doc/README.bug_report_mail
+    doc/bug_report_mail.sql
+    PEAR.php
+    bug_report_mail.php
+    manage_proj_cat_mail_delete.php
+    manage_proj_cat_mail_update.php
+    manage_proj_mail_categories.php
+    manage_proj_mail_delete.php
+    manage_proj_mail_update.php
+
+After installing this patch, you can add a POP3 server's hostname
+and authentication data for each of your projects with the project edit form.
+
+There are two ways to receive mail with bug_report_mail:
+The secure (and default) way is to use a standard reporting user:
+You have to create a reporter account, for example 'Mail'.
+The name for this reporter account you have to write in your config_inc.php file:
+	$g_mail_reporter = "Mail";
+and then, bug_report_mail must be informed to behave like this:
+	$g_mail_use_reporter = ON;
+
+The other way is to signup new user accounts automatically.
+For using this, you have to change this
+	$g_mail_auto_signup     = OFF;
+from OFF to ON.
+Now, bug_report_mail will look for an user named like the mail's sender
+or an user which mail adress is identical.
+If no user is found, then a new account will be created.
+The new user's name will be the mail address.
+
+This could be used for attacks, but there is no other way in the moment.
+
+If you like to parse MIME encoded mails, you have to install the PEAR
+Mail_Mime package and set
+	$g_mail_parse_mime	= OFF;
+from OFF to ON.
+
+For parsing HTML mails, set 
+	$g_mail_parse_html	= ON;
+and set 
+	$g_mail_html_parser
+to a valid tool for dumping HTML contents ("/usr/bin/w3m -T text/html -dump")
+Also, 
+	$g_mail_tmp_directory
+has to be a valid directory to handle write the temporary HTML files.
+
+For debugging controls there is the switch
+	$g_mail_additional	= OFF;
+which puts the complete message into the Additional Information field,
+if it is activated.
+
+If you like to see what bug_report_mail.php is doing, set
+	$g_mail_debug = ON;
+
+If $g_mail_directory is a valid directory and also writeable,
+the complete mails will be saved to this directory.
+
+In this case you should decrease the amount of fetched messages via
+	$g_mail_fetch_max	= 1;
+because the mime decoding needs a lot of memory.
+
+If you'd like to use the Mail Reporter but don't save the whole message for
+making the sender's address available, set
+	$g_mail_save_from	= OFF;
+to ON.
+
+If you don't want bug_report_mail.php to delete the mails from your POP3
+server set
+	$g_mail_delete = OFF;
+Use this carefully!
+
+With 
+	$g_mail_auth_method
+you may set the AUTH method for your POP3 server. Default is 'USER',
+but 'DIGEST-MD5','CRAM-MD5','LOGIN','PLAIN','APOP' are also possible
+
+For using the priority of the mails for the bug priority, set
+	$g_mail_use_bug_priority = ON;
+The
+	$g_mail_bug_priority_default = NORMAL;
+is the default value for the priority of new bug entries.
+
+After this, bug_report_mail can be used via cron like this:
+
+*/5 *   *   *   * lynx --dump http://mantis.homepage.com/bug_report_mail.php
+or via command line interface
+*/5 *   *   *   * /usr/local/bin/php /path/to/mantis/bug_report_mail.php
+
+This line fetch bug reports from via POP3 every 5 minutes. 
+
+This addon is distributed under the same conditions as Mantis itself.
+
+Gerrit Beine, August 2004
+
+Changelog:
+Aug 2006
+	- update to Mantis 1.0.5
+	- mail parsing completely rewritten
+	- include additional patches submitted by
+		- cas (handling of attachments and empty fields)
+		  mail_add_file in core/mail.api
+		  mail_add_bug in core/mail.api
+May 2006
+	- update to Mantis 1.0.3
+	- added support for HTML mail
+	- added support for encoded mail bodies and subjects
+	- changed handling of mail
+	- the global mail_debug configuration option is now set OFF by default
+	- include the additional patches submitted by
+		- EBY (support for priorities and file uploads)
+		  file_add in core/file_api.php
+		  mail_parse_content in core/mail_api.php
+		  config_defaults_inc.php
+Dec 2005
+	- update to Mantis 1.0.0rc4
+	- update to Mantis 0.19.4
+Oct 2005
+	- update to Mantis 1.0.0rc3
+	- update to Mantis 0.19.3
+Sep 2005:
+	- update to Mantis 1.0.0rc2
+	- fixed a bug in getting all categories for a project
+		category_get_all_rows in core/category_api.php
+Aug 2005:
+	- update to Mantis 1.0.0rc1
+	- include the additional patches submitted by      
+		- gernot (Fixed MIME handling and save the mail's sender)
+		  mail_get_all_mails in core/mail_api.php
+		  mail_parse_content in core/mail_api.php
+		  mail_add_bug in core/mail_api.php
+		- stevenc (Fixed MIME handling)
+		  mail_parse_content in core/mail_api.php
+		- rainman (Fixed empty files bug and regex for finding a bug id)
+		  mail_add_file in core/mail_api.php
+		  mail_get_bug_id_from_subject in core/mail_api.php
+Dec 2004:
+	- update to Mantis 0.19.2
+	- add config: g_mail_parse_mime
+	- add config: g_mail_additional
+	- add config: g_mail_fetch_max
+	- make it working via CLI
+Nov 2004:
+	- update to Mantis 0.19.1
+	- add support for MIME decoding
+Sep 2004:
+	- update to Mantis 0.19.0
+Aug 2004:
+	- create patch for Mantis 0.18.3
+
